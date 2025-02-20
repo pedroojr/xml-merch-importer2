@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -36,12 +35,9 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     if (!onProductUpdate) return;
 
     products.forEach((product, index) => {
-      if (product.useMarkup) {
-        const newProduct = { ...product };
-        newProduct.markup = value;
-        newProduct.salePrice = roundPrice(calculateSalePrice(newProduct, value), roundingType);
-        onProductUpdate(index, newProduct);
-      }
+      const newProduct = { ...product };
+      newProduct.salePrice = roundPrice(calculateSalePrice(newProduct, value), roundingType);
+      onProductUpdate(index, newProduct);
     });
   };
 
@@ -50,11 +46,9 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     if (!onProductUpdate) return;
 
     products.forEach((product, index) => {
-      if (product.useMarkup) {
-        const newProduct = { ...product };
-        newProduct.salePrice = roundPrice(calculateSalePrice(newProduct, newProduct.markup), type);
-        onProductUpdate(index, newProduct);
-      }
+      const newProduct = { ...product };
+      newProduct.salePrice = roundPrice(calculateSalePrice(newProduct, newProduct.markup), type);
+      onProductUpdate(index, newProduct);
     });
   };
 
@@ -68,13 +62,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
       case 'color':
       case 'uom':
         product[field] = value as string;
-        break;
-      case 'useMarkup':
-        product.useMarkup = value as boolean;
-        product.markup = globalMarkup;
-        if (product.useMarkup) {
-          product.salePrice = roundPrice(calculateSalePrice(product, globalMarkup), roundingType);
-        }
         break;
       case 'salePrice':
         product.salePrice = parseFloat(value) || 0;
@@ -109,7 +96,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
               <TableHead className="w-32 font-semibold text-right">Desconto</TableHead>
               <TableHead className="w-32 font-semibold text-right">Valor Líquido</TableHead>
               <TableHead className="w-40 font-semibold">Cor</TableHead>
-              <TableHead className="w-24 font-semibold text-center">Markup</TableHead>
               <TableHead className="w-40 font-semibold text-right">Preço Venda</TableHead>
             </TableRow>
           </TableHeader>
@@ -133,7 +119,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
               <TableCell className="text-right">{formatCurrency(totals.totalBruto)}</TableCell>
               <TableCell className="text-right">{formatCurrency(totals.totalDesconto)}</TableCell>
               <TableCell className="text-right">{formatCurrency(totals.totalLiquido)}</TableCell>
-              <TableCell></TableCell>
               <TableCell></TableCell>
               <TableCell></TableCell>
             </TableRow>

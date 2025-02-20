@@ -2,7 +2,6 @@
 import React, { useEffect } from 'react';
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency, formatNumber } from '../../utils/formatters';
 import { Product } from '../../types/nfe';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,23 +27,12 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
   globalMarkup,
   roundingType
 }) => {
-  // Efeito para atualizar o preço quando o markup global ou tipo de arredondamento mudar
   useEffect(() => {
-    if (product.useMarkup) {
-      const newSalePrice = roundPrice(calculateSalePrice(product, globalMarkup), roundingType);
-      if (newSalePrice !== product.salePrice) {
-        onUpdate(index, 'salePrice', newSalePrice);
-      }
-    }
-  }, [globalMarkup, roundingType, product.useMarkup, product.netPrice, index, onUpdate]);
-
-  const handleMarkupChange = (checked: boolean) => {
-    onUpdate(index, 'useMarkup', checked);
-    if (checked) {
-      const newSalePrice = roundPrice(calculateSalePrice({...product, useMarkup: true}, globalMarkup), roundingType);
+    const newSalePrice = roundPrice(calculateSalePrice(product, globalMarkup), roundingType);
+    if (newSalePrice !== product.salePrice) {
       onUpdate(index, 'salePrice', newSalePrice);
     }
-  };
+  }, [globalMarkup, roundingType, product.netPrice, index, onUpdate]);
 
   return (
     <TableRow className="hover:bg-slate-50">
@@ -109,14 +97,6 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
           </Select>
         ) : (
           product.color
-        )}
-      </TableCell>
-      <TableCell className="text-center">
-        {editable && (
-          <Checkbox
-            checked={product.useMarkup}
-            onCheckedChange={handleMarkupChange}
-          />
         )}
       </TableCell>
       <TableCell className="text-right">
