@@ -1,4 +1,5 @@
 import { Product } from '../types/nfe';
+import { extrairCorDaDescricao } from './colorParser';
 
 export const parseNFeXML = (xmlText: string): Product[] => {
   const parser = new DOMParser();
@@ -77,10 +78,13 @@ export const parseNFeXML = (xmlText: string): Product[] => {
     const discount = parseNumber(getElementText(item, "vDesc"));
     const netPrice = totalPrice - discount;
     
+    const nome = getElementText(prod, "xProd");
+    const corIdentificada = extrairCorDaDescricao(nome);
+    
     const product: Product = {
       code: getElementText(prod, "cProd"),
       ean: getElementText(prod, "cEAN"),
-      name: getElementText(prod, "xProd"),
+      name: nome,
       ncm: getElementText(prod, "NCM"),
       cfop: getElementText(prod, "CFOP"),
       uom: getElementText(prod, "uCom"),
@@ -89,7 +93,7 @@ export const parseNFeXML = (xmlText: string): Product[] => {
       totalPrice: totalPrice,
       discount: discount,
       netPrice: netPrice,
-      color: '#FFFFFF',
+      color: corIdentificada || '',
       useMarkup: false,
       markup: 30,
       salePrice: netPrice * 1.3
