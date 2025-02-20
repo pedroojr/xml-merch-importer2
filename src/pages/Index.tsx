@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import FileUpload from '../components/FileUpload';
-import ProductPreview from '../components/ProductPreview';
+import { ProductPreview } from '../components/product-preview';
 import { Button } from "@/components/ui/button";
 import { toast } from 'sonner';
 import { Info } from 'lucide-react';
