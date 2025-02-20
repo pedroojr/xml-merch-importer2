@@ -5,17 +5,19 @@ import ProductPreview from '../components/ProductPreview';
 import { Button } from "@/components/ui/button";
 import { toast } from 'sonner';
 import { Info } from 'lucide-react';
+import { parseNFeXML } from '../utils/nfeParser';
+import { Product } from '../types/nfe';
 
 const Index = () => {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleFileSelect = async (file: File) => {
     setIsProcessing(true);
     try {
-      // Em um cenário real, aqui enviaríamos o arquivo para o backend do Odoo
-      // Por enquanto, simulamos o processamento
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const text = await file.text();
+      const parsedProducts = parseNFeXML(text);
+      setProducts(parsedProducts);
       toast.success('Arquivo XML processado com sucesso');
     } catch (error) {
       toast.error('Erro ao processar o arquivo XML');
@@ -23,6 +25,17 @@ const Index = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleProductUpdate = (index: number, updatedProduct: Product) => {
+    const newProducts = [...products];
+    newProducts[index] = updatedProduct;
+    setProducts(newProducts);
+  };
+
+  const handleConfirmImport = () => {
+    // Aqui você enviaria os produtos para o backend
+    toast.success('Produtos importados com sucesso');
   };
 
   return (
@@ -54,10 +67,14 @@ const Index = () => {
 
         {products.length > 0 && (
           <div className="space-y-4">
-            <ProductPreview products={products} />
+            <ProductPreview 
+              products={products} 
+              onProductUpdate={handleProductUpdate}
+              editable={true}
+            />
             <div className="flex justify-end">
               <Button 
-                onClick={() => toast.success('Produtos importados com sucesso')}
+                onClick={handleConfirmImport}
                 className="bg-blue-700 hover:bg-blue-800 text-white"
               >
                 Confirmar Importação
