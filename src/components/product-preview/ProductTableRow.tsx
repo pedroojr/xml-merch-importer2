@@ -69,14 +69,14 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
       <TableCell>
         {editable ? (
           <Select
-            value={product.color}
-            onValueChange={(value) => onUpdate(index, 'color', value)}
+            value={product.color || '_OTHER_'}
+            onValueChange={(value) => onUpdate(index, 'color', value === '_OTHER_' ? '' : value)}
           >
             <SelectTrigger className="w-full border-blue-200">
               <SelectValue placeholder="Selecione uma cor" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Outra cor...</SelectItem>
+              <SelectItem value="_OTHER_">Outra cor...</SelectItem>
               {CORES_OPCOES.map((cor) => (
                 <SelectItem key={cor.value} value={cor.value}>
                   {cor.label}
