@@ -90,7 +90,8 @@ export const parseNFeXML = (xmlText: string): Product[] => {
       totalPrice: totalPrice,
       discount: discount,
       netPrice: netPrice,
-      taxCode: icmsInfo.cst || icmsInfo.orig
+      taxCode: icmsInfo.cst || icmsInfo.orig,
+      color: '#FFFFFF' // Adicionando cor padrão branca
     };
     
     products.push(product);
