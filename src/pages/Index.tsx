@@ -65,24 +65,6 @@ const Index = () => {
             </div>
           </div>
         )}
-
-        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Como utilizar</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="p-4 rounded-lg bg-gray-50">
-              <div className="text-lg font-medium mb-2">1. Selecione o arquivo</div>
-              <p className="text-gray-600">Faça upload do arquivo XML da NF-e</p>
-            </div>
-            <div className="p-4 rounded-lg bg-gray-50">
-              <div className="text-lg font-medium mb-2">2. Revise os dados</div>
-              <p className="text-gray-600">Confira as informações dos produtos</p>
-            </div>
-            <div className="p-4 rounded-lg bg-gray-50">
-              <div className="text-lg font-medium mb-2">3. Confirme a importação</div>
-              <p className="text-gray-600">Clique em "Confirmar Importação" para finalizar</p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
