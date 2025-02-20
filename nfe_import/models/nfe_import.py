@@ -38,6 +38,7 @@ class NFeImport(models.Model):
                                 'barcode': ean,
                                 'type': 'product',
                                 'nfe_import_id': record.id,
+                                'color': '#FFFFFF',  # Cor padrão quando não especificada
                             }
                             product = self.env['product.product'].create(vals)
                 
@@ -51,3 +52,9 @@ class ProductProduct(models.Model):
     _inherit = 'product.product'
     
     nfe_import_id = fields.Many2one('nfe.import', 'Importação NF-e')
+    color = fields.Char(
+        string='Cor',
+        help='Cor do produto em formato hexadecimal (ex: #FFFFFF)',
+        default='#FFFFFF',
+        size=7  # Tamanho exato para um código HEX (#RRGGBB)
+    )

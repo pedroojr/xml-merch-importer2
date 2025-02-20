@@ -12,4 +12,5 @@ export interface Product {
   discount: number;      // vDesc - Valor do Desconto
   netPrice: number;      // Valor Total Líquido (após descontos)
   taxCode: string;      // Código da Situação Tributária
+  color: string;        // Cor do produto em formato HEX
 }
