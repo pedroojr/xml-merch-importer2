@@ -1,4 +1,3 @@
-
 import { Product } from '../types/nfe';
 
 export const parseNFeXML = (xmlText: string): Product[] => {
@@ -90,8 +89,10 @@ export const parseNFeXML = (xmlText: string): Product[] => {
       totalPrice: totalPrice,
       discount: discount,
       netPrice: netPrice,
-      taxCode: icmsInfo.cst || icmsInfo.orig,
-      color: '#FFFFFF' // Adicionando cor padrão branca
+      color: '#FFFFFF',
+      useMarkup: false,
+      markup: 30,
+      salePrice: netPrice * 1.3
     };
     
     products.push(product);

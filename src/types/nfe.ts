@@ -11,6 +11,8 @@ export interface Product {
   totalPrice: number;    // vProd - Valor Total Bruto
   discount: number;      // vDesc - Valor do Desconto
   netPrice: number;      // Valor Total Líquido (após descontos)
-  taxCode: string;      // Código da Situação Tributária
   color: string;        // Cor do produto em formato HEX
+  useMarkup: boolean;   // Indica se deve usar markup no cálculo
+  markup: number;       // Percentual de markup
+  salePrice: number;    // Preço de venda calculado
 }
