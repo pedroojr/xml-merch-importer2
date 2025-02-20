@@ -20,11 +20,6 @@ interface ProductPreviewProps {
   editable?: boolean;
 }
 
-const UNITS = [
-  'UN', 'PC', 'CX', 'KG', 'L', 'M', 'M2', 'M3', 'PAR',
-  'PCT', 'ROL', 'TON', 'CM', 'DZ', 'G', 'ML'
-];
-
 const ProductPreview: React.FC<ProductPreviewProps> = ({ 
   products, 
   onProductUpdate, 
@@ -34,6 +29,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   const [roundingType, setRoundingType] = useState<'90' | '50'>('90');
 
   const totals = calculateTotals(products);
+  const totalItems = products.reduce((acc, product) => acc + product.quantity, 0);
 
   const handleGlobalMarkupChange = (value: number) => {
     setGlobalMarkup(value);
@@ -125,11 +121,15 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                 index={index}
                 editable={editable}
                 onUpdate={handleUpdate}
-                units={UNITS}
+                units={product.uom ? [product.uom] : []}
+                globalMarkup={globalMarkup}
+                roundingType={roundingType}
               />
             ))}
             <TableRow className="bg-slate-100 font-semibold">
-              <TableCell colSpan={8}>Totais</TableCell>
+              <TableCell colSpan={6}>Totais</TableCell>
+              <TableCell className="text-right">{totalItems}</TableCell>
+              <TableCell></TableCell>
               <TableCell className="text-right">{formatCurrency(totals.totalBruto)}</TableCell>
               <TableCell className="text-right">{formatCurrency(totals.totalDesconto)}</TableCell>
               <TableCell className="text-right">{formatCurrency(totals.totalLiquido)}</TableCell>

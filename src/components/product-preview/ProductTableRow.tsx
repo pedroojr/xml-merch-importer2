@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,6 +7,7 @@ import { formatCurrency, formatNumber } from '../../utils/formatters';
 import { Product } from '../../types/nfe';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CORES_OPCOES } from '../../utils/colorParser';
+import { calculateSalePrice, roundPrice } from './productCalculations';
 
 interface ProductTableRowProps {
   product: Product;
@@ -14,6 +15,8 @@ interface ProductTableRowProps {
   editable: boolean;
   onUpdate: (index: number, field: keyof Product, value: any) => void;
   units: string[];
+  globalMarkup: number;
+  roundingType: '90' | '50';
 }
 
 export const ProductTableRow: React.FC<ProductTableRowProps> = ({
@@ -22,7 +25,18 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
   editable,
   onUpdate,
   units,
+  globalMarkup,
+  roundingType
 }) => {
+  useEffect(() => {
+    if (product.useMarkup) {
+      const newSalePrice = roundPrice(calculateSalePrice(product, globalMarkup), roundingType);
+      if (newSalePrice !== product.salePrice) {
+        onUpdate(index, 'salePrice', newSalePrice);
+      }
+    }
+  }, [globalMarkup, product.useMarkup, roundingType]);
+
   return (
     <TableRow className="hover:bg-slate-50">
       <TableCell>{product.code || '-'}</TableCell>
@@ -92,7 +106,13 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
         {editable && (
           <Checkbox
             checked={product.useMarkup}
-            onCheckedChange={(checked) => onUpdate(index, 'useMarkup', checked)}
+            onCheckedChange={(checked) => {
+              onUpdate(index, 'useMarkup', checked);
+              if (checked) {
+                const newSalePrice = roundPrice(calculateSalePrice({...product, useMarkup: true}, globalMarkup), roundingType);
+                onUpdate(index, 'salePrice', newSalePrice);
+              }
+            }}
           />
         )}
       </TableCell>
@@ -101,7 +121,7 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
           <Input
             type="number"
             value={product.salePrice || 0}
-            onChange={(e) => onUpdate(index, 'salePrice', e.target.value)}
+            onChange={(e) => onUpdate(index, 'salePrice', parseFloat(e.target.value) || 0)}
             className="w-full border-blue-200 focus:border-blue-400"
           />
         ) : (
