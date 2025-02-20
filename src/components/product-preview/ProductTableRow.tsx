@@ -34,6 +34,8 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
     }
   }, [globalMarkup, roundingType, product.netPrice]);
 
+  const salePrice = roundPrice(calculateSalePrice(product, globalMarkup), roundingType);
+
   return (
     <TableRow className="hover:bg-slate-50">
       <TableCell>{product.code || '-'}</TableCell>
@@ -80,16 +82,7 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
         )}
       </TableCell>
       <TableCell className="text-right min-w-[120px]">
-        {editable ? (
-          <Input
-            type="number"
-            value={product.salePrice || 0}
-            onChange={(e) => onUpdate(index, 'salePrice', parseFloat(e.target.value) || 0)}
-            className="w-full border-blue-200 focus:border-blue-400 text-right"
-          />
-        ) : (
-          formatCurrency(product.salePrice || 0)
-        )}
+        {formatCurrency(salePrice)}
       </TableCell>
     </TableRow>
   );
