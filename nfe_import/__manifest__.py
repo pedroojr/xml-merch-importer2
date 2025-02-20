@@ -1,7 +1,7 @@
 
 {
-    'name': 'Importador NF-e',  # Nome mais amigável em português
-    'version': '16.0.1.0.0',    # Versão específica do Odoo
+    'name': 'Importador NF-e',
+    'version': '18.0.1.0.0',    # Atualizado para versão 18
     'category': 'Inventory/Inventory',
     'summary': 'Importação de NF-e com cadastro automático de produtos',
     'sequence': 1,
@@ -25,8 +25,11 @@
         'security/ir.model.access.csv',
         'views/nfe_import_views.xml',
     ],
-    'images': ['static/description/icon.png'],
-    'demo': [],
+    'assets': {
+        'web.assets_backend': [
+            'nfe_import/static/src/js/**/*',
+        ],
+    },
     'installable': True,
     'application': True,
     'auto_install': False,
