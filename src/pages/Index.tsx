@@ -4,7 +4,7 @@ import FileUpload from '../components/FileUpload';
 import { ProductPreview } from '../components/product-preview';
 import { Button } from "@/components/ui/button";
 import { toast } from 'sonner';
-import { Info, Github } from 'lucide-react';
+import { Info, FileSpreadsheet } from 'lucide-react';
 import { parseNFeXML } from '../utils/nfeParser';
 import { Product } from '../types/nfe';
 
@@ -33,9 +33,41 @@ const Index = () => {
     setProducts(newProducts);
   };
 
-  const handleGithubExport = () => {
-    // Aqui você implementaria a lógica de exportação para o GitHub
-    toast.success('Produtos exportados para o GitHub com sucesso!');
+  const handleExcelExport = () => {
+    // Criar o conteúdo CSV
+    const headers = ['Código', 'EAN', 'Nome', 'NCM', 'CFOP', 'UOM', 'Quantidade', 'Preço Unit.', 'Total', 'Desconto', 'Líquido', 'Cor', 'Preço Venda'];
+    const rows = products.map(p => [
+      p.code,
+      p.ean,
+      p.name,
+      p.ncm,
+      p.cfop,
+      p.uom,
+      p.quantity,
+      p.unitPrice,
+      p.totalPrice,
+      p.discount,
+      p.netPrice,
+      p.color,
+      p.salePrice
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    // Criar e baixar o arquivo
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'produtos.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Produtos exportados para Excel com sucesso!');
   };
 
   return (
@@ -75,11 +107,11 @@ const Index = () => {
             <div className="flex justify-end gap-4">
               <Button 
                 variant="outline"
-                onClick={handleGithubExport}
-                className="bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-2"
+                onClick={handleExcelExport}
+                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
               >
-                <Github size={18} />
-                Exportar para GitHub
+                <FileSpreadsheet size={18} />
+                Exportar para Excel
               </Button>
               <Button 
                 onClick={() => toast.success('Produtos importados com sucesso!')}
