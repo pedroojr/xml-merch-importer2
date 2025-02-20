@@ -5,52 +5,17 @@ import ProductPreview from '../components/ProductPreview';
 import { Button } from "@/components/ui/button";
 import { toast } from 'sonner';
 import { Info } from 'lucide-react';
-import { Product } from '../types/nfe';
 
 const Index = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleFileSelect = async (file: File) => {
     setIsProcessing(true);
     try {
       // Em um cenário real, aqui enviaríamos o arquivo para o backend do Odoo
-      // Por enquanto, simulamos o processamento com dados de exemplo
+      // Por enquanto, simulamos o processamento
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Dados de exemplo para demonstração
-      const exampleProducts: Product[] = [
-        {
-          code: '001',
-          ean: '7894900010015',
-          name: 'Produto Exemplo 1',
-          ncm: '22021000',
-          cfop: '5102',
-          uom: 'UN',
-          quantity: 10,
-          unitPrice: 50.00,
-          totalPrice: 500.00,
-          discount: 50.00,
-          netPrice: 450.00,
-          taxCode: '000'
-        },
-        {
-          code: '002',
-          ean: '7894900010022',
-          name: 'Produto Exemplo 2',
-          ncm: '22021000',
-          cfop: '5102',
-          uom: 'UN',
-          quantity: 5,
-          unitPrice: 100.00,
-          totalPrice: 500.00,
-          discount: 25.00,
-          netPrice: 475.00,
-          taxCode: '000'
-        }
-      ];
-
-      setProducts(exampleProducts);
       toast.success('Arquivo XML processado com sucesso');
     } catch (error) {
       toast.error('Erro ao processar o arquivo XML');
