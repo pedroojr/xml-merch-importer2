@@ -79,8 +79,17 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
           product.color
         )}
       </TableCell>
-      <TableCell className="text-right">
-        {formatCurrency(product.salePrice || 0)}
+      <TableCell className="text-right min-w-[120px]">
+        {editable ? (
+          <Input
+            type="number"
+            value={product.salePrice || 0}
+            onChange={(e) => onUpdate(index, 'salePrice', parseFloat(e.target.value) || 0)}
+            className="w-full border-blue-200 focus:border-blue-400 text-right"
+          />
+        ) : (
+          formatCurrency(product.salePrice || 0)
+        )}
       </TableCell>
     </TableRow>
   );
