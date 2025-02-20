@@ -32,7 +32,7 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
     if (newSalePrice !== product.salePrice) {
       onUpdate(index, 'salePrice', newSalePrice);
     }
-  }, [globalMarkup, roundingType, product.netPrice, index, onUpdate]);
+  }, [globalMarkup, roundingType, product.netPrice]);
 
   return (
     <TableRow className="hover:bg-slate-50">
@@ -51,27 +51,7 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
       </TableCell>
       <TableCell>{product.ncm || '-'}</TableCell>
       <TableCell>{product.cfop || '-'}</TableCell>
-      <TableCell>
-        {editable ? (
-          <Select
-            value={product.uom}
-            onValueChange={(value) => onUpdate(index, 'uom', value)}
-          >
-            <SelectTrigger className="w-[100px] border-blue-200">
-              <SelectValue placeholder="UN" />
-            </SelectTrigger>
-            <SelectContent>
-              {units.map((unit) => (
-                <SelectItem key={unit} value={unit}>
-                  {unit}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          product.uom
-        )}
-      </TableCell>
+      <TableCell>{product.uom || '-'}</TableCell>
       <TableCell className="text-right">{formatNumber(product.quantity)}</TableCell>
       <TableCell className="text-right">{formatCurrency(product.unitPrice)}</TableCell>
       <TableCell className="text-right">{formatCurrency(product.totalPrice)}</TableCell>
@@ -100,16 +80,7 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
         )}
       </TableCell>
       <TableCell className="text-right">
-        {editable ? (
-          <Input
-            type="number"
-            value={product.salePrice || 0}
-            onChange={(e) => onUpdate(index, 'salePrice', parseFloat(e.target.value) || 0)}
-            className="w-full border-blue-200 focus:border-blue-400"
-          />
-        ) : (
-          formatCurrency(product.salePrice || 0)
-        )}
+        {formatCurrency(product.salePrice || 0)}
       </TableCell>
     </TableRow>
   );

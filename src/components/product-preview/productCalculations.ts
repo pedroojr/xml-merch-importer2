@@ -2,7 +2,6 @@
 import { Product } from '../../types/nfe';
 
 export const calculateSalePrice = (product: Product, markup: number): number => {
-  if (!product.useMarkup) return product.netPrice;
   const markupMultiplier = 1 + markup / 100;
   return product.netPrice * markupMultiplier;
 };
