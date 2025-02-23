@@ -34,7 +34,9 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
     }
   }, [globalMarkup, roundingType, product.netPrice]);
 
-  const salePrice = roundPrice(calculateSalePrice(product, globalMarkup), roundingType);
+  // Calcula valores unitários
+  const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
+  const unitSalePrice = product.quantity > 0 ? product.salePrice / product.quantity : 0;
 
   return (
     <TableRow className="hover:bg-slate-50">
@@ -58,7 +60,7 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
       <TableCell className="text-right">{formatCurrency(product.unitPrice)}</TableCell>
       <TableCell className="text-right">{formatCurrency(product.totalPrice)}</TableCell>
       <TableCell className="text-right">{formatCurrency(product.discount)}</TableCell>
-      <TableCell className="text-right">{formatCurrency(product.netPrice)}</TableCell>
+      <TableCell className="text-right">{formatCurrency(unitNetPrice)}</TableCell>
       <TableCell>
         {editable ? (
           <Select
@@ -82,7 +84,7 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
         )}
       </TableCell>
       <TableCell className="text-right min-w-[120px]">
-        {formatCurrency(salePrice)}
+        {formatCurrency(unitSalePrice)}
       </TableCell>
     </TableRow>
   );
