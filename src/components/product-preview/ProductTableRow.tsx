@@ -36,7 +36,10 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
 
   // Calcula valores unitários
   const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
-  const unitSalePrice = product.quantity > 0 ? product.salePrice / product.quantity : 0;
+  
+  // Calcula o preço de venda unitário considerando markup e arredondamento
+  const unitSalePrice = product.quantity > 0 ? 
+    roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, globalMarkup), roundingType) : 0;
 
   return (
     <TableRow className="hover:bg-slate-50">
