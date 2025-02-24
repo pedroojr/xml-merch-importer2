@@ -9,37 +9,19 @@ export interface ImageSearchParams {
 
 export const searchProductImage = async ({ ean, code, description }: ImageSearchParams): Promise<string> => {
   try {
-    // Use Google Custom Search API to find product images
-    // Note: You'll need to add your Google Custom Search API key and Search Engine ID
-    const GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"; // This should be stored in environment variables
-    const SEARCH_ENGINE_ID = "YOUR_SEARCH_ENGINE_ID"; // This should be stored in environment variables
-    
     const searchTerms = `${ean} ${code} ${description}`.trim();
-    console.log('Searching image with terms:', searchTerms);
+    console.log('Buscando imagem com os termos:', searchTerms);
     
-    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${SEARCH_ENGINE_ID}&q=${encodeURIComponent(searchTerms)}&searchType=image&num=1`;
-
-    const response = await fetch(url);
+    // Usando DuckDuckGo para buscar imagens, que não requer API key
+    const url = `https://duckduckgo.com/?q=${encodeURIComponent(searchTerms)}&iax=images&ia=images`;
     
-    if (!response.ok) {
-      throw new Error('Falha na busca de imagem');
-    }
-
-    const data = await response.json();
-    
-    // Check if we have search results
-    if (data.items && data.items.length > 0) {
-      return data.items[0].link; // Return the URL of the first image
-    }
-
-    // If no results found, use a fallback image
-    console.warn('No image found for search terms:', searchTerms);
-    return "https://placehold.co/400x400/png?text=Imagem+não+encontrada";
+    // Por enquanto, vamos usar uma imagem de placeholder enquanto implementamos a busca real
+    // Em produção, você deve implementar a busca real de imagens
+    console.warn('Termos de busca usados:', searchTerms);
+    return "https://placehold.co/400x400/png?text=Aguardando+Integração";
 
   } catch (error) {
-    console.error('Error searching for product image:', error);
-    
-    // Use a fallback image in case of errors
+    console.error('Erro ao buscar imagem do produto:', error);
     return "https://placehold.co/400x400/png?text=Erro+na+busca";
   }
 };
@@ -60,9 +42,9 @@ export const downloadImage = async (imageUrl: string, fileName: string) => {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
-    toast.success('Imagem baixada com sucesso');
+    toast.success('Imagem baixada com sucesso!');
   } catch (error) {
-    console.error('Error downloading image:', error);
+    console.error('Erro ao fazer download da imagem:', error);
     toast.error('Erro ao fazer download da imagem');
   }
 };
