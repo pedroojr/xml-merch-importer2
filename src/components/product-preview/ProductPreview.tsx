@@ -49,6 +49,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   const [compactMode, setCompactMode] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<{ index: number; product: Product } | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [searchUrl, setSearchUrl] = useState<string>('');
 
   const columns: Column[] = [
     { 
@@ -135,29 +136,41 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
 
   const handleImageSearch = async (index: number, product: Product) => {
     try {
-      await searchProductImage({
+      const url = await searchProductImage({
         ean: product.ean,
         code: product.code,
         description: product.name
       });
       
-      toast.success('Busca de imagens aberta em nova aba');
+      setSearchUrl(url);
+      setSelectedProduct({ index, product });
+      setIsImageModalOpen(true);
       
     } catch (error) {
       toast.error('Erro ao buscar imagem do produto');
     }
   };
 
-  const handleDownloadImage = () => {
-    if (selectedProduct?.product.imageUrl) {
-      const fileName = `${selectedProduct.product.ean}-${selectedProduct.product.name}.jpg`;
-      downloadImage(selectedProduct.product.imageUrl, fileName);
-    }
+  const handleCloseModal = () => {
+    setIsImageModalOpen(false);
+    setSelectedProduct(null);
   };
 
   const handleNewImageSearch = async () => {
     if (selectedProduct) {
-      await handleImageSearch(selectedProduct.index, selectedProduct.product);
+      const url = await searchProductImage({
+        ean: selectedProduct.product.ean,
+        code: selectedProduct.product.code,
+        description: selectedProduct.product.name
+      });
+      setSearchUrl(url);
+    }
+  };
+
+  const handleDownloadImage = () => {
+    if (selectedProduct) {
+      const fileName = `${selectedProduct.product.ean}-${selectedProduct.product.name}`;
+      downloadImage(searchUrl, fileName);
     }
   };
 
@@ -412,9 +425,10 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
       {selectedProduct && (
         <ProductImageModal
           isOpen={isImageModalOpen}
-          onClose={() => setIsImageModalOpen(false)}
-          imageUrl={selectedProduct.product.imageUrl || null}
+          onClose={handleCloseModal}
+          imageUrl={searchUrl}
           productName={selectedProduct.product.name}
+          productEan={selectedProduct.product.ean}
           onSearchNew={handleNewImageSearch}
           onDownload={handleDownloadImage}
         />

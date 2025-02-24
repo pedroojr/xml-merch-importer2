@@ -7,7 +7,7 @@ export interface ImageSearchParams {
   description: string;
 }
 
-export const searchProductImage = async ({ ean, code, description }: ImageSearchParams): Promise<void> => {
+export const searchProductImage = async ({ ean, code, description }: ImageSearchParams): Promise<string> => {
   try {
     const searchTerms = `${ean} ${code} ${description}`.trim();
     console.log('Termos de busca:', searchTerms);
