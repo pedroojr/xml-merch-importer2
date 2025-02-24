@@ -134,19 +134,15 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   ];
 
   const handleImageSearch = async (index: number, product: Product) => {
-    setSelectedProduct({ index, product });
-    setIsImageModalOpen(true);
-
     try {
-      const imageUrl = await searchProductImage({
+      await searchProductImage({
         ean: product.ean,
         code: product.code,
         description: product.name
       });
-
-      if (onProductUpdate) {
-        onProductUpdate(index, { ...product, imageUrl });
-      }
+      
+      toast.success('Busca de imagens aberta em nova aba');
+      
     } catch (error) {
       toast.error('Erro ao buscar imagem do produto');
     }

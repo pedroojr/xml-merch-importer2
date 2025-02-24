@@ -7,22 +7,18 @@ export interface ImageSearchParams {
   description: string;
 }
 
-export const searchProductImage = async ({ ean, code, description }: ImageSearchParams): Promise<string> => {
+export const searchProductImage = async ({ ean, code, description }: ImageSearchParams): Promise<void> => {
   try {
     const searchTerms = `${ean} ${code} ${description}`.trim();
-    console.log('Buscando imagem com os termos:', searchTerms);
+    console.log('Termos de busca:', searchTerms);
     
-    // Usando DuckDuckGo para buscar imagens, que não requer API key
-    const url = `https://duckduckgo.com/?q=${encodeURIComponent(searchTerms)}&iax=images&ia=images`;
+    // Abre o Google Images em uma nova aba com os termos de busca
+    const googleImagesUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerms)}&tbm=isch`;
+    window.open(googleImagesUrl, '_blank');
     
-    // Por enquanto, vamos usar uma imagem de placeholder enquanto implementamos a busca real
-    // Em produção, você deve implementar a busca real de imagens
-    console.warn('Termos de busca usados:', searchTerms);
-    return "https://placehold.co/400x400/png?text=Aguardando+Integração";
-
   } catch (error) {
-    console.error('Erro ao buscar imagem do produto:', error);
-    return "https://placehold.co/400x400/png?text=Erro+na+busca";
+    console.error('Erro ao abrir busca de imagens:', error);
+    toast.error('Erro ao abrir busca de imagens');
   }
 };
 
