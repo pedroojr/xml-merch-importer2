@@ -9,11 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, Search, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 interface ProductImageModalProps {
   isOpen: boolean;
   onClose: () => void;
-  imageUrl: string | null;
+  imageUrl: string;
   productName: string;
   productEan: string;
   onSearchNew: () => void;
@@ -29,24 +30,39 @@ export const ProductImageModal: React.FC<ProductImageModalProps> = ({
   onSearchNew,
   onDownload,
 }) => {
+  const [previewUrl, setPreviewUrl] = useState<string>('');
   const [searchUrl, setSearchUrl] = useState('');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(imageUrl);
+  const [isValidUrl, setIsValidUrl] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       const searchTerms = encodeURIComponent(`${productEan} ${productName}`);
       setSearchUrl(`https://www.google.com/search?q=${searchTerms}&tbm=isch`);
+      setPreviewUrl('');
     }
   }, [isOpen, productEan, productName]);
 
-  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPreviewUrl(e.target.value);
+  const validateUrl = (url: string) => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
-  const handleDownloadWithUrl = () => {
-    if (previewUrl) {
-      onDownload();
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setPreviewUrl(url);
+    setIsValidUrl(validateUrl(url));
+  };
+
+  const handleDownloadClick = () => {
+    if (!isValidUrl) {
+      toast.error('URL da imagem inválida');
+      return;
     }
+    onDownload();
   };
 
   return (
@@ -61,7 +77,7 @@ export const ProductImageModal: React.FC<ProductImageModalProps> = ({
             <Input
               type="text"
               placeholder="Cole a URL da imagem aqui"
-              value={previewUrl || ''}
+              value={previewUrl}
               onChange={handleImageUrlChange}
               className="flex-1"
             />
@@ -81,7 +97,10 @@ export const ProductImageModal: React.FC<ProductImageModalProps> = ({
                   src={previewUrl}
                   alt={productName}
                   className="max-w-full max-h-full object-contain"
-                  onError={() => setPreviewUrl(null)}
+                  onError={() => {
+                    setIsValidUrl(false);
+                    toast.error('Erro ao carregar imagem. Verifique se a URL é válida.');
+                  }}
                 />
               </div>
             ) : (
@@ -97,8 +116,8 @@ export const ProductImageModal: React.FC<ProductImageModalProps> = ({
               Limpar e Buscar Nova
             </Button>
             <Button 
-              onClick={handleDownloadWithUrl}
-              disabled={!previewUrl}
+              onClick={handleDownloadClick}
+              disabled={!isValidUrl}
             >
               <Download className="mr-2 h-4 w-4" />
               Baixar Imagem
