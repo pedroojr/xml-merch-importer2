@@ -9,19 +9,21 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, EyeOff, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Product } from '../../types/nfe';
 import { formatCurrency } from '../../utils/formatters';
-import { calculateSalePrice, roundPrice } from './productCalculations';
+import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
 
 interface UnitValuesTableProps {
   products: Product[];
   xapuriMarkup: number;
   epitaMarkup: number;
-  roundingType: '90' | '50';
+  roundingType: RoundingType;
   confirmedItems: Set<number>;
+  hiddenItems: Set<number>;
   onConfirmItem: (index: number) => void;
+  onToggleVisibility: (index: number) => void;
 }
 
 export const UnitValuesTable: React.FC<UnitValuesTableProps> = ({
@@ -30,7 +32,9 @@ export const UnitValuesTable: React.FC<UnitValuesTableProps> = ({
   epitaMarkup,
   roundingType,
   confirmedItems,
+  hiddenItems,
   onConfirmItem,
+  onToggleVisibility,
 }) => {
   return (
     <Table>
@@ -43,7 +47,7 @@ export const UnitValuesTable: React.FC<UnitValuesTableProps> = ({
           <TableHead className="w-32 font-semibold text-right">Valor Líq. Un.</TableHead>
           <TableHead className="w-32 font-semibold text-right">Preço Xapuri</TableHead>
           <TableHead className="w-32 font-semibold text-right">Preço Epitaciolândia</TableHead>
-          <TableHead className="w-24 font-semibold text-center">Ações</TableHead>
+          <TableHead className="w-32 font-semibold text-center">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -55,6 +59,11 @@ export const UnitValuesTable: React.FC<UnitValuesTableProps> = ({
           const epitaPrice = product.quantity > 0 ? 
             roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup), roundingType) : 0;
           const isConfirmed = confirmedItems.has(index);
+          const isHidden = hiddenItems.has(index);
+
+          if (isHidden) {
+            return null;
+          }
 
           return (
             <TableRow 
@@ -72,15 +81,24 @@ export const UnitValuesTable: React.FC<UnitValuesTableProps> = ({
               <TableCell className="text-right">{formatCurrency(xapuriPrice)}</TableCell>
               <TableCell className="text-right">{formatCurrency(epitaPrice)}</TableCell>
               <TableCell className="text-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={isConfirmed ? "text-green-600" : ""}
-                  onClick={() => onConfirmItem(index)}
-                  disabled={isConfirmed}
-                >
-                  <Check className="h-4 w-4" />
-                </Button>
+                <div className="flex justify-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={isConfirmed ? "text-green-600" : ""}
+                    onClick={() => onConfirmItem(index)}
+                    disabled={isConfirmed}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onToggleVisibility(index)}
+                  >
+                    {isConfirmed && <EyeOff className="h-4 w-4" />}
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           );

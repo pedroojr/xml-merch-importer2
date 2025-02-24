@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from '../../types/nfe';
-import { calculateTotals } from './productCalculations';
+import { calculateTotals, RoundingType } from './productCalculations';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { MarkupControls } from './MarkupControls';
@@ -32,8 +32,9 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
 }) => {
   const [xapuriMarkup, setXapuriMarkup] = useState(35);
   const [epitaMarkup, setEpitaMarkup] = useState(40);
-  const [roundingType, setRoundingType] = useState<'90' | '50'>('90');
+  const [roundingType, setRoundingType] = useState<RoundingType>('90');
   const [confirmedItems, setConfirmedItems] = useState<Set<number>>(new Set());
+  const [hiddenItems, setHiddenItems] = useState<Set<number>>(new Set());
 
   const totals = calculateTotals(products);
   const totalItems = products.reduce((acc, product) => acc + product.quantity, 0);
@@ -46,11 +47,27 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     setEpitaMarkup(value);
   };
 
+  const handleRoundingChange = (value: RoundingType) => {
+    setRoundingType(value);
+  };
+
   const handleConfirmItem = (index: number) => {
     const newConfirmedItems = new Set(confirmedItems);
     newConfirmedItems.add(index);
     setConfirmedItems(newConfirmedItems);
     toast.success('Item confirmado com sucesso!');
+  };
+
+  const handleToggleVisibility = (index: number) => {
+    const newHiddenItems = new Set(hiddenItems);
+    if (newHiddenItems.has(index)) {
+      newHiddenItems.delete(index);
+      toast.success('Item exibido novamente');
+    } else {
+      newHiddenItems.add(index);
+      toast.success('Item ocultado');
+    }
+    setHiddenItems(newHiddenItems);
   };
 
   const handleUpdate = (index: number, field: keyof Product, value: any) => {
@@ -128,8 +145,10 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
             <MarkupControls
               xapuriMarkup={xapuriMarkup}
               epitaMarkup={epitaMarkup}
+              roundingType={roundingType}
               onXapuriMarkupChange={handleXapuriMarkupChange}
               onEpitaMarkupChange={handleEpitaMarkupChange}
+              onRoundingChange={handleRoundingChange}
             />
             <UnitValuesTable
               products={products}
@@ -137,7 +156,9 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
               epitaMarkup={epitaMarkup}
               roundingType={roundingType}
               confirmedItems={confirmedItems}
+              hiddenItems={hiddenItems}
               onConfirmItem={handleConfirmItem}
+              onToggleVisibility={handleToggleVisibility}
             />
           </TabsContent>
         </Tabs>

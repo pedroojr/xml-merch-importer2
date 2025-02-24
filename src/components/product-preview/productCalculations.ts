@@ -6,9 +6,19 @@ export const calculateSalePrice = (product: Product, markup: number): number => 
   return product.netPrice * markupMultiplier;
 };
 
-export const roundPrice = (price: number, type: '90' | '50'): number => {
-  const integer = Math.floor(price);
-  return type === '90' ? integer + 0.90 : Math.round(price / 0.5) * 0.5;
+export type RoundingType = '90' | '50' | 'none';
+
+export const roundPrice = (price: number, type: RoundingType): number => {
+  switch (type) {
+    case '90':
+      return Math.floor(price) + 0.90;
+    case '50':
+      return Math.round(price / 0.5) * 0.5;
+    case 'none':
+      return price;
+    default:
+      return price;
+  }
 };
 
 export const calculateTotals = (products: Product[]) => {
