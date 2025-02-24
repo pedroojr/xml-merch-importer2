@@ -140,6 +140,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     try {
       const imageUrl = await searchProductImage({
         ean: product.ean,
+        code: product.code,
         description: product.name
       });
 
