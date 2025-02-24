@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Product } from '../../types/nfe';
 import { calculateTotals, calculateSalePrice, RoundingType } from './productCalculations';
@@ -47,10 +48,10 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
 
   const columns: Column[] = [
     { id: 'code', header: 'Código', initiallyVisible: true },
-    { id: 'ean', header: 'EAN', initiallyVisible: false },
+    { id: 'ean', header: 'EAN', initiallyVisible: true },
     { id: 'name', header: 'Descrição', initiallyVisible: true },
-    { id: 'ncm', header: 'NCM', initiallyVisible: false },
-    { id: 'cfop', header: 'CFOP', initiallyVisible: false },
+    { id: 'ncm', header: 'NCM', initiallyVisible: true },
+    { id: 'cfop', header: 'CFOP', initiallyVisible: true },
     { id: 'uom', header: 'Unidade', initiallyVisible: true },
     { 
       id: 'quantity', 
@@ -61,7 +62,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     },
     { 
       id: 'unitPrice', 
-      header: 'Valor Unit.', 
+      header: 'Custo Unit.', 
       initiallyVisible: true, 
       alignment: 'right',
       format: formatCurrency
@@ -101,12 +102,20 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
       alignment: 'right',
       format: formatCurrency
     },
-    { id: 'color', header: 'Cor', initiallyVisible: false },
+    { id: 'color', header: 'Cor', initiallyVisible: true },
+  ];
+
+  const compactColumns = [
+    'name',          // Descrição
+    'quantity',      // Quantidade
+    'unitPrice',     // Custo Unitário
+    'xapuriPrice',   // Preço Xapuri
+    'epitaPrice',    // Preço Epitaciolândia
   ];
 
   const defaultVisibleColumns = compactMode ? 
-    ['code', 'name', 'quantity', 'unitPrice', 'totalPrice'] :
-    columns.filter(col => col.initiallyVisible).map(col => col.id);
+    compactColumns :
+    columns.map(col => col.id);  // All columns in detailed mode
 
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(defaultVisibleColumns)
@@ -125,8 +134,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   const toggleCompactMode = () => {
     setCompactMode(!compactMode);
     setVisibleColumns(new Set(compactMode ? 
-      columns.filter(col => col.initiallyVisible).map(col => col.id) :
-      ['code', 'name', 'quantity', 'unitPrice', 'totalPrice']
+      columns.map(col => col.id) :  // Show all columns in detailed mode
+      compactColumns                 // Show only compact columns in compact mode
     ));
   };
 
@@ -204,6 +213,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={toggleCompactMode}
+                    className="min-w-[140px]"
                   >
                     {compactMode ? 'Modo Detalhado' : 'Modo Compacto'}
                   </Button>
