@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Product } from '../../types/nfe';
 import { calculateTotals, calculateSalePrice, RoundingType } from './productCalculations';
@@ -32,6 +31,7 @@ interface Column {
   initiallyVisible: boolean;
   alignment?: 'left' | 'right';
   format?: (value: any) => string;
+  getValue?: (product: Product) => any;
 }
 
 const ProductPreview: React.FC<ProductPreviewProps> = ({ 
@@ -76,10 +76,18 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     },
     { 
       id: 'discount', 
-      header: 'Desconto', 
+      header: 'Desconto Total', 
       initiallyVisible: true, 
       alignment: 'right',
       format: formatCurrency
+    },
+    { 
+      id: 'unitDiscount', 
+      header: 'Desconto Unit.', 
+      initiallyVisible: true, 
+      alignment: 'right',
+      format: formatCurrency,
+      getValue: (product: Product) => product.quantity > 0 ? product.discount / product.quantity : 0
     },
     { 
       id: 'netPrice', 
@@ -110,7 +118,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     'ean',          // EAN
     'quantity',      // Quantidade
     'unitPrice',     // Custo Unitário
-    'discount',      // Desconto
+    'unitDiscount',  // Desconto Unitário
     'xapuriPrice',   // Preço Xapuri
     'epitaPrice',    // Preço Epitaciolândia
   ];
@@ -272,10 +280,11 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                     if (hiddenItems.has(index)) return null;
 
                     const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
-                    const xapuriPrice = product.quantity > 0 ? 
-                      calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup) : 0;
-                    const epitaPrice = product.quantity > 0 ? 
-                      calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup) : 0;
+                    const baseXapuriPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup);
+                    const baseEpitaPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup);
+                    
+                    const xapuriPrice = roundPrice(baseXapuriPrice, roundingType);
+                    const epitaPrice = roundPrice(baseEpitaPrice, roundingType);
 
                     return (
                       <TableRow 
@@ -288,7 +297,10 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                         {columns.map((column) => {
                           if (!visibleColumns.has(column.id)) return null;
 
-                          let value = product[column.id as keyof Product];
+                          let value: any = column.getValue ? 
+                            column.getValue(product) : 
+                            product[column.id as keyof Product];
+
                           if (column.id === 'xapuriPrice') value = xapuriPrice;
                           if (column.id === 'epitaPrice') value = epitaPrice;
                           if (column.id === 'unitPrice') value = product.unitPrice;
