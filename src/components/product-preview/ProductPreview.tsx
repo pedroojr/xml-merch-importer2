@@ -39,8 +39,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   onProductUpdate, 
   editable = false 
 }) => {
-  const [xapuriMarkup, setXapuriMarkup] = useState(35);
-  const [epitaMarkup, setEpitaMarkup] = useState(40);
+  const [xapuriMarkup, setXapuriMarkup] = useState(120);
+  const [epitaMarkup, setEpitaMarkup] = useState(140);
   const [roundingType, setRoundingType] = useState<RoundingType>('90');
   const [confirmedItems, setConfirmedItems] = useState<Set<number>>(new Set());
   const [hiddenItems, setHiddenItems] = useState<Set<number>>(new Set());
@@ -107,8 +107,10 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
 
   const compactColumns = [
     'name',          // Descrição
+    'ean',          // EAN
     'quantity',      // Quantidade
     'unitPrice',     // Custo Unitário
+    'discount',      // Desconto
     'xapuriPrice',   // Preço Xapuri
     'epitaPrice',    // Preço Epitaciolândia
   ];
@@ -253,6 +255,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                           className={`font-semibold px-6 ${
                             column.alignment === 'right' ? 'text-right' : ''
                           } ${
+                            column.id === 'xapuriPrice' ? 'bg-blue-50 text-blue-700' : ''
+                          } ${
                             column.id === 'epitaPrice' ? 'bg-emerald-50 text-emerald-700' : ''
                           }`}
                         >
@@ -295,6 +299,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                               key={column.id}
                               className={`px-6 py-4 ${
                                 column.alignment === 'right' ? 'text-right tabular-nums' : ''
+                              } ${
+                                column.id === 'xapuriPrice' ? 'bg-blue-50' : ''
                               } ${
                                 column.id === 'epitaPrice' ? 'bg-emerald-50' : ''
                               }`}
