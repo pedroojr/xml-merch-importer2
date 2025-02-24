@@ -12,13 +12,13 @@ export const searchProductImage = async ({ ean, code, description }: ImageSearch
     const searchTerms = `${ean} ${code} ${description}`.trim();
     console.log('Termos de busca:', searchTerms);
     
-    // Abre o Google Images em uma nova aba com os termos de busca
-    const googleImagesUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerms)}&tbm=isch`;
-    window.open(googleImagesUrl, '_blank');
-    
+    // Em vez de abrir uma nova aba, retornamos a URL de busca
+    // que será usada no modal
+    return `https://www.google.com/search?q=${encodeURIComponent(searchTerms)}&tbm=isch`;
   } catch (error) {
-    console.error('Erro ao abrir busca de imagens:', error);
-    toast.error('Erro ao abrir busca de imagens');
+    console.error('Erro ao gerar URL de busca:', error);
+    toast.error('Erro ao preparar busca de imagens');
+    throw error;
   }
 };
 
@@ -33,7 +33,9 @@ export const downloadImage = async (imageUrl: string, fileName: string) => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = fileName;
+    // Adiciona o EAN ao nome do arquivo
+    const extension = imageUrl.split('.').pop()?.split('?')[0] || 'jpg';
+    link.download = `${fileName}.${extension}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
