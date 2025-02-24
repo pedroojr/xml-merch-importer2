@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Product } from '../../types/nfe';
-import { calculateTotals, calculateSalePrice, RoundingType } from './productCalculations';
+import { calculateTotals, calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { MarkupControls } from './MarkupControls';
