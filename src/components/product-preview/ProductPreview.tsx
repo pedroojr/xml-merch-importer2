@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface ProductPreviewProps {
   products: Product[];
@@ -30,7 +31,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   editable = false 
 }) => {
   const [globalMarkup, setGlobalMarkup] = useState(30);
-  const [xapuriMarkup, setXapuriMarkup] = useState(35); // Markup específico para Xapuri
+  const [xapuriMarkup, setXapuriMarkup] = useState(35);
+  const [epitaMarkup, setEpitaMarkup] = useState(40);
   const [roundingType, setRoundingType] = useState<'90' | '50'>('90');
   const [confirmedItems, setConfirmedItems] = useState<Set<number>>(new Set());
 
@@ -50,6 +52,10 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
 
   const handleXapuriMarkupChange = (value: number) => {
     setXapuriMarkup(value);
+  };
+
+  const handleEpitaMarkupChange = (value: number) => {
+    setEpitaMarkup(value);
   };
 
   const handleGlobalRoundingChange = (type: '90' | '50') => {
@@ -152,19 +158,34 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
           </TabsContent>
 
           <TabsContent value="unit">
-            <div className="p-4 border-b bg-slate-50">
-              <div className="flex items-center gap-4">
-                <label className="text-sm font-medium">
-                  Markup Xapuri (%)
-                </label>
-                <input
-                  type="number"
-                  value={xapuriMarkup}
-                  onChange={(e) => handleXapuriMarkupChange(Number(e.target.value))}
-                  className="w-20 px-2 py-1 border rounded"
-                  min="0"
-                  max="100"
-                />
+            <div className="p-4 border-b bg-slate-50 space-y-2">
+              <div className="flex items-center gap-8">
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium">
+                    Markup Xapuri (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={xapuriMarkup}
+                    onChange={(e) => handleXapuriMarkupChange(Number(e.target.value))}
+                    className="w-20 px-2 py-1 border rounded"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium">
+                    Markup Epitaciolândia (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={epitaMarkup}
+                    onChange={(e) => handleEpitaMarkupChange(Number(e.target.value))}
+                    className="w-20 px-2 py-1 border rounded"
+                    min="0"
+                    max="100"
+                  />
+                </div>
               </div>
             </div>
             <Table>
@@ -176,8 +197,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                   <TableHead className="w-32 font-semibold text-right">Desconto Un.</TableHead>
                   <TableHead className="w-32 font-semibold text-right">Valor Líq. Un.</TableHead>
                   <TableHead className="w-32 font-semibold text-right">Preço Venda</TableHead>
-                  <TableHead className="w-32 font-semibold text-right">Markup Xapuri</TableHead>
                   <TableHead className="w-32 font-semibold text-right">Preço Xapuri</TableHead>
+                  <TableHead className="w-32 font-semibold text-right">Preço Epitaciolândia</TableHead>
                   <TableHead className="w-24 font-semibold text-center">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -189,24 +210,33 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                     roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, globalMarkup), roundingType) : 0;
                   const xapuriPrice = product.quantity > 0 ? 
                     roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup), roundingType) : 0;
+                  const epitaPrice = product.quantity > 0 ? 
+                    roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup), roundingType) : 0;
+                  const isConfirmed = confirmedItems.has(index);
 
                   return (
-                    <TableRow key={product.code} className="hover:bg-slate-50">
+                    <TableRow 
+                      key={product.code} 
+                      className={cn(
+                        "hover:bg-slate-50 transition-colors",
+                        isConfirmed && "bg-slate-100"
+                      )}
+                    >
                       <TableCell>{product.ean || '-'}</TableCell>
                       <TableCell>{product.name}</TableCell>
                       <TableCell className="text-right">{formatCurrency(product.unitPrice)}</TableCell>
                       <TableCell className="text-right">{formatCurrency(unitDiscount)}</TableCell>
                       <TableCell className="text-right">{formatCurrency(unitNetPrice)}</TableCell>
                       <TableCell className="text-right">{formatCurrency(unitSalePrice)}</TableCell>
-                      <TableCell className="text-right">{xapuriMarkup}%</TableCell>
                       <TableCell className="text-right">{formatCurrency(xapuriPrice)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(epitaPrice)}</TableCell>
                       <TableCell className="text-center">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={confirmedItems.has(index) ? "text-green-600" : ""}
+                          className={isConfirmed ? "text-green-600" : ""}
                           onClick={() => handleConfirmItem(index)}
-                          disabled={confirmedItems.has(index)}
+                          disabled={isConfirmed}
                         >
                           <Check className="h-4 w-4" />
                         </Button>
