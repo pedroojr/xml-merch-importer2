@@ -71,24 +71,28 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient 0to-b from-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-sm font-medium mb-4">
-            <Info size={16} />
-            <span>Importador de NF-e</span>
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Importação de Produtos via XML</h1>
-          <p className="text-slate-600 max-w-2xl mx-auto">
-            Faça upload do arquivo XML da NF-e para importar automaticamente os produtos para o seu catálogo no Odoo
-          </p>
-        </div>
+        {products.length === 0 && (
+          <>
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-sm font-medium mb-4">
+                <Info size={16} />
+                <span>Importador de NF-e</span>
+              </div>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Importação de Produtos via XML</h1>
+              <p className="text-slate-600 max-w-2xl mx-auto">
+                Faça upload do arquivo XML da NF-e para importar automaticamente os produtos para o seu catálogo no Odoo
+              </p>
+            </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-          <div className="max-w-3xl mx-auto">
-            <FileUpload onFileSelect={handleFileSelect} />
-          </div>
-        </div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+              <div className="max-w-3xl mx-auto">
+                <FileUpload onFileSelect={handleFileSelect} />
+              </div>
+            </div>
+          </>
+        )}
 
         {isProcessing && (
           <div className="text-center py-8">

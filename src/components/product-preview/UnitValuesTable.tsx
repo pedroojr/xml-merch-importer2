@@ -9,7 +9,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Check, EyeOff, Eye } from "lucide-react";
+import { Check, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Product } from '../../types/nfe';
 import { formatCurrency } from '../../utils/formatters';
@@ -46,7 +46,9 @@ export const UnitValuesTable: React.FC<UnitValuesTableProps> = ({
           <TableHead className="w-32 font-semibold text-right">Desconto Un.</TableHead>
           <TableHead className="w-32 font-semibold text-right">Valor Líq. Un.</TableHead>
           <TableHead className="w-32 font-semibold text-right">Preço Xapuri</TableHead>
-          <TableHead className="w-32 font-semibold text-right">Preço Epitaciolândia</TableHead>
+          <TableHead className="w-32 font-semibold text-right bg-emerald-50 text-emerald-700">
+            Preço Epitaciolândia
+          </TableHead>
           <TableHead className="w-32 font-semibold text-center">Ações</TableHead>
         </TableRow>
       </TableHeader>
@@ -79,7 +81,9 @@ export const UnitValuesTable: React.FC<UnitValuesTableProps> = ({
               <TableCell className="text-right">{formatCurrency(unitDiscount)}</TableCell>
               <TableCell className="text-right">{formatCurrency(unitNetPrice)}</TableCell>
               <TableCell className="text-right">{formatCurrency(xapuriPrice)}</TableCell>
-              <TableCell className="text-right">{formatCurrency(epitaPrice)}</TableCell>
+              <TableCell className="text-right bg-emerald-50 text-emerald-700 font-medium">
+                {formatCurrency(epitaPrice)}
+              </TableCell>
               <TableCell className="text-center">
                 <div className="flex justify-center gap-2">
                   <Button
@@ -91,13 +95,15 @@ export const UnitValuesTable: React.FC<UnitValuesTableProps> = ({
                   >
                     <Check className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onToggleVisibility(index)}
-                  >
-                    {isConfirmed && <EyeOff className="h-4 w-4" />}
-                  </Button>
+                  {isConfirmed && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToggleVisibility(index)}
+                    >
+                      <EyeOff className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>
