@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Product } from '../../types/nfe';
 import { calculateTotals, calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
@@ -9,8 +8,10 @@ import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@
 import { ProfitabilityAnalysis } from './insights/ProfitabilityAnalysis';
 import { ProductAnalysis } from './insights/ProductAnalysis';
 import { Button } from "@/components/ui/button";
-import { Eye, Columns, EyeOff } from "lucide-react";
+import { Eye, Columns, EyeOff, Image as ImageIcon } from "lucide-react";
 import { formatCurrency, formatNumber } from '../../utils/formatters';
+import { ProductImageModal } from './ProductImageModal';
+import { searchProductImage, downloadImage } from '../../services/imageSearch';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,8 +47,15 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   const [confirmedItems, setConfirmedItems] = useState<Set<number>>(new Set());
   const [hiddenItems, setHiddenItems] = useState<Set<number>>(new Set());
   const [compactMode, setCompactMode] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<{ index: number; product: Product } | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   const columns: Column[] = [
+    { 
+      id: 'image', 
+      header: 'Imagem', 
+      initiallyVisible: true
+    },
     { id: 'code', header: 'Código', initiallyVisible: true },
     { id: 'ean', header: 'EAN', initiallyVisible: true },
     { id: 'name', header: 'Descrição', initiallyVisible: true },
@@ -115,14 +123,46 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   ];
 
   const compactColumns = [
+    'image',         // Imagem
     'name',          // Descrição
-    'ean',          // EAN
+    'ean',           // EAN
     'quantity',      // Quantidade
     'unitPrice',     // Custo Unitário
     'unitDiscount',  // Desconto Unitário
     'xapuriPrice',   // Preço Xapuri
     'epitaPrice',    // Preço Epitaciolândia
   ];
+
+  const handleImageSearch = async (index: number, product: Product) => {
+    setSelectedProduct({ index, product });
+    setIsImageModalOpen(true);
+
+    try {
+      const imageUrl = await searchProductImage({
+        ean: product.ean,
+        description: product.name
+      });
+
+      if (onProductUpdate) {
+        onProductUpdate(index, { ...product, imageUrl });
+      }
+    } catch (error) {
+      toast.error('Erro ao buscar imagem do produto');
+    }
+  };
+
+  const handleDownloadImage = () => {
+    if (selectedProduct?.product.imageUrl) {
+      const fileName = `${selectedProduct.product.ean}-${selectedProduct.product.name}.jpg`;
+      downloadImage(selectedProduct.product.imageUrl, fileName);
+    }
+  };
+
+  const handleNewImageSearch = async () => {
+    if (selectedProduct) {
+      await handleImageSearch(selectedProduct.index, selectedProduct.product);
+    }
+  };
 
   const defaultVisibleColumns = compactMode ? 
     compactColumns :
@@ -295,8 +335,28 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                           hover:bg-slate-100 transition-colors
                         `}
                       >
+                        {visibleColumns.has('image') && (
+                          <TableCell className="w-20">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleImageSearch(index, product)}
+                              className="w-full"
+                            >
+                              {product.imageUrl ? (
+                                <img
+                                  src={product.imageUrl}
+                                  alt={product.name}
+                                  className="w-8 h-8 object-cover rounded"
+                                />
+                              ) : (
+                                <ImageIcon className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </TableCell>
+                        )}
                         {columns.map((column) => {
-                          if (!visibleColumns.has(column.id)) return null;
+                          if (!visibleColumns.has(column.id) || column.id === 'image') return null;
 
                           let value: any = column.getValue ? 
                             column.getValue(product) : 
@@ -351,6 +411,17 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
           </TabsContent>
         </Tabs>
       </div>
+
+      {selectedProduct && (
+        <ProductImageModal
+          isOpen={isImageModalOpen}
+          onClose={() => setIsImageModalOpen(false)}
+          imageUrl={selectedProduct.product.imageUrl || null}
+          productName={selectedProduct.product.name}
+          onSearchNew={handleNewImageSearch}
+          onDownload={handleDownloadImage}
+        />
+      )}
     </div>
   );
 };

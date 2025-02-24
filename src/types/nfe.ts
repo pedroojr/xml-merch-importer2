@@ -15,4 +15,5 @@ export interface Product {
   useMarkup: boolean;   // Indica se deve usar markup no cálculo
   markup: number;       // Percentual de markup
   salePrice: number;    // Preço de venda calculado
+  imageUrl?: string;    // URL da imagem do produto
 }
