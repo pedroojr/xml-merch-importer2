@@ -30,6 +30,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   editable = false 
 }) => {
   const [globalMarkup, setGlobalMarkup] = useState(30);
+  const [xapuriMarkup, setXapuriMarkup] = useState(35); // Markup específico para Xapuri
   const [roundingType, setRoundingType] = useState<'90' | '50'>('90');
   const [confirmedItems, setConfirmedItems] = useState<Set<number>>(new Set());
 
@@ -45,6 +46,10 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
       newProduct.salePrice = roundPrice(calculateSalePrice(newProduct, value), roundingType);
       onProductUpdate(index, newProduct);
     });
+  };
+
+  const handleXapuriMarkupChange = (value: number) => {
+    setXapuriMarkup(value);
   };
 
   const handleGlobalRoundingChange = (type: '90' | '50') => {
@@ -147,6 +152,21 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
           </TabsContent>
 
           <TabsContent value="unit">
+            <div className="p-4 border-b bg-slate-50">
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium">
+                  Markup Xapuri (%)
+                </label>
+                <input
+                  type="number"
+                  value={xapuriMarkup}
+                  onChange={(e) => handleXapuriMarkupChange(Number(e.target.value))}
+                  className="w-20 px-2 py-1 border rounded"
+                  min="0"
+                  max="100"
+                />
+              </div>
+            </div>
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50">
@@ -156,6 +176,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                   <TableHead className="w-32 font-semibold text-right">Desconto Un.</TableHead>
                   <TableHead className="w-32 font-semibold text-right">Valor Líq. Un.</TableHead>
                   <TableHead className="w-32 font-semibold text-right">Preço Venda</TableHead>
+                  <TableHead className="w-32 font-semibold text-right">Markup Xapuri</TableHead>
+                  <TableHead className="w-32 font-semibold text-right">Preço Xapuri</TableHead>
                   <TableHead className="w-24 font-semibold text-center">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -165,6 +187,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                   const unitDiscount = product.quantity > 0 ? product.discount / product.quantity : 0;
                   const unitSalePrice = product.quantity > 0 ? 
                     roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, globalMarkup), roundingType) : 0;
+                  const xapuriPrice = product.quantity > 0 ? 
+                    roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup), roundingType) : 0;
 
                   return (
                     <TableRow key={product.code} className="hover:bg-slate-50">
@@ -174,6 +198,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                       <TableCell className="text-right">{formatCurrency(unitDiscount)}</TableCell>
                       <TableCell className="text-right">{formatCurrency(unitNetPrice)}</TableCell>
                       <TableCell className="text-right">{formatCurrency(unitSalePrice)}</TableCell>
+                      <TableCell className="text-right">{xapuriMarkup}%</TableCell>
+                      <TableCell className="text-right">{formatCurrency(xapuriPrice)}</TableCell>
                       <TableCell className="text-center">
                         <Button
                           variant="ghost"
