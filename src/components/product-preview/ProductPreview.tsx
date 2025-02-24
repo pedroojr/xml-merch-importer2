@@ -1,4 +1,11 @@
 import React, { useState } from 'react';
+import { Product } from '../../types/nfe';
+import { calculateTotals } from './productCalculations';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { MarkupControls } from './MarkupControls';
+import { UnitValuesTable } from './UnitValuesTable';
+import { ProductTableRow } from './ProductTableRow';
 import {
   Table,
   TableBody,
@@ -7,14 +14,9 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { Product } from '../../types/nfe';
 import { formatCurrency } from '../../utils/formatters';
-import { ProductTableRow } from './ProductTableRow';
-import { calculateSalePrice, roundPrice, calculateTotals } from './productCalculations';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { Button } from "src/components/ui/button"
 import { Check } from "lucide-react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface ProductPreviewProps {
@@ -44,17 +46,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     setEpitaMarkup(value);
   };
 
-  const handleGlobalRoundingChange = (type: '90' | '50') => {
-    setRoundingType(type);
-    if (!onProductUpdate) return;
-
-    products.forEach((product, index) => {
-      const newProduct = { ...product };
-      newProduct.salePrice = roundPrice(calculateSalePrice(newProduct, newProduct.markup), type);
-      onProductUpdate(index, newProduct);
-    });
-  };
-
   const handleConfirmItem = (index: number) => {
     const newConfirmedItems = new Set(confirmedItems);
     newConfirmedItems.add(index);
@@ -66,7 +57,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     if (!onProductUpdate) return;
 
     const product = { ...products[index] };
-    
     switch (field) {
       case 'name':
       case 'color':
@@ -135,90 +125,20 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
           </TabsContent>
 
           <TabsContent value="unit">
-            <div className="p-4 border-b bg-slate-50 space-y-2">
-              <div className="flex items-center gap-8">
-                <div className="flex items-center gap-4">
-                  <label className="text-sm font-medium">
-                    Markup Xapuri (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={xapuriMarkup}
-                    onChange={(e) => handleXapuriMarkupChange(Number(e.target.value))}
-                    className="w-20 px-2 py-1 border rounded"
-                    min="0"
-                    max="100"
-                  />
-                </div>
-                <div className="flex items-center gap-4">
-                  <label className="text-sm font-medium">
-                    Markup Epitaciolândia (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={epitaMarkup}
-                    onChange={(e) => handleEpitaMarkupChange(Number(e.target.value))}
-                    className="w-20 px-2 py-1 border rounded"
-                    min="0"
-                    max="100"
-                  />
-                </div>
-              </div>
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50">
-                  <TableHead className="w-32 font-semibold">EAN</TableHead>
-                  <TableHead className="min-w-[400px] font-semibold">Descrição</TableHead>
-                  <TableHead className="w-32 font-semibold text-right">Valor Un.</TableHead>
-                  <TableHead className="w-32 font-semibold text-right">Desconto Un.</TableHead>
-                  <TableHead className="w-32 font-semibold text-right">Valor Líq. Un.</TableHead>
-                  <TableHead className="w-32 font-semibold text-right">Preço Xapuri</TableHead>
-                  <TableHead className="w-32 font-semibold text-right">Preço Epitaciolândia</TableHead>
-                  <TableHead className="w-24 font-semibold text-center">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product, index) => {
-                  const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
-                  const unitDiscount = product.quantity > 0 ? product.discount / product.quantity : 0;
-                  const xapuriPrice = product.quantity > 0 ? 
-                    roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup), roundingType) : 0;
-                  const epitaPrice = product.quantity > 0 ? 
-                    roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup), roundingType) : 0;
-                  const isConfirmed = confirmedItems.has(index);
-
-                  return (
-                    <TableRow 
-                      key={product.code} 
-                      className={cn(
-                        "hover:bg-slate-50 transition-colors",
-                        isConfirmed && "bg-slate-100"
-                      )}
-                    >
-                      <TableCell>{product.ean || '-'}</TableCell>
-                      <TableCell>{product.name}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(product.unitPrice)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(unitDiscount)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(unitNetPrice)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(xapuriPrice)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(epitaPrice)}</TableCell>
-                      <TableCell className="text-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={isConfirmed ? "text-green-600" : ""}
-                          onClick={() => handleConfirmItem(index)}
-                          disabled={isConfirmed}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <MarkupControls
+              xapuriMarkup={xapuriMarkup}
+              epitaMarkup={epitaMarkup}
+              onXapuriMarkupChange={handleXapuriMarkupChange}
+              onEpitaMarkupChange={handleEpitaMarkupChange}
+            />
+            <UnitValuesTable
+              products={products}
+              xapuriMarkup={xapuriMarkup}
+              epitaMarkup={epitaMarkup}
+              roundingType={roundingType}
+              confirmedItems={confirmedItems}
+              onConfirmItem={handleConfirmItem}
+            />
           </TabsContent>
         </Tabs>
       </div>
