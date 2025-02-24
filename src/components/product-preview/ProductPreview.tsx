@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { MarkupControls } from './MarkupControls';
 import { UnitValuesTable } from './UnitValuesTable';
 import { ProductTableRow } from './ProductTableRow';
+import { ProfitabilityAnalysis } from './insights/ProfitabilityAnalysis';
+import { ProductAnalysis } from './insights/ProductAnalysis';
 import {
   Table,
   TableBody,
@@ -95,6 +97,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
           <TabsList className="w-full justify-start border-b rounded-none px-4">
             <TabsTrigger value="complete">Visão Completa</TabsTrigger>
             <TabsTrigger value="unit">Valores Unitários</TabsTrigger>
+            <TabsTrigger value="insights">Insights e Análises</TabsTrigger>
           </TabsList>
 
           <TabsContent value="complete">
@@ -160,6 +163,15 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
               onConfirmItem={handleConfirmItem}
               onToggleVisibility={handleToggleVisibility}
             />
+          </TabsContent>
+
+          <TabsContent value="insights" className="space-y-8 p-6">
+            <ProfitabilityAnalysis
+              products={products}
+              xapuriMarkup={xapuriMarkup}
+              epitaMarkup={epitaMarkup}
+            />
+            <ProductAnalysis products={products} />
           </TabsContent>
         </Tabs>
       </div>

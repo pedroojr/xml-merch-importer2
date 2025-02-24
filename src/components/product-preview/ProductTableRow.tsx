@@ -6,7 +6,7 @@ import { formatCurrency, formatNumber } from '../../utils/formatters';
 import { Product } from '../../types/nfe';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CORES_OPCOES } from '../../utils/colorParser';
-import { calculateSalePrice, roundPrice } from './productCalculations';
+import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
 
 interface ProductTableRowProps {
   product: Product;
@@ -15,7 +15,7 @@ interface ProductTableRowProps {
   onUpdate: (index: number, field: keyof Product, value: any) => void;
   units: string[];
   globalMarkup: number;
-  roundingType: '90' | '50';
+  roundingType: RoundingType;
 }
 
 export const ProductTableRow: React.FC<ProductTableRowProps> = ({
