@@ -13,7 +13,8 @@ export const roundPrice = (price: number, type: RoundingType): number => {
     case '90':
       return Math.floor(price) + 0.90;
     case '50':
-      return Math.round(price / 0.5) * 0.5;
+      const roundedTo50 = Math.ceil(price * 2) / 2; // Rounds up to nearest 0.50
+      return roundedTo50;
     case 'none':
       return price;
     default:

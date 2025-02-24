@@ -28,9 +28,13 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
   roundingType
 }) => {
   useEffect(() => {
-    const newSalePrice = roundPrice(calculateSalePrice(product, globalMarkup), roundingType);
-    if (newSalePrice !== product.salePrice) {
-      onUpdate(index, 'salePrice', newSalePrice);
+    // Calculate base sale price without rounding
+    const basePrice = calculateSalePrice(product, globalMarkup);
+    // Apply rounding
+    const roundedPrice = roundPrice(basePrice, roundingType);
+    
+    if (roundedPrice !== product.salePrice) {
+      onUpdate(index, 'salePrice', roundedPrice);
     }
   }, [globalMarkup, roundingType, product.netPrice]);
 
@@ -38,8 +42,8 @@ export const ProductTableRow: React.FC<ProductTableRowProps> = ({
   const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
   
   // Calcula o preço de venda unitário considerando markup e arredondamento
-  const unitSalePrice = product.quantity > 0 ? 
-    roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, globalMarkup), roundingType) : 0;
+  const baseUnitSalePrice = product.quantity > 0 ? calculateSalePrice({ ...product, netPrice: unitNetPrice }, globalMarkup) : 0;
+  const unitSalePrice = roundPrice(baseUnitSalePrice, roundingType);
 
   return (
     <TableRow className="hover:bg-slate-50">
