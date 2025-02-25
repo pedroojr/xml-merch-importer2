@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FileUpload from '../components/FileUpload';
 import { ProductPreview } from '../components/product-preview';
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,24 @@ import { Product } from '../types/nfe';
 const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    // Adiciona o evento de confirmação antes de sair/atualizar a página
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (products.length > 0) {
+        e.preventDefault();
+        // A mensagem abaixo pode não aparecer em alguns navegadores, que usam mensagens padrão
+        e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair da página?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [products]);
 
   const handleFileSelect = async (file: File) => {
     setIsProcessing(true);
