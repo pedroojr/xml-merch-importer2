@@ -57,13 +57,13 @@ export const generateProductDescription = (product: Product): string => {
 
   // Monta a descrição final
   if (attributes.length > 0) {
-    parts.push(attributes.join(' / '));
+    parts.push(attributes.join(' '));
   }
 
   if (technicalInfo.length > 0) {
-    parts.push(technicalInfo.join(' / '));
+    parts.push(technicalInfo.join(' '));
   }
 
-  // Une todas as partes usando barra como separador
-  return parts.join(' / ');
+  // Une todas as partes usando apenas espaço como separador
+  return parts.join(' ');
 };

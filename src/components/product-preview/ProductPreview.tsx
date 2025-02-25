@@ -14,12 +14,14 @@ interface ProductPreviewProps {
   products: Product[];
   onProductUpdate?: (index: number, product: Product) => void;
   editable?: boolean;
+  onConfigurationUpdate?: (xapuriMarkup: number, epitaMarkup: number, roundingType: string) => void;
 }
 
 const ProductPreview: React.FC<ProductPreviewProps> = ({ 
   products, 
   onProductUpdate, 
-  editable = false 
+  editable = false,
+  onConfigurationUpdate
 }) => {
   const [xapuriMarkup, setXapuriMarkup] = useState(120);
   const [epitaMarkup, setEpitaMarkup] = useState(140);
@@ -35,6 +37,13 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(defaultVisibleColumns)
   );
+
+  const handleMarkupChange = (xapuri: number, epita: number, rounding: RoundingType) => {
+    setXapuriMarkup(xapuri);
+    setEpitaMarkup(epita);
+    setRoundingType(rounding);
+    onConfigurationUpdate?.(xapuri, epita, rounding);
+  };
 
   const handleImageSearch = async (index: number, product: Product) => {
     const searchTerms = `${product.ean} ${product.code} ${product.name}`;
@@ -85,9 +94,9 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
               xapuriMarkup={xapuriMarkup}
               epitaMarkup={epitaMarkup}
               roundingType={roundingType}
-              onXapuriMarkupChange={setXapuriMarkup}
-              onEpitaMarkupChange={setEpitaMarkup}
-              onRoundingChange={setRoundingType}
+              onXapuriMarkupChange={(value) => handleMarkupChange(value, epitaMarkup, roundingType)}
+              onEpitaMarkupChange={(value) => handleMarkupChange(xapuriMarkup, value, roundingType)}
+              onRoundingChange={(value) => handleMarkupChange(xapuriMarkup, epitaMarkup, value)}
               compactMode={compactMode}
               toggleCompactMode={toggleCompactMode}
               columns={columns}
