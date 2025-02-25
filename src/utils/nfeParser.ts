@@ -1,3 +1,4 @@
+
 import { Product } from '../types/nfe';
 import { extrairCorDaDescricao } from './colorParser';
 import { extrairTamanhoDaDescricao } from './sizeParser';

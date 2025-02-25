@@ -7,20 +7,46 @@ export type BrandInfo = {
 export const extractReferencePattern = (text: string): string | null => {
   // Padrões comuns de referência
   const patterns = [
+    // Malharia Cristina: 1000557-300009-10 (pegamos apenas 1000557)
+    {
+      pattern: /(\d{7})-\d{6}-\d{2}/,
+      brand: 'CRISTINA',
+      confidence: 0.9,
+      extract: (match: RegExpMatchArray) => match[1]
+    },
+    // Apenas números com 7 dígitos (possível Cristina sem formatação)
+    {
+      pattern: /^(\d{7})$/,
+      brand: 'CRISTINA',
+      confidence: 0.7,
+      extract: (match: RegExpMatchArray) => match[1]
+    },
     // Letra seguida de números (ex: K12345, M1234)
-    /[A-Z][0-9]{4,5}/i,
+    {
+      pattern: /([A-Z][0-9]{4,5})/i,
+      brand: (match: string) => `REF-${match[0].toUpperCase()}`,
+      confidence: 0.8,
+      extract: (match: RegExpMatchArray) => match[1]
+    },
     // Duas letras seguidas de números (ex: BR123, EL123)
-    /[A-Z]{2}[0-9]{3,4}/i,
-    // Apenas números com 5 dígitos
-    /^[0-9]{5}$/,
-    // Referência com hífen (ex: AB-1234)
-    /[A-Z]{1,2}-[0-9]{3,4}/i
+    {
+      pattern: /([A-Z]{2}[0-9]{3,4})/i,
+      brand: (match: string) => `REF-${match.substring(0, 2).toUpperCase()}`,
+      confidence: 0.8,
+      extract: (match: RegExpMatchArray) => match[1]
+    }
   ];
 
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
+  for (const def of patterns) {
+    const match = text.match(def.pattern);
     if (match) {
-      return match[0].toUpperCase();
+      const reference = def.extract(match);
+      const brand = typeof def.brand === 'function' ? def.brand(reference) : def.brand;
+      return {
+        reference,
+        brand,
+        confidence: def.confidence
+      };
     }
   }
 
@@ -29,42 +55,19 @@ export const extractReferencePattern = (text: string): string | null => {
 
 export const identifyBrand = (reference: string, name: string): BrandInfo => {
   // Tenta encontrar um padrão de referência tanto no código quanto no nome
-  const refPattern = extractReferencePattern(reference) || extractReferencePattern(name);
+  const refMatch = extractReferencePattern(reference) || extractReferencePattern(name);
   
-  if (!refPattern) {
-    return { brand: 'OUTROS', confidence: 0.3 };
-  }
-
-  // Extrai o prefixo da referência (letras iniciais)
-  const prefix = refPattern.match(/^[A-Z]+/);
-  if (prefix) {
-    // Se encontrou um prefixo, usa ele como identificador da marca
-    const brandPrefix = prefix[0];
-    let confidence = 0.8; // Alta confiança para referências com prefixo
-
-    // Verifica se o prefixo aparece no nome do produto também
-    if (name.toUpperCase().includes(brandPrefix)) {
-      confidence = 0.9; // Aumenta a confiança se o prefixo também está no nome
-    }
-
+  if (refMatch) {
     return {
-      brand: `REF-${brandPrefix}`,
-      confidence
+      brand: refMatch.brand,
+      confidence: refMatch.confidence
     };
   }
 
-  // Para referências apenas numéricas
-  if (/^[0-9]+$/.test(refPattern)) {
-    return {
-      brand: 'REF-NUM',
-      confidence: 0.6
-    };
-  }
-
-  // Para outros padrões de referência
+  // Se não encontrou nenhum padrão conhecido
   return {
-    brand: `REF-${refPattern.substring(0, 2)}`,
-    confidence: 0.7
+    brand: 'OUTROS',
+    confidence: 0.3
   };
 };
 
@@ -73,8 +76,6 @@ export const analyzeReference = (reference: string, name: string) => {
   console.log('Analisando referência:', {
     reference,
     name,
-    extractedPattern: extractReferencePattern(reference),
-    namePattern: extractReferencePattern(name),
     result: identifyBrand(reference, name)
   });
 };
