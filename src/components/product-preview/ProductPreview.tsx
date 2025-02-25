@@ -6,8 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ProductAnalysis } from './insights/ProductAnalysis';
 import { ProfitabilityAnalysis } from './insights/ProfitabilityAnalysis';
-import { ProductImageModal } from './ProductImageModal';
-import { searchProductImage, downloadImage } from '../../services/imageSearch';
 import { ProductToolbar } from './ProductToolbar';
 import { ProductTable } from './ProductTable';
 import { getDefaultColumns, compactColumns } from './types/column';
@@ -26,12 +24,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   const [xapuriMarkup, setXapuriMarkup] = useState(120);
   const [epitaMarkup, setEpitaMarkup] = useState(140);
   const [roundingType, setRoundingType] = useState<RoundingType>('90');
-  const [confirmedItems, setConfirmedItems] = useState<Set<number>>(new Set());
   const [hiddenItems, setHiddenItems] = useState<Set<number>>(new Set());
   const [compactMode, setCompactMode] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<{ index: number; product: Product } | null>(null);
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [searchUrl, setSearchUrl] = useState<string>('');
 
   const columns = getDefaultColumns();
   const defaultVisibleColumns = compactMode ? 
@@ -43,43 +37,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   );
 
   const handleImageSearch = async (index: number, product: Product) => {
-    try {
-      const url = await searchProductImage({
-        ean: product.ean,
-        code: product.code,
-        description: product.name
-      });
-      
-      setSearchUrl(url);
-      setSelectedProduct({ index, product });
-      setIsImageModalOpen(true);
-      
-    } catch (error) {
-      toast.error('Erro ao buscar imagem do produto');
-    }
-  };
-
-  const handleCloseModal = () => {
-    setIsImageModalOpen(false);
-    setSelectedProduct(null);
-  };
-
-  const handleNewImageSearch = async () => {
-    if (selectedProduct) {
-      const url = await searchProductImage({
-        ean: selectedProduct.product.ean,
-        code: selectedProduct.product.code,
-        description: selectedProduct.product.name
-      });
-      setSearchUrl(url);
-    }
-  };
-
-  const handleDownloadImage = () => {
-    if (selectedProduct) {
-      const fileName = `${selectedProduct.product.ean}-${selectedProduct.product.name}`;
-      downloadImage(searchUrl, fileName);
-    }
+    const searchTerms = `${product.ean} ${product.code} ${product.name}`;
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(searchTerms)}&tbm=isch`, '_blank');
   };
 
   const toggleColumn = (columnId: string) => {
@@ -161,18 +120,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
           </TabsContent>
         </Tabs>
       </div>
-
-      {selectedProduct && (
-        <ProductImageModal
-          isOpen={isImageModalOpen}
-          onClose={handleCloseModal}
-          imageUrl={searchUrl}
-          productName={selectedProduct.product.name}
-          productEan={selectedProduct.product.ean}
-          onSearchNew={handleNewImageSearch}
-          onDownload={handleDownloadImage}
-        />
-      )}
     </div>
   );
 };
