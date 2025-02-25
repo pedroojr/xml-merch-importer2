@@ -8,7 +8,7 @@ import { calculateSalePrice, roundPrice, RoundingType } from './productCalculati
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { generateProductDescription } from './productDescription';
-import { formatNumber, formatCurrency } from '../../utils/formatters';
+import { formatNumber, formatCurrency, formatNumberForCopy } from '../../utils/formatters';
 
 interface ProductTableProps {
   products: Product[];
@@ -45,14 +45,12 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   const formatValueForCopy = (value: any, column: Column): string => {
     if (typeof value === 'number') {
-      // Se o valor for monetário (preços), formata com 2 casas decimais
       if (column.id.toLowerCase().includes('price') || 
           column.id.toLowerCase().includes('discount') || 
           column.id === 'unitPrice' || 
           column.id === 'netPrice') {
         return formatNumberForCopy(value, 2);
       }
-      // Para quantidades, mantém até 4 casas decimais
       if (column.id === 'quantity') {
         return formatNumberForCopy(value, 4);
       }
