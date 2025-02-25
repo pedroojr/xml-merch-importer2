@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { calculateSalePrice, roundPrice, RoundingType } from './productCalculati
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { generateProductDescription } from './productDescription';
+import { formatNumber, formatCurrency } from '../../utils/formatters';
 
 interface ProductTableProps {
   products: Product[];
@@ -42,9 +44,27 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     window.open(`https://www.google.com/search?q=${encodeURIComponent(searchTerms)}&tbm=isch`, '_blank');
   };
 
-  const handleCopyToClipboard = async (value: string, field: string) => {
+  const formatValueForCopy = (value: any, column: Column): string => {
+    if (typeof value === 'number') {
+      // Se o valor for monetário (preços), formata com 2 casas decimais
+      if (column.id.toLowerCase().includes('price') || 
+          column.id.toLowerCase().includes('discount') || 
+          column.id === 'unitPrice' || 
+          column.id === 'netPrice') {
+        return value.toFixed(2);
+      }
+      // Para quantidades, mantém até 4 casas decimais
+      if (column.id === 'quantity') {
+        return value.toFixed(4);
+      }
+    }
+    return value?.toString() || '';
+  };
+
+  const handleCopyToClipboard = async (value: any, column: Column, field: string) => {
     try {
-      await navigator.clipboard.writeText(value);
+      const formattedValue = formatValueForCopy(value, column);
+      await navigator.clipboard.writeText(formattedValue);
       setCopiedField(field);
       toast.success('Copiado para a área de transferência');
       setTimeout(() => setCopiedField(''), 2000);
@@ -90,80 +110,79 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           const betterDescription = generateProductDescription(product);
 
           return (
-            <React.Fragment key={product.code}>
-              <TableRow 
-                className={`
-                  ${index % 2 === 0 ? 'bg-slate-50/50' : ''}
-                  hover:bg-slate-100 transition-colors
-                `}
-              >
-                {visibleColumns.has('image') && (
-                  <TableCell className="w-20">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openGoogleSearch(product)}
-                      className="w-full"
-                      title="Buscar imagem no Google"
-                    >
-                      <ImageIcon className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                )}
-                {columns.map((column) => {
-                  if (!visibleColumns.has(column.id) || column.id === 'image') return null;
-
-                  let value: any = column.getValue ? 
-                    column.getValue(product) : 
-                    product[column.id as keyof Product];
-
-                  if (column.id === 'xapuriPrice') value = xapuriPrice;
-                  if (column.id === 'epitaPrice') value = epitaPrice;
-                  if (column.id === 'unitPrice') value = product.unitPrice;
-                  if (column.id === 'netPrice') value = unitNetPrice;
-                  if (column.id === 'name') value = betterDescription;
-
-                  const copyId = `${column.id}-${index}`;
-                  const isCopied = copiedField === copyId;
-
-                  return (
-                    <TableCell
-                      key={column.id}
-                      className={`px-6 py-4 ${
-                        column.alignment === 'right' ? 'text-right tabular-nums' : ''
-                      } ${
-                        column.id === 'xapuriPrice' ? 'bg-blue-50' : ''
-                      } ${
-                        column.id === 'epitaPrice' ? 'bg-emerald-50' : ''
-                      } group relative cursor-pointer hover:bg-slate-200`}
-                      onClick={() => handleCopyToClipboard(value?.toString() || '', copyId)}
-                    >
-                      <div className="flex items-center gap-2 justify-between">
-                        <span>{column.format ? column.format(value) : value}</span>
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          {isCopied ? (
-                            <Check className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Copy className="h-4 w-4 text-gray-500" />
-                          )}
-                        </span>
-                      </div>
-                    </TableCell>
-                  );
-                })}
-                <TableCell className="px-6">
-                  <div className="flex justify-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleToggleVisibility(index)}
-                    >
-                      <EyeOff className="h-4 w-4" />
-                    </Button>
-                  </div>
+            <TableRow 
+              key={product.code}
+              className={`
+                ${index % 2 === 0 ? 'bg-slate-50/50' : ''}
+                hover:bg-slate-100 transition-colors
+              `}
+            >
+              {visibleColumns.has('image') && (
+                <TableCell className="w-20">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openGoogleSearch(product)}
+                    className="w-full"
+                    title="Buscar imagem no Google"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                  </Button>
                 </TableCell>
-              </TableRow>
-            </React.Fragment>
+              )}
+              {columns.map((column) => {
+                if (!visibleColumns.has(column.id) || column.id === 'image') return null;
+
+                let value: any = column.getValue ? 
+                  column.getValue(product) : 
+                  product[column.id as keyof Product];
+
+                if (column.id === 'xapuriPrice') value = xapuriPrice;
+                if (column.id === 'epitaPrice') value = epitaPrice;
+                if (column.id === 'unitPrice') value = product.unitPrice;
+                if (column.id === 'netPrice') value = unitNetPrice;
+                if (column.id === 'name') value = betterDescription;
+
+                const copyId = `${column.id}-${index}`;
+                const isCopied = copiedField === copyId;
+
+                return (
+                  <TableCell
+                    key={column.id}
+                    className={`px-6 py-4 ${
+                      column.alignment === 'right' ? 'text-right tabular-nums' : ''
+                    } ${
+                      column.id === 'xapuriPrice' ? 'bg-blue-50' : ''
+                    } ${
+                      column.id === 'epitaPrice' ? 'bg-emerald-50' : ''
+                    } group relative cursor-pointer hover:bg-slate-200`}
+                    onClick={() => handleCopyToClipboard(value, column, copyId)}
+                  >
+                    <div className="flex items-center gap-2 justify-between">
+                      <span>{column.format ? column.format(value) : value}</span>
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {isCopied ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4 text-gray-500" />
+                        )}
+                      </span>
+                    </div>
+                  </TableCell>
+                );
+              })}
+              <TableCell className="px-6">
+                <div className="flex justify-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleToggleVisibility(index)}
+                  >
+                    <EyeOff className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
           );
         })}
       </TableBody>
