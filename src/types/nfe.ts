@@ -12,6 +12,8 @@ export interface Product {
   discount: number;      // vDesc - Valor do Desconto
   netPrice: number;      // Valor Total Líquido (após descontos)
   color: string;        // Cor do produto em formato HEX
+  size: string;         // Tamanho do produto
+  reference: string;    // Referência do produto
   useMarkup: boolean;   // Indica se deve usar markup no cálculo
   markup: number;       // Percentual de markup
   salePrice: number;    // Preço de venda calculado

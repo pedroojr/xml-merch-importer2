@@ -18,7 +18,10 @@ export const getDefaultColumns = (): Column[] => [
   },
   { id: 'code', header: 'Código', initiallyVisible: true },
   { id: 'ean', header: 'EAN', initiallyVisible: true },
+  { id: 'reference', header: 'Referência', initiallyVisible: true },
   { id: 'name', header: 'Descrição', initiallyVisible: true },
+  { id: 'size', header: 'Tamanho', initiallyVisible: true },
+  { id: 'color', header: 'Cor', initiallyVisible: true },
   { id: 'ncm', header: 'NCM', initiallyVisible: true },
   { id: 'cfop', header: 'CFOP', initiallyVisible: true },
   { id: 'uom', header: 'Unidade', initiallyVisible: true },
@@ -78,13 +81,15 @@ export const getDefaultColumns = (): Column[] => [
     initiallyVisible: true, 
     alignment: 'right',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-  },
-  { id: 'color', header: 'Cor', initiallyVisible: true },
+  }
 ];
 
 export const compactColumns = [
   'image',         // Imagem
+  'reference',     // Referência
   'name',          // Descrição
+  'size',          // Tamanho
+  'color',         // Cor
   'ean',           // EAN
   'quantity',      // Quantidade
   'unitPrice',     // Custo Unitário

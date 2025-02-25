@@ -1,3 +1,4 @@
+
 import { Product } from '../types/nfe';
 import { extrairCorDaDescricao } from './colorParser';
 
@@ -59,6 +60,27 @@ export const parseNFeXML = (xmlText: string): Product[] => {
     
     return { cst: "", orig: "" };
   };
+
+  // Função para extrair tamanho da descrição
+  const extrairTamanhoDaDescricao = (descricao: string): string => {
+    const tamanhos = ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XXG'];
+    const match = tamanhos.find(tamanho => 
+      descricao.toUpperCase().includes(` ${tamanho} `) || 
+      descricao.toUpperCase().includes(`${tamanho} `) ||
+      descricao.toUpperCase().includes(` ${tamanho}`)
+    );
+    return match || '';
+  };
+
+  // Função para extrair referência da descrição ou código
+  const extrairReferencia = (descricao: string, codigo: string): string => {
+    // Tenta encontrar um padrão de referência na descrição
+    const refMatch = descricao.match(/REF[.: ]([A-Z0-9-]+)/i);
+    if (refMatch) return refMatch[1];
+
+    // Se não encontrar na descrição, usa o código como referência
+    return codigo;
+  };
   
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -79,10 +101,13 @@ export const parseNFeXML = (xmlText: string): Product[] => {
     const netPrice = totalPrice - discount;
     
     const nome = getElementText(prod, "xProd");
+    const codigo = getElementText(prod, "cProd");
     const corIdentificada = extrairCorDaDescricao(nome);
+    const tamanho = extrairTamanhoDaDescricao(nome);
+    const referencia = extrairReferencia(nome, codigo);
     
     const product: Product = {
-      code: getElementText(prod, "cProd"),
+      code: codigo,
       ean: getElementText(prod, "cEAN"),
       name: nome,
       ncm: getElementText(prod, "NCM"),
@@ -94,6 +119,8 @@ export const parseNFeXML = (xmlText: string): Product[] => {
       discount: discount,
       netPrice: netPrice,
       color: corIdentificada || '',
+      size: tamanho,
+      reference: referencia,
       useMarkup: false,
       markup: 30,
       salePrice: netPrice * 1.3
