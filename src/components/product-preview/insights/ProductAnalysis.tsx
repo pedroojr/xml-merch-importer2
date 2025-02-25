@@ -10,55 +10,93 @@ interface ProductAnalysisProps {
 }
 
 export const ProductAnalysis: React.FC<ProductAnalysisProps> = ({ products }) => {
-  // Sort by quantity and filter out products that have higher total value
-  const sortedByQuantity = [...products]
-    .sort((a, b) => b.quantity - a.quantity)
-    .filter(product => {
-      const productValue = product.netPrice;
-      const productsWithHigherValue = products.filter(p => p.netPrice > productValue);
-      return productsWithHigherValue.length < 5;
-    });
+  // Análises por tamanho
+  const tamanhoStats = products.reduce((acc, product) => {
+    const tamanho = product.size || 'Não especificado';
+    if (!acc[tamanho]) {
+      acc[tamanho] = {
+        quantidade: 0,
+        valorTotal: 0,
+        produtos: []
+      };
+    }
+    acc[tamanho].quantidade += product.quantity;
+    acc[tamanho].valorTotal += product.netPrice;
+    acc[tamanho].produtos.push(product);
+    return acc;
+  }, {} as Record<string, { quantidade: number; valorTotal: number; produtos: Product[] }>);
 
-  // Sort by total value and filter out products that have higher quantity
-  const sortedByValue = [...products]
-    .sort((a, b) => b.netPrice - a.netPrice)
-    .filter(product => {
-      const productQuantity = product.quantity;
-      const productsWithHigherQuantity = products.filter(p => p.quantity > productQuantity);
-      return productsWithHigherQuantity.length < 5;
-    });
+  // Análises por NCM
+  const ncmStats = products.reduce((acc, product) => {
+    if (!acc[product.ncm]) {
+      acc[product.ncm] = {
+        quantidade: 0,
+        valorTotal: 0,
+        descricao: product.name.split(' ')[0] // Pega primeiro termo como categoria
+      };
+    }
+    acc[product.ncm].quantidade += product.quantity;
+    acc[product.ncm].valorTotal += product.netPrice;
+    return acc;
+  }, {} as Record<string, { quantidade: number; valorTotal: number; descricao: string }>);
+
+  // Análise por faixa de preço
+  const getFaixaPreco = (preco: number): string => {
+    if (preco <= 50) return 'Até R$ 50';
+    if (preco <= 100) return 'R$ 51 a R$ 100';
+    if (preco <= 200) return 'R$ 101 a R$ 200';
+    return 'Acima de R$ 200';
+  };
+
+  const faixaPrecoStats = products.reduce((acc, product) => {
+    const precoUnitario = product.netPrice / product.quantity;
+    const faixa = getFaixaPreco(precoUnitario);
+    if (!acc[faixa]) {
+      acc[faixa] = {
+        quantidade: 0,
+        valorTotal: 0,
+        produtos: []
+      };
+    }
+    acc[faixa].quantidade += product.quantity;
+    acc[faixa].valorTotal += product.netPrice;
+    acc[faixa].produtos.push(product);
+    return acc;
+  }, {} as Record<string, { quantidade: number; valorTotal: number; produtos: Product[] }>);
 
   return (
     <div className="space-y-8">
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>Produtos com Maior Volume</CardTitle>
+          <CardTitle>Análise por Tamanho</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead className="font-semibold">Produto</TableHead>
+                <TableHead className="font-semibold">Tamanho</TableHead>
                 <TableHead className="font-semibold text-right">Quantidade</TableHead>
-                <TableHead className="font-semibold text-right">Valor Unit.</TableHead>
-                <TableHead className="font-semibold text-right">Total</TableHead>
+                <TableHead className="font-semibold text-right">Valor Total</TableHead>
+                <TableHead className="font-semibold text-right">Preço Médio</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedByQuantity.slice(0, 5).map((product) => (
-                <TableRow key={product.code}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell className="text-right">
-                    {formatNumber(product.quantity)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(product.netPrice / product.quantity)}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {formatCurrency(product.netPrice)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {Object.entries(tamanhoStats)
+                .sort((a, b) => b[1].quantidade - a[1].quantidade)
+                .map(([tamanho, stats]) => (
+                  <TableRow key={tamanho}>
+                    <TableCell className="font-medium">{tamanho}</TableCell>
+                    <TableCell className="text-right">
+                      {formatNumber(stats.quantidade)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(stats.valorTotal)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(stats.valorTotal / stats.quantidade)}
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </CardContent>
@@ -66,33 +104,72 @@ export const ProductAnalysis: React.FC<ProductAnalysisProps> = ({ products }) =>
 
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>Produtos com Maior Valor Total</CardTitle>
+          <CardTitle>Análise por NCM</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead className="font-semibold">Produto</TableHead>
-                <TableHead className="font-semibold text-right">Valor Total</TableHead>
+                <TableHead className="font-semibold">NCM</TableHead>
+                <TableHead className="font-semibold">Categoria</TableHead>
                 <TableHead className="font-semibold text-right">Quantidade</TableHead>
-                <TableHead className="font-semibold text-right">Valor Unit.</TableHead>
+                <TableHead className="font-semibold text-right">Valor Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedByValue.slice(0, 5).map((product) => (
-                <TableRow key={product.code} className="hover:bg-slate-50">
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell className="text-right font-semibold">
-                    {formatCurrency(product.netPrice)}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {formatNumber(product.quantity)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(product.netPrice / product.quantity)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {Object.entries(ncmStats)
+                .sort((a, b) => b[1].valorTotal - a[1].valorTotal)
+                .map(([ncm, stats]) => (
+                  <TableRow key={ncm}>
+                    <TableCell className="font-medium">{ncm}</TableCell>
+                    <TableCell>{stats.descricao}</TableCell>
+                    <TableCell className="text-right">
+                      {formatNumber(stats.quantidade)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(stats.valorTotal)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle>Análise por Faixa de Preço</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50">
+                <TableHead className="font-semibold">Faixa de Preço</TableHead>
+                <TableHead className="font-semibold text-right">Quantidade</TableHead>
+                <TableHead className="font-semibold text-right">Valor Total</TableHead>
+                <TableHead className="font-semibold text-right">% do Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Object.entries(faixaPrecoStats)
+                .sort((a, b) => b[1].valorTotal - a[1].valorTotal)
+                .map(([faixa, stats]) => {
+                  const percentualTotal = (stats.valorTotal / products.reduce((acc, p) => acc + p.netPrice, 0)) * 100;
+                  return (
+                    <TableRow key={faixa}>
+                      <TableCell className="font-medium">{faixa}</TableCell>
+                      <TableCell className="text-right">
+                        {formatNumber(stats.quantidade)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(stats.valorTotal)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {percentualTotal.toFixed(1)}%
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
             </TableBody>
           </Table>
         </CardContent>

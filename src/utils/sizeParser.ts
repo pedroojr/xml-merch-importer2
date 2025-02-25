@@ -1,4 +1,3 @@
-
 interface SizePattern {
   pattern: RegExp;
   sizes: string[];
@@ -17,11 +16,6 @@ const sizePatterns: SizePattern[] = [
     description: 'Tamanhos de calçados com faixa'
   },
   {
-    pattern: /\b(\d{2,3})(cm)?\b/,
-    sizes: [], // Dinâmico, ex: "42" ou "42cm"
-    description: 'Tamanhos numéricos'
-  },
-  {
     pattern: /\bTAM(?:ANHO)?[\s:.]-?\s*([A-Za-z0-9]{1,3})\b/i,
     sizes: [], // Dinâmico, ex: "TAM: G" ou "TAMANHO M"
     description: 'Indicador explícito de tamanho'
@@ -30,6 +24,11 @@ const sizePatterns: SizePattern[] = [
     pattern: /\b(INFANTIL|ADULTO|JUVENIL)\b/i,
     sizes: ['INFANTIL', 'ADULTO', 'JUVENIL'],
     description: 'Categorias de tamanho'
+  },
+  {
+    pattern: /INFAN[\.TIL]*[\s-]*(DE USO )?COMUM/i,
+    sizes: ['INFANTIL'],
+    description: 'Tamanho infantil em descrições específicas'
   }
 ];
 
@@ -71,33 +70,19 @@ const validarTamanho = (tamanho: string): boolean => {
 export const extrairTamanhoDaDescricao = (descricao: string): string => {
   if (!descricao) return '';
 
-  // Converte para maiúsculas para facilitar a comparação
   const textoNormalizado = descricao.toUpperCase();
   
+  // Casos especiais para produtos infantis
+  if (textoNormalizado.includes('INFAN') && textoNormalizado.includes('COMUM')) {
+    return 'INFANTIL';
+  }
+
   for (const { pattern } of sizePatterns) {
     const match = textoNormalizado.match(pattern);
     if (match && match[1]) {
       const tamanhoEncontrado = normalizarTamanho(match[1]);
       if (validarTamanho(tamanhoEncontrado)) {
         return tamanhoEncontrado;
-      }
-    }
-  }
-
-  // Se não encontrou um tamanho válido nos padrões principais,
-  // procura por palavras-chave específicas
-  const palavrasChave = ['TAMANHO', 'TAM', 'SIZE'];
-  for (const palavra of palavrasChave) {
-    const index = textoNormalizado.indexOf(palavra);
-    if (index !== -1) {
-      // Pega até 5 caracteres após a palavra-chave
-      const trecho = textoNormalizado.slice(index + palavra.length, index + palavra.length + 5);
-      const match = trecho.match(/[A-Z0-9]+/);
-      if (match) {
-        const tamanhoEncontrado = normalizarTamanho(match[0]);
-        if (validarTamanho(tamanhoEncontrado)) {
-          return tamanhoEncontrado;
-        }
       }
     }
   }
