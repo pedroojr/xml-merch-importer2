@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { generateProductDescription } from './productDescription';
 import { formatNumber, formatCurrency, formatNumberForCopy } from '../../utils/formatters';
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface ProductTableProps {
   products: Product[];
@@ -37,6 +41,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   const [searchResults, setSearchResults] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [copiedField, setCopiedField] = useState<string>('');
+  const [showConfirmed, setShowConfirmed] = useState(false);
+  const [showUnconfirmed, setShowUnconfirmed] = useState(false);
 
   const openGoogleSearch = (product: Product) => {
     const searchTerms = `${product.ean || ''} ${product.reference || ''} ${product.code || ''}`.trim();
@@ -70,6 +76,22 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     }
   };
 
+  // Função para verificar se um produto está confirmado
+  const isProductConfirmed = (product: Product) => {
+    return product.brandConfidence >= 0.8;
+  };
+
+  // Função para filtrar produtos baseado nas configurações
+  const filterProducts = (products: Product[]) => {
+    if (!showConfirmed && !showUnconfirmed) return products;
+    return products.filter(product => {
+      const isConfirmed = isProductConfirmed(product);
+      if (showConfirmed && !showUnconfirmed) return isConfirmed;
+      if (!showConfirmed && showUnconfirmed) return !isConfirmed;
+      return true;
+    });
+  };
+
   // Agrupa produtos por marca
   const groupedProducts = products.reduce((groups, product) => {
     const brand = product.brand || 'OUTROS';
@@ -86,131 +108,175 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   return (
     <div className="space-y-4">
-      {sortedBrands.map(([brand, brandProducts]) => (
-        <div key={brand} className="bg-white rounded-lg shadow-sm">
-          <div className="p-4 bg-slate-50 border-b flex justify-between items-center">
-            <h3 className="font-semibold text-slate-900">
-              {brand} 
-              <span className="ml-2 text-sm text-slate-500">
-                ({brandProducts.length} produtos)
-              </span>
-            </h3>
+      <div className="p-4 bg-slate-50 border rounded-lg flex items-center justify-between">
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="show-confirmed"
+              checked={showConfirmed}
+              onCheckedChange={setShowConfirmed}
+            />
+            <Label htmlFor="show-confirmed">Mostrar apenas confirmados</Label>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50/50">
-                {columns.map((column) => (
-                  visibleColumns.has(column.id) && (
-                    <TableHead
-                      key={column.id}
-                      className={`font-semibold px-6 ${
-                        column.alignment === 'right' ? 'text-right' : ''
-                      } ${
-                        column.id === 'xapuriPrice' ? 'bg-blue-50 text-blue-700' : ''
-                      } ${
-                        column.id === 'epitaPrice' ? 'bg-emerald-50 text-emerald-700' : ''
-                      }`}
-                    >
-                      {column.header}
-                    </TableHead>
-                  )
-                ))}
-                <TableHead className="font-semibold w-20">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {brandProducts.map((product, index) => {
-                if (hiddenItems.has(index)) return null;
-
-                const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
-                const baseXapuriPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup);
-                const baseEpitaPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup);
-                
-                const xapuriPrice = roundPrice(baseXapuriPrice, roundingType);
-                const epitaPrice = roundPrice(baseEpitaPrice, roundingType);
-
-                const betterDescription = generateProductDescription(product);
-
-                return (
-                  <TableRow 
-                    key={product.code}
-                    className={`
-                      ${index % 2 === 0 ? 'bg-slate-50/50' : ''}
-                      hover:bg-slate-100 transition-colors
-                    `}
-                  >
-                    {visibleColumns.has('image') && (
-                      <TableCell className="w-20">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openGoogleSearch(product)}
-                          className="w-full"
-                          title="Buscar imagem no Google"
-                        >
-                          <ImageIcon className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    )}
-                    {columns.map((column) => {
-                      if (!visibleColumns.has(column.id) || column.id === 'image') return null;
-
-                      let value: any = column.getValue ? 
-                        column.getValue(product) : 
-                        product[column.id as keyof Product];
-
-                      if (column.id === 'xapuriPrice') value = xapuriPrice;
-                      if (column.id === 'epitaPrice') value = epitaPrice;
-                      if (column.id === 'unitPrice') value = product.unitPrice;
-                      if (column.id === 'netPrice') value = unitNetPrice;
-                      if (column.id === 'name') value = betterDescription;
-
-                      const copyId = `${column.id}-${index}`;
-                      const isCopied = copiedField === copyId;
-
-                      return (
-                        <TableCell
-                          key={column.id}
-                          className={`px-6 py-4 ${
-                            column.alignment === 'right' ? 'text-right tabular-nums' : ''
-                          } ${
-                            column.id === 'xapuriPrice' ? 'bg-blue-50' : ''
-                          } ${
-                            column.id === 'epitaPrice' ? 'bg-emerald-50' : ''
-                          } group relative cursor-pointer hover:bg-slate-200`}
-                          onClick={() => handleCopyToClipboard(value, column, copyId)}
-                        >
-                          <div className="flex items-center gap-2 justify-between">
-                            <span>{column.format ? column.format(value) : value}</span>
-                            <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                              {isCopied ? (
-                                <Check className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <Copy className="h-4 w-4 text-gray-500" />
-                              )}
-                            </span>
-                          </div>
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell className="px-6">
-                      <div className="flex justify-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleVisibility(index)}
-                        >
-                          <EyeOff className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="show-unconfirmed"
+              checked={showUnconfirmed}
+              onCheckedChange={setShowUnconfirmed}
+            />
+            <Label htmlFor="show-unconfirmed">Mostrar apenas não confirmados</Label>
+          </div>
         </div>
-      ))}
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="bg-green-50 text-green-700">
+            Alta Confiança ≥ 80%
+          </Badge>
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+            Média Confiança ≥ 60%
+          </Badge>
+          <Badge variant="outline" className="bg-red-50 text-red-700">
+            Baixa Confiança &lt; 60%
+          </Badge>
+        </div>
+      </div>
+
+      {sortedBrands.map(([brand, brandProducts]) => {
+        const filteredProducts = filterProducts(brandProducts);
+        if (filteredProducts.length === 0) return null;
+
+        return (
+          <div key={brand} className="bg-white rounded-lg shadow-sm">
+            <div className="p-4 bg-slate-50 border-b flex justify-between items-center">
+              <h3 className="font-semibold text-slate-900">
+                {brand} 
+                <span className="ml-2 text-sm text-slate-500">
+                  ({filteredProducts.length} produtos)
+                </span>
+              </h3>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/50">
+                  {columns.map((column) => (
+                    visibleColumns.has(column.id) && (
+                      <TableHead
+                        key={column.id}
+                        className={`font-semibold px-6 ${
+                          column.alignment === 'right' ? 'text-right' : ''
+                        } ${
+                          column.id === 'xapuriPrice' ? 'bg-blue-50 text-blue-700' : ''
+                        } ${
+                          column.id === 'epitaPrice' ? 'bg-emerald-50 text-emerald-700' : ''
+                        }`}
+                      >
+                        {column.header}
+                      </TableHead>
+                    )
+                  ))}
+                  <TableHead className="font-semibold w-20">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProducts.map((product, index) => {
+                  if (hiddenItems.has(index)) return null;
+
+                  const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
+                  const baseXapuriPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup);
+                  const baseEpitaPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup);
+                  
+                  const xapuriPrice = roundPrice(baseXapuriPrice, roundingType);
+                  const epitaPrice = roundPrice(baseEpitaPrice, roundingType);
+
+                  const betterDescription = generateProductDescription(product);
+
+                  // Define a classe de confiança para colorir a linha
+                  const confidenceClass = product.brandConfidence >= 0.8 
+                    ? 'bg-green-50/50' 
+                    : product.brandConfidence >= 0.6 
+                      ? 'bg-yellow-50/50' 
+                      : 'bg-red-50/50';
+
+                  return (
+                    <TableRow 
+                      key={product.code}
+                      className={`
+                        hover:bg-slate-100 transition-colors
+                        ${confidenceClass}
+                      `}
+                    >
+                      {visibleColumns.has('image') && (
+                        <TableCell className="w-20">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openGoogleSearch(product)}
+                            className="w-full"
+                            title="Buscar imagem no Google"
+                          >
+                            <ImageIcon className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      )}
+                      {columns.map((column) => {
+                        if (!visibleColumns.has(column.id) || column.id === 'image') return null;
+
+                        let value: any = column.getValue ? 
+                          column.getValue(product) : 
+                          product[column.id as keyof Product];
+
+                        if (column.id === 'xapuriPrice') value = xapuriPrice;
+                        if (column.id === 'epitaPrice') value = epitaPrice;
+                        if (column.id === 'unitPrice') value = product.unitPrice;
+                        if (column.id === 'netPrice') value = unitNetPrice;
+                        if (column.id === 'name') value = betterDescription;
+
+                        const copyId = `${column.id}-${index}`;
+                        const isCopied = copiedField === copyId;
+
+                        return (
+                          <TableCell
+                            key={column.id}
+                            className={`px-6 py-4 ${
+                              column.alignment === 'right' ? 'text-right tabular-nums' : ''
+                            } ${
+                              column.id === 'xapuriPrice' ? 'bg-blue-50' : ''
+                            } ${
+                              column.id === 'epitaPrice' ? 'bg-emerald-50' : ''
+                            } group relative cursor-pointer hover:bg-slate-200`}
+                            onClick={() => handleCopyToClipboard(value, column, copyId)}
+                          >
+                            <div className="flex items-center gap-2 justify-between">
+                              <span>{column.format ? column.format(value) : value}</span>
+                              <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                {isCopied ? (
+                                  <Check className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <Copy className="h-4 w-4 text-gray-500" />
+                                )}
+                              </span>
+                            </div>
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="px-6">
+                        <div className="flex justify-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleVisibility(index)}
+                          >
+                            <EyeOff className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        );
+      })}
     </div>
   );
 };
