@@ -1,3 +1,4 @@
+
 import { Product } from '../types/nfe';
 import { extrairCorDaDescricao } from './colorParser';
 import { extrairTamanhoDaDescricao } from './sizeParser';
@@ -6,34 +7,49 @@ export const parseNFeXML = (xmlText: string): Product[] => {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlText, "text/xml");
   
-  // Verifica se houve erro no parsing do XML
   if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
     throw new Error("Erro ao analisar o arquivo XML");
   }
   
-  // Namespace da NFe
   const ns = "http://www.portalfiscal.inf.br/nfe";
-  
-  // Seleciona todos os itens (det) da NFe
   const items = xmlDoc.getElementsByTagNameNS(ns, "det");
-  
   const products: Product[] = [];
   
-  // Função auxiliar para obter o texto de um elemento
   const getElementText = (element: Element, tagName: string) => {
     const el = element.getElementsByTagNameNS(ns, tagName)[0];
     return el ? el.textContent || "" : "";
   };
 
-  // Função auxiliar para converter texto para número
   const parseNumber = (text: string) => {
     if (!text) return 0;
     const cleanText = text.replace(/[^\d,.-]/g, '').replace(',', '.');
     const number = parseFloat(cleanText);
     return isNaN(number) ? 0 : number;
   };
+
+  // Primeiro, calcula o valor total dos produtos e o valor total da nota
+  let totalProductsValue = 0;
+  let totalInvoiceValue = 0;
+
+  // Pega o valor total da nota do nó total
+  const totalNode = xmlDoc.getElementsByTagNameNS(ns, "total")[0];
+  if (totalNode) {
+    const icmsTotalNode = totalNode.getElementsByTagNameNS(ns, "ICMSTot")[0];
+    if (icmsTotalNode) {
+      totalProductsValue = parseNumber(getElementText(icmsTotalNode, "vProd"));
+      totalInvoiceValue = parseNumber(getElementText(icmsTotalNode, "vNF"));
+    }
+  }
+
+  // Calcula a porcentagem de desconto global
+  const totalDiscount = totalProductsValue - totalInvoiceValue;
+  const discountPercentage = totalDiscount > 0 ? (totalDiscount / totalProductsValue) * 100 : 0;
   
-  // Extrai os dados específicos para impostos ICMS
+  console.log('Valor Total Produtos:', totalProductsValue);
+  console.log('Valor Total Nota:', totalInvoiceValue);
+  console.log('Desconto Total:', totalDiscount);
+  console.log('Porcentagem de Desconto:', discountPercentage.toFixed(2) + '%');
+  
   const getICMSInfo = (element: Element) => {
     if (!element) return { cst: "", orig: "" };
     
@@ -63,8 +79,6 @@ export const parseNFeXML = (xmlText: string): Product[] => {
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
-    
-    // Extrai informações do produto
     const prod = item.getElementsByTagNameNS(ns, "prod")[0];
     const icms = item.getElementsByTagNameNS(ns, "ICMS")[0];
     
@@ -75,25 +89,23 @@ export const parseNFeXML = (xmlText: string): Product[] => {
     
     const icmsInfo = getICMSInfo(icms);
     
-    // Obtém valores brutos e descontos
+    // Valores brutos
     const quantity = parseNumber(getElementText(prod, "qCom"));
     const unitPrice = parseNumber(getElementText(prod, "vUnCom"));
     const totalPrice = parseNumber(getElementText(prod, "vProd"));
     
-    // Busca descontos em diferentes locais do XML
-    const discountProd = parseNumber(getElementText(prod, "vDesc")); // Desconto no nível do produto
-    const discountItem = parseNumber(getElementText(item, "vDesc")); // Desconto no nível do item
-    const totalDiscount = discountProd + discountItem; // Soma todos os descontos
+    // Aplica a porcentagem de desconto ao preço unitário
+    const unitDiscount = unitPrice * (discountPercentage / 100);
+    const netUnitPrice = unitPrice - unitDiscount;
     
-    // Calcula o valor líquido correto (valor total - desconto total)
-    const netPrice = totalPrice - totalDiscount;
+    // Calcula os valores totais
+    const totalDiscount = unitDiscount * quantity;
+    const netPrice = netUnitPrice * quantity;
     
     const nome = getElementText(prod, "xProd");
     const codigo = getElementText(prod, "cProd");
     const corIdentificada = extrairCorDaDescricao(nome);
     const tamanho = extrairTamanhoDaDescricao(nome);
-    
-    // Extrai referência da descrição ou usa o código como fallback
     const referencia = codigo;
     
     const product: Product = {
