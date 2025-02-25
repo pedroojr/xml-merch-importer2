@@ -1,8 +1,7 @@
-
 import { Product } from '../types/nfe';
 import { extrairCorDaDescricao } from './colorParser';
 import { extrairTamanhoDaDescricao } from './sizeParser';
-import { identifyBrand } from './brandIdentifier';
+import { identifyBrand, analyzeReference } from './brandIdentifier';
 
 export const parseNFeXML = (xmlText: string): Product[] => {
   const parser = new DOMParser();
@@ -28,11 +27,9 @@ export const parseNFeXML = (xmlText: string): Product[] => {
     return isNaN(number) ? 0 : number;
   };
 
-  // Primeiro, calcula o valor total dos produtos e o valor total da nota
   let totalProductsValue = 0;
   let totalInvoiceValue = 0;
 
-  // Pega o valor total da nota do nó total
   const totalNode = xmlDoc.getElementsByTagNameNS(ns, "total")[0];
   if (totalNode) {
     const icmsTotalNode = totalNode.getElementsByTagNameNS(ns, "ICMSTot")[0];
@@ -42,7 +39,6 @@ export const parseNFeXML = (xmlText: string): Product[] => {
     }
   }
 
-  // Calcula a porcentagem de desconto global
   const totalDiscount = totalProductsValue - totalInvoiceValue;
   const discountPercentage = totalDiscount > 0 ? (totalDiscount / totalProductsValue) * 100 : 0;
   
@@ -66,7 +62,6 @@ export const parseNFeXML = (xmlText: string): Product[] => {
       }
     }
     
-    // Tenta CSOSN para Simples Nacional
     const icmsSN = element.getElementsByTagNameNS(ns, "ICMSSN")[0];
     if (icmsSN) {
       return {
@@ -90,16 +85,13 @@ export const parseNFeXML = (xmlText: string): Product[] => {
     
     const icmsInfo = getICMSInfo(icms);
     
-    // Valores brutos
     const quantity = parseNumber(getElementText(prod, "qCom"));
     const unitPrice = parseNumber(getElementText(prod, "vUnCom"));
     const totalPrice = parseNumber(getElementText(prod, "vProd"));
     
-    // Aplica a porcentagem de desconto ao preço unitário
     const unitDiscount = unitPrice * (discountPercentage / 100);
     const netUnitPrice = unitPrice - unitDiscount;
     
-    // Calcula os valores totais
     const totalDiscount = unitDiscount * quantity;
     const netPrice = netUnitPrice * quantity;
     
@@ -109,7 +101,8 @@ export const parseNFeXML = (xmlText: string): Product[] => {
     const tamanho = extrairTamanhoDaDescricao(nome);
     const referencia = codigo;
 
-    // Identifica a marca baseada na referência e nome
+    analyzeReference(referencia, nome);
+
     const { brand, confidence } = identifyBrand(referencia, nome);
     
     const product: Product = {
@@ -130,8 +123,8 @@ export const parseNFeXML = (xmlText: string): Product[] => {
       useMarkup: false,
       markup: 30,
       salePrice: netPrice * 1.3,
-      brand: brand, // Adicionando a marca identificada
-      brandConfidence: confidence // Adicionando o nível de confiança da identificação
+      brand: brand,
+      brandConfidence: confidence
     };
     
     products.push(product);
