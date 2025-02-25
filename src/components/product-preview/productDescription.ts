@@ -29,19 +29,19 @@ export const generateProductDescription = (product: Product): string => {
   // Dados técnicos em uma seção separada
   const technicalInfo: string[] = [];
 
-  // Adiciona referência se disponível
+  // Adiciona referência se disponível (sem o prefixo REF)
   if (product.reference) {
-    technicalInfo.push(`REF ${product.reference}`);
+    technicalInfo.push(product.reference);
   }
 
   // Adiciona código do produto se disponível e diferente da referência
   if (product.code && product.code !== product.reference) {
-    technicalInfo.push(`CÓD ${product.code}`);
+    technicalInfo.push(product.code);
   }
 
-  // Adiciona EAN se disponível
+  // Adiciona EAN se disponível (sem o prefixo EAN)
   if (product.ean) {
-    technicalInfo.push(`EAN ${product.ean}`);
+    technicalInfo.push(product.ean);
   }
 
   // Informações de cor e tamanho
@@ -57,13 +57,13 @@ export const generateProductDescription = (product: Product): string => {
 
   // Monta a descrição final
   if (attributes.length > 0) {
-    parts.push(attributes.join(' | '));
+    parts.push(attributes.join(' / '));
   }
 
   if (technicalInfo.length > 0) {
-    parts.push(technicalInfo.join(' | '));
+    parts.push(technicalInfo.join(' / '));
   }
 
-  // Une todas as partes com quebras visuais
-  return parts.join(' • ');
+  // Une todas as partes usando barra como separador
+  return parts.join(' / ');
 };

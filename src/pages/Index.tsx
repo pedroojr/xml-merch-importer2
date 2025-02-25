@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import FileUpload from '../components/FileUpload';
 import { ProductPreview } from '../components/product-preview';
@@ -8,16 +7,40 @@ import { Info, FileSpreadsheet } from 'lucide-react';
 import { parseNFeXML } from '../utils/nfeParser';
 import { Product } from '../types/nfe';
 
+const STORAGE_KEYS = {
+  XAPURI_MARKUP: 'nfe_import_xapuri_markup',
+  EPITA_MARKUP: 'nfe_import_epita_markup',
+  ROUNDING_TYPE: 'nfe_import_rounding_type'
+};
+
 const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    // Adiciona o evento de confirmação antes de sair/atualizar a página
+    const savedXapuriMarkup = localStorage.getItem(STORAGE_KEYS.XAPURI_MARKUP);
+    const savedEpitaMarkup = localStorage.getItem(STORAGE_KEYS.EPITA_MARKUP);
+    const savedRoundingType = localStorage.getItem(STORAGE_KEYS.ROUNDING_TYPE);
+
+    if (savedXapuriMarkup) {
+      const markup = Number(savedXapuriMarkup);
+      console.log('Carregando markup Xapuri:', markup);
+    }
+    
+    if (savedEpitaMarkup) {
+      const markup = Number(savedEpitaMarkup);
+      console.log('Carregando markup Epitaciolândia:', markup);
+    }
+
+    if (savedRoundingType) {
+      console.log('Carregando tipo de arredondamento:', savedRoundingType);
+    }
+  }, []);
+
+  useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (products.length > 0) {
         e.preventDefault();
-        // A mensagem abaixo pode não aparecer em alguns navegadores, que usam mensagens padrão
         e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair da página?';
         return e.returnValue;
       }
@@ -52,7 +75,6 @@ const Index = () => {
   };
 
   const handleExcelExport = () => {
-    // Criar o conteúdo CSV
     const headers = ['Código', 'EAN', 'Nome', 'NCM', 'CFOP', 'UOM', 'Quantidade', 'Preço Unit.', 'Total', 'Desconto', 'Líquido', 'Cor', 'Preço Venda'];
     const rows = products.map(p => [
       p.code,
@@ -75,7 +97,6 @@ const Index = () => {
       ...rows.map(row => row.join(','))
     ].join('\n');
 
-    // Criar e baixar o arquivo
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -86,6 +107,22 @@ const Index = () => {
     document.body.removeChild(link);
     
     toast.success('Produtos exportados para Excel com sucesso!');
+  };
+
+  const handleConfigurationUpdate = (
+    xapuriMarkup: number, 
+    epitaMarkup: number, 
+    roundingType: string
+  ) => {
+    localStorage.setItem(STORAGE_KEYS.XAPURI_MARKUP, xapuriMarkup.toString());
+    localStorage.setItem(STORAGE_KEYS.EPITA_MARKUP, epitaMarkup.toString());
+    localStorage.setItem(STORAGE_KEYS.ROUNDING_TYPE, roundingType);
+    
+    console.log('Configurações salvas:', {
+      xapuriMarkup,
+      epitaMarkup,
+      roundingType
+    });
   };
 
   return (
@@ -125,6 +162,7 @@ const Index = () => {
               products={products} 
               onProductUpdate={handleProductUpdate}
               editable={true}
+              onConfigurationUpdate={handleConfigurationUpdate}
             />
             <div className="flex justify-end gap-4">
               <Button 
