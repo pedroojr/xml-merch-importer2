@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Image as ImageIcon, Search, Download } from "lucide-react";
@@ -35,19 +35,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   const [searchResults, setSearchResults] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleSearchClick = async (product: Product) => {
-    setLoading(true);
-    // Simular resultados de busca com placeholder
-    // Na vida real, isso viria de uma API de busca de imagens
-    setSearchResults([
-      'https://picsum.photos/200/200?random=1',
-      'https://picsum.photos/200/200?random=2',
-      'https://picsum.photos/200/200?random=3',
-      'https://picsum.photos/200/200?random=4',
-      'https://picsum.photos/200/200?random=5',
-      'https://picsum.photos/200/200?random=6'
-    ]);
-    setLoading(false);
+  const openGoogleSearch = (product: Product) => {
+    const searchTerms = `${product.ean || ''} ${product.reference || ''} ${product.code || ''}`.trim();
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(searchTerms)}&tbm=isch`, '_blank');
   };
 
   return (
@@ -99,18 +89,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setSelectedProductIndex(isSelected ? null : index)}
+                      onClick={() => openGoogleSearch(product)}
                       className="w-full"
+                      title="Buscar imagem no Google"
                     >
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-8 h-8 object-cover rounded"
-                        />
-                      ) : (
-                        <ImageIcon className="w-4 h-4" />
-                      )}
+                      <ImageIcon className="w-4 h-4" />
                     </Button>
                   </TableCell>
                 )}
@@ -146,16 +129,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        setSelectedProductIndex(isSelected ? null : index);
-                        if (!isSelected) handleSearchClick(product);
-                      }}
-                    >
-                      <ImageIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
                       onClick={() => handleToggleVisibility(index)}
                     >
                       <EyeOff className="h-4 w-4" />
@@ -163,57 +136,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   </div>
                 </TableCell>
               </TableRow>
-              {isSelected && (
-                <TableRow>
-                  <TableCell colSpan={columns.filter(col => visibleColumns.has(col.id)).length + 1}>
-                    <div className="p-4 space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold">{product.name}</h3>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleSearchClick(product)}
-                          className="gap-2"
-                        >
-                          <Search className="h-4 w-4" />
-                          Buscar Imagens
-                        </Button>
-                      </div>
-
-                      {loading ? (
-                        <div className="h-64 flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-3 gap-4">
-                          {searchResults.map((url, idx) => (
-                            <div key={idx} className="relative group">
-                              <img
-                                src={url}
-                                alt={`Result ${idx + 1}`}
-                                className="w-full h-48 object-cover rounded-lg"
-                              />
-                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  className="gap-2"
-                                  onClick={() => {
-                                    // Aqui você implementaria a lógica para salvar a imagem
-                                    console.log('Salvando imagem:', url);
-                                  }}
-                                >
-                                  <Download className="h-4 w-4" />
-                                  Selecionar
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
             </React.Fragment>
           );
         })}
