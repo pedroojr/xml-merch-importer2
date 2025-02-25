@@ -4,9 +4,16 @@ export type BrandInfo = {
   confidence: number;
 };
 
-export const extractReferencePattern = (text: string): string | null => {
+type ReferencePattern = {
+  pattern: RegExp;
+  brand: string | ((match: string) => string);
+  confidence: number;
+  extract: (match: RegExpMatchArray) => string;
+};
+
+export const extractReferencePattern = (text: string): BrandInfo | null => {
   // Padrões comuns de referência
-  const patterns = [
+  const patterns: ReferencePattern[] = [
     // Malharia Cristina: 1000557-300009-10 (pegamos apenas 1000557)
     {
       pattern: /(\d{7})-\d{6}-\d{2}/,
@@ -24,7 +31,7 @@ export const extractReferencePattern = (text: string): string | null => {
     // Letra seguida de números (ex: K12345, M1234)
     {
       pattern: /([A-Z][0-9]{4,5})/i,
-      brand: (match: string) => `REF-${match[0].toUpperCase()}`,
+      brand: (match: string) => `REF-${match.toUpperCase()}`,
       confidence: 0.8,
       extract: (match: RegExpMatchArray) => match[1]
     },
@@ -43,7 +50,6 @@ export const extractReferencePattern = (text: string): string | null => {
       const reference = def.extract(match);
       const brand = typeof def.brand === 'function' ? def.brand(reference) : def.brand;
       return {
-        reference,
         brand,
         confidence: def.confidence
       };
@@ -58,10 +64,7 @@ export const identifyBrand = (reference: string, name: string): BrandInfo => {
   const refMatch = extractReferencePattern(reference) || extractReferencePattern(name);
   
   if (refMatch) {
-    return {
-      brand: refMatch.brand,
-      confidence: refMatch.confidence
-    };
+    return refMatch;
   }
 
   // Se não encontrou nenhum padrão conhecido

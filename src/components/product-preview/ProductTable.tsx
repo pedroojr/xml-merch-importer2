@@ -41,7 +41,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   const [searchResults, setSearchResults] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [copiedField, setCopiedField] = useState<string>('');
-  const [showConfirmed, setShowConfirmed] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
   const [showUnconfirmed, setShowUnconfirmed] = useState(false);
 
   const openGoogleSearch = (product: Product) => {
@@ -112,11 +112,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-2">
             <Switch
-              id="show-confirmed"
-              checked={showConfirmed}
-              onCheckedChange={setShowConfirmed}
+              id="show-hidden"
+              checked={showHidden}
+              onCheckedChange={setShowHidden}
             />
-            <Label htmlFor="show-confirmed">Mostrar apenas confirmados</Label>
+            <Label htmlFor="show-hidden">Mostrar apenas ocultados</Label>
           </div>
           <div className="flex items-center space-x-2">
             <Switch
