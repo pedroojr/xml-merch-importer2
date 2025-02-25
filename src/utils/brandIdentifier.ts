@@ -2,16 +2,9 @@
 export type BrandInfo = {
   brand: string;
   confidence: number;
-  reference?: string;
 };
 
-type ReferenceMatch = {
-  reference: string;
-  brand: string;
-  confidence: number;
-} | null;
-
-export const extractReferencePattern = (text: string): ReferenceMatch => {
+export const extractReferencePattern = (text: string): string | null => {
   // Padrões comuns de referência
   const patterns = [
     // Malharia Cristina: 1000557-300009-10 (pegamos apenas 1000557)
@@ -67,8 +60,7 @@ export const identifyBrand = (reference: string, name: string): BrandInfo => {
   if (refMatch) {
     return {
       brand: refMatch.brand,
-      confidence: refMatch.confidence,
-      reference: refMatch.reference
+      confidence: refMatch.confidence
     };
   }
 
