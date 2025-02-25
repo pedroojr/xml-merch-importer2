@@ -2,6 +2,7 @@
 import { Product } from '../types/nfe';
 import { extrairCorDaDescricao } from './colorParser';
 import { extrairTamanhoDaDescricao } from './sizeParser';
+import { identifyBrand } from './brandIdentifier';
 
 export const parseNFeXML = (xmlText: string): Product[] => {
   const parser = new DOMParser();
@@ -107,6 +108,9 @@ export const parseNFeXML = (xmlText: string): Product[] => {
     const corIdentificada = extrairCorDaDescricao(nome);
     const tamanho = extrairTamanhoDaDescricao(nome);
     const referencia = codigo;
+
+    // Identifica a marca baseada na referência e nome
+    const { brand, confidence } = identifyBrand(referencia, nome);
     
     const product: Product = {
       code: codigo,
@@ -125,7 +129,9 @@ export const parseNFeXML = (xmlText: string): Product[] => {
       reference: referencia,
       useMarkup: false,
       markup: 30,
-      salePrice: netPrice * 1.3
+      salePrice: netPrice * 1.3,
+      brand: brand, // Adicionando a marca identificada
+      brandConfidence: confidence // Adicionando o nível de confiança da identificação
     };
     
     products.push(product);

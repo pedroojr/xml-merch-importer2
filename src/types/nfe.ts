@@ -18,4 +18,6 @@ export interface Product {
   markup: number;       // Percentual de markup
   salePrice: number;    // Preço de venda calculado
   imageUrl?: string;    // URL da imagem do produto
+  brand: string;        // Marca identificada do produto
+  brandConfidence: number; // Nível de confiança na identificação da marca (0-1)
 }
