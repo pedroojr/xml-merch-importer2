@@ -1,12 +1,13 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Image as ImageIcon, Search, Download } from "lucide-react";
+import { Eye, EyeOff, Image as ImageIcon, Search, Download, Copy, Check } from "lucide-react";
 import { Product } from '../../types/nfe';
 import { Column } from './types/column';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { generateProductDescription } from './productDescription';
 
 interface ProductTableProps {
   products: Product[];
@@ -34,10 +35,22 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   const [selectedProductIndex, setSelectedProductIndex] = useState<number | null>(null);
   const [searchResults, setSearchResults] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [copiedField, setCopiedField] = useState<string>('');
 
   const openGoogleSearch = (product: Product) => {
     const searchTerms = `${product.ean || ''} ${product.reference || ''} ${product.code || ''}`.trim();
     window.open(`https://www.google.com/search?q=${encodeURIComponent(searchTerms)}&tbm=isch`, '_blank');
+  };
+
+  const handleCopyToClipboard = async (value: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(field);
+      toast.success('Copiado para a área de transferência');
+      setTimeout(() => setCopiedField(''), 2000);
+    } catch (err) {
+      toast.error('Erro ao copiar');
+    }
   };
 
   return (
@@ -74,7 +87,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           const xapuriPrice = roundPrice(baseXapuriPrice, roundingType);
           const epitaPrice = roundPrice(baseEpitaPrice, roundingType);
 
-          const isSelected = selectedProductIndex === index;
+          const betterDescription = generateProductDescription(product);
 
           return (
             <React.Fragment key={product.code}>
@@ -108,6 +121,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   if (column.id === 'epitaPrice') value = epitaPrice;
                   if (column.id === 'unitPrice') value = product.unitPrice;
                   if (column.id === 'netPrice') value = unitNetPrice;
+                  if (column.id === 'name') value = betterDescription;
+
+                  const copyId = `${column.id}-${index}`;
+                  const isCopied = copiedField === copyId;
 
                   return (
                     <TableCell
@@ -118,9 +135,19 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                         column.id === 'xapuriPrice' ? 'bg-blue-50' : ''
                       } ${
                         column.id === 'epitaPrice' ? 'bg-emerald-50' : ''
-                      }`}
+                      } group relative cursor-pointer hover:bg-slate-200`}
+                      onClick={() => handleCopyToClipboard(value?.toString() || '', copyId)}
                     >
-                      {column.format ? column.format(value) : value}
+                      <div className="flex items-center gap-2 justify-between">
+                        <span>{column.format ? column.format(value) : value}</span>
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          {isCopied ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Copy className="h-4 w-4 text-gray-500" />
+                          )}
+                        </span>
+                      </div>
                     </TableCell>
                   );
                 })}
