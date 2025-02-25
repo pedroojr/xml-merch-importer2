@@ -12,3 +12,8 @@ export const formatNumber = (value: number): string => {
     maximumFractionDigits: 4
   }).format(value);
 };
+
+// Função para converter número para formato brasileiro ao copiar
+export const formatNumberForCopy = (value: number, decimalPlaces: number = 2): string => {
+  return value.toFixed(decimalPlaces).replace('.', ',');
+};

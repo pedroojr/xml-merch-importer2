@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -51,11 +50,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           column.id.toLowerCase().includes('discount') || 
           column.id === 'unitPrice' || 
           column.id === 'netPrice') {
-        return value.toFixed(2);
+        return formatNumberForCopy(value, 2);
       }
       // Para quantidades, mantém até 4 casas decimais
       if (column.id === 'quantity') {
-        return value.toFixed(4);
+        return formatNumberForCopy(value, 4);
       }
     }
     return value?.toString() || '';
