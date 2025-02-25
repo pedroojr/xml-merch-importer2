@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Image as ImageIcon } from "lucide-react";
+import { Eye, EyeOff, Image as ImageIcon, Search, Download } from "lucide-react";
 import { Product } from '../../types/nfe';
 import { Column } from './types/column';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
@@ -32,11 +32,22 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   roundingType,
 }) => {
   const [selectedProductIndex, setSelectedProductIndex] = useState<number | null>(null);
-  const [imageUrl, setImageUrl] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleImageUrlChange = (index: number, url: string) => {
-    setImageUrl(url);
-    setSelectedProductIndex(index);
+  const handleSearchClick = async (product: Product) => {
+    setLoading(true);
+    // Simular resultados de busca com placeholder
+    // Na vida real, isso viria de uma API de busca de imagens
+    setSearchResults([
+      'https://picsum.photos/200/200?random=1',
+      'https://picsum.photos/200/200?random=2',
+      'https://picsum.photos/200/200?random=3',
+      'https://picsum.photos/200/200?random=4',
+      'https://picsum.photos/200/200?random=5',
+      'https://picsum.photos/200/200?random=6'
+    ]);
+    setLoading(false);
   };
 
   return (
@@ -88,7 +99,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleImageSearch(index, product)}
+                      onClick={() => setSelectedProductIndex(isSelected ? null : index)}
                       className="w-full"
                     >
                       {product.imageUrl ? (
@@ -135,7 +146,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setSelectedProductIndex(isSelected ? null : index)}
+                      onClick={() => {
+                        setSelectedProductIndex(isSelected ? null : index);
+                        if (!isSelected) handleSearchClick(product);
+                      }}
                     >
                       <ImageIcon className="h-4 w-4" />
                     </Button>
@@ -153,31 +167,47 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 <TableRow>
                   <TableCell colSpan={columns.filter(col => visibleColumns.has(col.id)).length + 1}>
                     <div className="p-4 space-y-4">
-                      <div className="flex gap-4 items-start">
-                        <div className="flex-1">
-                          <Input
-                            type="text"
-                            placeholder="Cole a URL da imagem aqui"
-                            value={imageUrl}
-                            onChange={(e) => handleImageUrlChange(index, e.target.value)}
-                            className="w-full"
-                          />
-                        </div>
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold">{product.name}</h3>
                         <Button
                           variant="outline"
-                          onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(product.name)}&tbm=isch`, '_blank')}
+                          onClick={() => handleSearchClick(product)}
+                          className="gap-2"
                         >
+                          <Search className="h-4 w-4" />
                           Buscar Imagens
                         </Button>
                       </div>
-                      {imageUrl && (
-                        <div className="relative w-full h-64 bg-slate-100 rounded-lg overflow-hidden">
-                          <img
-                            src={imageUrl}
-                            alt={product.name}
-                            className="w-full h-full object-contain"
-                            onError={() => setImageUrl('')}
-                          />
+
+                      {loading ? (
+                        <div className="h-64 flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-4">
+                          {searchResults.map((url, idx) => (
+                            <div key={idx} className="relative group">
+                              <img
+                                src={url}
+                                alt={`Result ${idx + 1}`}
+                                className="w-full h-48 object-cover rounded-lg"
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="gap-2"
+                                  onClick={() => {
+                                    // Aqui você implementaria a lógica para salvar a imagem
+                                    console.log('Salvando imagem:', url);
+                                  }}
+                                >
+                                  <Download className="h-4 w-4" />
+                                  Selecionar
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
