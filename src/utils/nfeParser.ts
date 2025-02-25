@@ -34,13 +34,13 @@ export const parseNFeXML = (xmlText: string): Product[] => {
   };
   
   // Extrai os dados específicos para impostos ICMS
-  const getICMSInfo = (icmsElement: Element) => {
-    if (!icmsElement) return { cst: "", orig: "" };
+  const getICMSInfo = (element: Element) => {
+    if (!element) return { cst: "", orig: "" };
     
     const icmsGroups = ['00', '10', '20', '30', '40', '51', '60', '70', '90'];
     
     for (const group of icmsGroups) {
-      const icmsNode = icmsElement.getElementsByTagNameNS(ns, `ICMS${group}`)[0];
+      const icmsNode = element.getElementsByTagNameNS(ns, `ICMS${group}`)[0];
       if (icmsNode) {
         return {
           cst: getElementText(icmsNode, "CST"),
@@ -50,7 +50,7 @@ export const parseNFeXML = (xmlText: string): Product[] => {
     }
     
     // Tenta CSOSN para Simples Nacional
-    const icmsSN = icmsElement.getElementsByTagNameNS(ns, "ICMSSN")[0];
+    const icmsSN = element.getElementsByTagNameNS(ns, "ICMSSN")[0];
     if (icmsSN) {
       return {
         cst: getElementText(icmsSN, "CSOSN"),
@@ -75,9 +75,18 @@ export const parseNFeXML = (xmlText: string): Product[] => {
     
     const icmsInfo = getICMSInfo(icms);
     
+    // Obtém valores brutos e descontos
+    const quantity = parseNumber(getElementText(prod, "qCom"));
+    const unitPrice = parseNumber(getElementText(prod, "vUnCom"));
     const totalPrice = parseNumber(getElementText(prod, "vProd"));
-    const discount = parseNumber(getElementText(item, "vDesc"));
-    const netPrice = totalPrice - discount;
+    
+    // Busca descontos em diferentes locais do XML
+    const discountProd = parseNumber(getElementText(prod, "vDesc")); // Desconto no nível do produto
+    const discountItem = parseNumber(getElementText(item, "vDesc")); // Desconto no nível do item
+    const totalDiscount = discountProd + discountItem; // Soma todos os descontos
+    
+    // Calcula o valor líquido correto (valor total - desconto total)
+    const netPrice = totalPrice - totalDiscount;
     
     const nome = getElementText(prod, "xProd");
     const codigo = getElementText(prod, "cProd");
@@ -94,10 +103,10 @@ export const parseNFeXML = (xmlText: string): Product[] => {
       ncm: getElementText(prod, "NCM"),
       cfop: getElementText(prod, "CFOP"),
       uom: getElementText(prod, "uCom"),
-      quantity: parseNumber(getElementText(prod, "qCom")),
-      unitPrice: parseNumber(getElementText(prod, "vUnCom")),
+      quantity: quantity,
+      unitPrice: unitPrice,
       totalPrice: totalPrice,
-      discount: discount,
+      discount: totalDiscount,
       netPrice: netPrice,
       color: corIdentificada || '',
       size: tamanho,
