@@ -30,6 +30,11 @@ const sizePatterns: SizePattern[] = [
     pattern: /-(\d{1,2})(?:\s|$)/,
     sizes: [], // Dinâmico, números no final da referência
     description: 'Números no final da referência (estilo Kelly)'
+  },
+  {
+    pattern: /(?:FEMININA|MASCULINA|INFANTIL)-(\d{1,2})-/i,
+    sizes: [], // Dinâmico, padrão Elian: IG FEMININA-12-2037
+    description: 'Padrão Elian (número entre hífens)'
   }
 ];
 
@@ -85,10 +90,21 @@ export const extrairTamanhoDaDescricao = (descricao: string): string => {
 
   const textoNormalizado = descricao.toUpperCase();
   
+  // Padrão Elian: extrai número entre hífens após FEMININA/MASCULINA/INFANTIL
+  const matchElian = textoNormalizado.match(/(?:FEMININA|MASCULINA|INFANTIL)-(\d{1,2})-/i);
+  if (matchElian && matchElian[1]) {
+    const tamanho = matchElian[1];
+    if (validarTamanho(tamanho)) {
+      return tamanho;
+    }
+  }
+
+  // Casos especiais para produtos infantis
   if (textoNormalizado.includes('INFAN') && textoNormalizado.includes('COMUM')) {
     return 'INFANTIL';
   }
 
+  // Outros padrões de tamanho
   for (const { pattern } of sizePatterns) {
     const match = textoNormalizado.match(pattern);
     if (match && match[1]) {
