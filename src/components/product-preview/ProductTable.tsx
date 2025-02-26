@@ -130,7 +130,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         </div>
       </div>
 
-      <div className="w-full relative">
+      <div className="w-full">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/50">
