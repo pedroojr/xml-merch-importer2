@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import FileUpload from '../components/FileUpload';
 import { ProductPreview } from '../components/product-preview';
@@ -126,10 +127,10 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+      <div className="w-full max-w-[100vw] px-4 py-8">
         {products.length === 0 && (
-          <>
+          <div className="max-w-7xl mx-auto space-y-8">
             <div className="text-center">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-sm font-medium mb-4">
                 <Info size={16} />
@@ -146,7 +147,7 @@ const Index = () => {
                 <FileUpload onFileSelect={handleFileSelect} />
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {isProcessing && (
@@ -157,20 +158,22 @@ const Index = () => {
         )}
 
         {products.length > 0 && (
-          <div className="space-y-6 animate-fade-up">
-            <ProductPreview 
-              products={products} 
-              onProductUpdate={handleProductUpdate}
-              editable={true}
-              onConfigurationUpdate={handleConfigurationUpdate}
-            />
-            <div className="flex justify-end gap-4">
+          <div className="w-full animate-fade-up">
+            <div className="w-full">
+              <ProductPreview 
+                products={products} 
+                onProductUpdate={handleProductUpdate}
+                editable={true}
+                onConfigurationUpdate={handleConfigurationUpdate}
+              />
+            </div>
+            <div className="flex justify-end gap-4 mt-6 px-4">
               <Button 
                 variant="outline"
                 onClick={handleExcelExport}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
-                <FileSpreadsheet size={18} />
+                <FileSpreadsheet size={18} className="mr-2" />
                 Exportar para Excel
               </Button>
               <Button 
