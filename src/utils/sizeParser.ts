@@ -1,3 +1,4 @@
+
 interface SizePattern {
   pattern: RegExp;
   sizes: string[];
@@ -26,14 +27,13 @@ const sizePatterns: SizePattern[] = [
     description: 'Categorias de tamanho'
   },
   {
-    pattern: /INFAN[\.TIL]*[\s-]*(DE USO )?COMUM/i,
-    sizes: ['INFANTIL'],
-    description: 'Tamanho infantil em descrições específicas'
+    pattern: /-(\d{1,2})(?:\s|$)/,
+    sizes: [], // Dinâmico, números no final da referência
+    description: 'Números no final da referência (estilo Kelly)'
   }
 ];
 
 const normalizarTamanho = (tamanho: string): string => {
-  // Remove espaços extras e converte para maiúsculas
   const normalizado = tamanho.trim().toUpperCase();
   
   // Padroniza nomenclaturas específicas
@@ -50,14 +50,12 @@ const normalizarTamanho = (tamanho: string): string => {
 };
 
 const validarTamanho = (tamanho: string): boolean => {
-  // Lista de tamanhos válidos conhecidos
   const tamanhosValidos = new Set([
     'PP', 'P', 'M', 'G', 'GG', 'XG', 'XXG',
     'INFANTIL', 'ADULTO', 'JUVENIL'
   ]);
 
-  // Padrões de tamanhos numéricos válidos
-  const padraoNumerico = /^\d{2,3}$/;  // 2 ou 3 dígitos
+  const padraoNumerico = /^\d{1,2}$/;  // 1 ou 2 dígitos
   const padraoFaixa = /^\d{2}\/\d{2}$/;  // formato 00/00
 
   const tamanhoNormalizado = normalizarTamanho(tamanho);
@@ -67,12 +65,26 @@ const validarTamanho = (tamanho: string): boolean => {
          padraoFaixa.test(tamanhoNormalizado);
 };
 
+export const extrairTamanhoDaReferencia = (referencia: string): string => {
+  if (!referencia) return '';
+
+  // Procura por número no final da referência (estilo Kelly)
+  const match = referencia.match(/-(\d{1,2})(?:\s|$)/);
+  if (match && match[1]) {
+    const tamanho = match[1];
+    if (validarTamanho(tamanho)) {
+      return tamanho;
+    }
+  }
+
+  return '';
+};
+
 export const extrairTamanhoDaDescricao = (descricao: string): string => {
   if (!descricao) return '';
 
   const textoNormalizado = descricao.toUpperCase();
   
-  // Casos especiais para produtos infantis
   if (textoNormalizado.includes('INFAN') && textoNormalizado.includes('COMUM')) {
     return 'INFANTIL';
   }

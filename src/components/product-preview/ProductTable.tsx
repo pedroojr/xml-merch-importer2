@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { extrairTamanhoDaDescricao } from '../../utils/sizeParser';
+import { extrairTamanhoDaDescricao, extrairTamanhoDaReferencia } from '../../utils/sizeParser';
 
 interface ProductTableProps {
   products: Product[];
@@ -157,9 +156,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               const xapuriPrice = roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup), roundingType);
               const epitaPrice = roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup), roundingType);
               
+              const tamanhoReferencia = extrairTamanhoDaReferencia(product.reference);
               const tamanhoDescricao = extrairTamanhoDaDescricao(product.name);
-              const tamanhoReferencia = extrairTamanhoDaDescricao(product.reference);
-              const tamanho = tamanhoDescricao || tamanhoReferencia;
+              const tamanho = tamanhoReferencia || tamanhoDescricao || '';
 
               return (
                 <TableRow 
