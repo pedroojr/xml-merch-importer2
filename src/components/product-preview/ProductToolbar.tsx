@@ -43,21 +43,9 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
   onToggleColumn,
   onNewFileRequest,
 }) => {
-  const handleColumnToggle = (columnId: string) => {
-    onToggleColumn(columnId);
-    // Salva a configuração atual no localStorage
-    const currentConfig = new Set(visibleColumns);
-    if (currentConfig.has(columnId)) {
-      currentConfig.delete(columnId);
-    } else {
-      currentConfig.add(columnId);
-    }
-    localStorage.setItem('visibleColumns', JSON.stringify(Array.from(currentConfig)));
-  };
-
   return (
-    <div className="p-4 border-b">
-      <div className="flex items-center justify-between mb-4">
+    <div className="py-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <MarkupControls
           xapuriMarkup={xapuriMarkup}
           epitaMarkup={epitaMarkup}
@@ -66,12 +54,12 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
           onEpitaMarkupChange={onEpitaMarkupChange}
           onRoundingChange={onRoundingChange}
         />
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
           <Button
             variant="outline"
             size="sm"
             onClick={onNewFileRequest}
-            className="min-w-[140px]"
+            className="flex-1 md:flex-none md:min-w-[140px]"
           >
             <FileText className="h-4 w-4 mr-2" />
             Nova Nota
@@ -80,13 +68,17 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
             variant="outline"
             size="sm"
             onClick={toggleCompactMode}
-            className="min-w-[140px]"
+            className="flex-1 md:flex-none md:min-w-[140px]"
           >
             {compactMode ? 'Modo Detalhado' : 'Modo Compacto'}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="min-w-[160px]">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 md:flex-none md:min-w-[160px]"
+              >
                 <Columns className="h-4 w-4 mr-2" />
                 Personalizar Visão
               </Button>
@@ -98,7 +90,7 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
                 <DropdownMenuCheckboxItem
                   key={column.id}
                   checked={visibleColumns.has(column.id)}
-                  onCheckedChange={() => handleColumnToggle(column.id)}
+                  onCheckedChange={() => onToggleColumn(column.id)}
                 >
                   {column.header}
                 </DropdownMenuCheckboxItem>

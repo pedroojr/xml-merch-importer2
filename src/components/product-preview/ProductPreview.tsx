@@ -48,13 +48,14 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   });
 
   const columns = getDefaultColumns();
-  const defaultVisibleColumns = new Set(
-    localStorage.getItem('visibleColumns') ? 
-      JSON.parse(localStorage.getItem('visibleColumns')!) : 
-      compactMode ? compactColumns : columns.map(col => col.id)
-  );
-
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(defaultVisibleColumns);
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('visibleColumns');
+    if (saved) {
+      const parsedColumns = JSON.parse(saved) as string[];
+      return new Set(parsedColumns);
+    }
+    return new Set(compactMode ? compactColumns : columns.map(col => col.id));
+  });
 
   // Persistir configurações
   useEffect(() => {
@@ -84,12 +85,15 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
       newVisibleColumns.add(columnId);
     }
     setVisibleColumns(newVisibleColumns);
+    localStorage.setItem('visibleColumns', JSON.stringify(Array.from(newVisibleColumns)));
   };
 
   const toggleCompactMode = () => {
     const newMode = !compactMode;
     setCompactMode(newMode);
-    setVisibleColumns(new Set(newMode ? compactColumns : columns.map(col => col.id)));
+    const newColumns = new Set(newMode ? compactColumns : columns.map(col => col.id));
+    setVisibleColumns(newColumns);
+    localStorage.setItem('visibleColumns', JSON.stringify(Array.from(newColumns)));
   };
 
   const handleToggleVisibility = (index: number) => {
@@ -112,8 +116,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
-          // Aqui você pode processar o novo arquivo
-          // Por enquanto vamos apenas simular com os produtos existentes
           onNewFile?.(products);
           toast.success('Nova nota carregada com sucesso');
         } catch (error) {
@@ -125,29 +127,31 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       <div className="rounded-lg border bg-white shadow-sm animate-fade-up">
         <Tabs defaultValue="unified" className="w-full">
-          <TabsList className="w-full justify-start border-b rounded-none px-4">
+          <TabsList className="w-full justify-start border-b rounded-none px-4 overflow-x-auto flex-nowrap">
             <TabsTrigger value="unified">Visão Unificada</TabsTrigger>
             <TabsTrigger value="insights">Insights e Análises</TabsTrigger>
           </TabsList>
 
           <TabsContent value="unified" className="relative">
-            <ProductToolbar
-              xapuriMarkup={xapuriMarkup}
-              epitaMarkup={epitaMarkup}
-              roundingType={roundingType}
-              onXapuriMarkupChange={(value) => handleMarkupChange(value, epitaMarkup, roundingType)}
-              onEpitaMarkupChange={(value) => handleMarkupChange(xapuriMarkup, value, roundingType)}
-              onRoundingChange={(value) => handleMarkupChange(xapuriMarkup, epitaMarkup, value)}
-              compactMode={compactMode}
-              toggleCompactMode={toggleCompactMode}
-              columns={columns}
-              visibleColumns={visibleColumns}
-              onToggleColumn={toggleColumn}
-              onNewFileRequest={handleNewFileRequest}
-            />
+            <div className="md:px-4 px-2">
+              <ProductToolbar
+                xapuriMarkup={xapuriMarkup}
+                epitaMarkup={epitaMarkup}
+                roundingType={roundingType}
+                onXapuriMarkupChange={(value) => handleMarkupChange(value, epitaMarkup, roundingType)}
+                onEpitaMarkupChange={(value) => handleMarkupChange(xapuriMarkup, value, roundingType)}
+                onRoundingChange={(value) => handleMarkupChange(xapuriMarkup, epitaMarkup, value)}
+                compactMode={compactMode}
+                toggleCompactMode={toggleCompactMode}
+                columns={columns}
+                visibleColumns={visibleColumns}
+                onToggleColumn={toggleColumn}
+                onNewFileRequest={handleNewFileRequest}
+              />
+            </div>
 
             <div className="overflow-x-auto">
               <ProductTable
