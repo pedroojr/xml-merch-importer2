@@ -25,10 +25,16 @@ export const getDefaultColumns = (): Column[] => [
     width: 'w-28'
   },
   { 
-    id: 'ean', 
-    header: 'EAN', 
+    id: 'name', 
+    header: 'Descrição', 
     initiallyVisible: true,
-    width: 'w-32'
+    width: 'min-w-[300px]'
+  },
+  { 
+    id: 'size', 
+    header: 'Tam.', 
+    initiallyVisible: true,
+    width: 'w-16'
   },
   { 
     id: 'reference', 
@@ -37,16 +43,10 @@ export const getDefaultColumns = (): Column[] => [
     width: 'w-32'
   },
   { 
-    id: 'name', 
-    header: 'Descrição', 
+    id: 'ean', 
+    header: 'EAN', 
     initiallyVisible: true,
-    width: 'min-w-[200px] max-w-[280px]'
-  },
-  { 
-    id: 'size', 
-    header: 'Tam.', 
-    initiallyVisible: true,
-    width: 'w-16'
+    width: 'w-32'
   },
   { 
     id: 'color', 
@@ -140,15 +140,15 @@ export const getDefaultColumns = (): Column[] => [
 ];
 
 export const compactColumns = [
-  'image',         // Imagem
-  'reference',     // Referência
-  'name',          // Descrição
-  'size',          // Tamanho
-  'color',         // Cor
-  'ean',           // EAN
-  'quantity',      // Quantidade
-  'unitPrice',     // Custo Unitário
-  'unitDiscount',  // Desconto Unitário
-  'xapuriPrice',   // Preço Xapuri
-  'epitaPrice',    // Preço Epitaciolândia
+  'image',
+  'name',
+  'size',
+  'reference',
+  'ean',
+  'quantity',
+  'unitPrice',
+  'unitDiscount',
+  'xapuriPrice',
+  'epitaPrice',
 ];
+

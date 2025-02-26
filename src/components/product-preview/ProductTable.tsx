@@ -200,15 +200,19 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                         className={cn(
                           column.width,
                           "px-3 group relative cursor-pointer text-sm",
+                          column.id === 'name' && "break-words whitespace-normal",
                           column.alignment === 'right' && "text-right tabular-nums",
                           column.id === 'xapuriPrice' && "bg-blue-50/50",
                           column.id === 'epitaPrice' && "bg-emerald-50/50"
                         )}
                         onClick={() => handleCopyToClipboard(value, column, copyId)}
                       >
-                        <div className="flex items-center gap-1 justify-between">
+                        <div className={cn(
+                          "flex items-center gap-1",
+                          column.alignment === 'right' ? "justify-end" : "justify-between"
+                        )}>
                           <span className={cn(
-                            "truncate",
+                            column.id === 'name' ? "whitespace-normal" : "truncate",
                             column.alignment === 'right' ? "ml-auto" : "mr-auto"
                           )}>
                             {column.format ? column.format(value) : value}
