@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Image as ImageIcon, Copy, Check, GripVertical } from "lucide-react";
@@ -47,10 +48,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     const saved = localStorage.getItem('columnWidths');
     return saved ? JSON.parse(saved) : {};
   });
-
-  useEffect(() => {
-    localStorage.setItem('showHidden', JSON.stringify(showHidden));
-  }, [showHidden]);
 
   const handleColumnResize = (columnId: string, width: number) => {
     const newWidths = { ...columnWidths, [columnId]: width };
@@ -232,7 +229,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                             column.id === 'name' ? "whitespace-normal" : "truncate",
                             column.alignment === 'right' ? "ml-auto" : "mr-auto"
                           )}>
-                            {column.format ? column.format(value, products[index]) : value}
+                            {column.format ? column.format(value) : value}
                           </span>
                           <span className={cn(
                             "transition-opacity flex-shrink-0",
