@@ -86,27 +86,14 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   const filteredProducts = filterProducts(products);
 
-  const totals = filteredProducts.reduce((acc, product) => {
-    const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
-    const baseXapuriPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup);
-    const baseEpitaPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup);
-    
-    const xapuriPrice = roundPrice(baseXapuriPrice, roundingType);
-    const epitaPrice = roundPrice(baseEpitaPrice, roundingType);
-
-    return {
-      quantidade: acc.quantidade + product.quantity,
-      valorTotal: acc.valorTotal + product.totalPrice,
-      valorLiquido: acc.valorLiquido + product.netPrice,
-      xapuri: acc.xapuri + (xapuriPrice * product.quantity),
-      epita: acc.epita + (epitaPrice * product.quantity),
-    };
-  }, {
+  const totals = filteredProducts.reduce((acc, product) => ({
+    quantidade: acc.quantidade + product.quantity,
+    valorTotal: acc.valorTotal + product.totalPrice,
+    valorLiquido: acc.valorLiquido + product.netPrice,
+  }), {
     quantidade: 0,
     valorTotal: 0,
     valorLiquido: 0,
-    xapuri: 0,
-    epita: 0,
   });
 
   return (
@@ -122,35 +109,23 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             <Label htmlFor="show-hidden" className="font-medium">Mostrar apenas ocultados</Label>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <Card>
-              <CardContent className="pt-4">
-                <div className="text-sm font-medium text-muted-foreground mb-1">Quantidade</div>
-                <div className="text-2xl font-bold">{totals.quantidade.toLocaleString('pt-BR')}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <div className="text-sm font-medium text-muted-foreground mb-1">Valor Total</div>
-                <div className="text-2xl font-bold">{totals.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+              <CardContent className="py-2">
+                <div className="text-xs font-medium text-muted-foreground">Quantidade</div>
+                <div className="text-lg font-semibold">{totals.quantidade.toLocaleString('pt-BR')}</div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-4">
-                <div className="text-sm font-medium text-muted-foreground mb-1">Valor Líquido</div>
-                <div className="text-2xl font-bold">{totals.valorLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+              <CardContent className="py-2">
+                <div className="text-xs font-medium text-muted-foreground">Valor Total</div>
+                <div className="text-lg font-semibold">{totals.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
               </CardContent>
             </Card>
-            <Card className="bg-blue-50">
-              <CardContent className="pt-4">
-                <div className="text-sm font-medium text-blue-600 mb-1">Total Xapuri</div>
-                <div className="text-2xl font-bold text-blue-700">{totals.xapuri.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-emerald-50">
-              <CardContent className="pt-4">
-                <div className="text-sm font-medium text-emerald-600 mb-1">Total Epitaciolândia</div>
-                <div className="text-2xl font-bold text-emerald-700">{totals.epita.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+            <Card>
+              <CardContent className="py-2">
+                <div className="text-xs font-medium text-muted-foreground">Valor Líquido</div>
+                <div className="text-lg font-semibold">{totals.valorLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
               </CardContent>
             </Card>
           </div>
