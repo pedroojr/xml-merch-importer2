@@ -16,68 +16,68 @@ export const getDefaultColumns = (): Column[] => [
     id: 'image', 
     header: 'Imagem', 
     initiallyVisible: true,
-    width: 'w-[80px]'
+    width: 'w-16'
   },
   { 
     id: 'code', 
     header: 'Código', 
     initiallyVisible: true,
-    width: 'w-[120px]'
+    width: 'w-24'
   },
   { 
     id: 'ean', 
     header: 'EAN', 
     initiallyVisible: true,
-    width: 'w-[140px]'
+    width: 'w-32'
   },
   { 
     id: 'reference', 
     header: 'Referência', 
     initiallyVisible: true,
-    width: 'w-[160px]'
+    width: 'w-36'
   },
   { 
     id: 'name', 
     header: 'Descrição', 
     initiallyVisible: true,
-    width: 'min-w-[200px] max-w-xl'
+    width: 'min-w-[180px] max-w-[300px]'
   },
   { 
     id: 'size', 
     header: 'Tamanho', 
     initiallyVisible: true,
-    width: 'w-[100px]'
+    width: 'w-20'
   },
   { 
     id: 'color', 
     header: 'Cor', 
     initiallyVisible: true,
-    width: 'w-[120px]'
+    width: 'w-28'
   },
   { 
     id: 'ncm', 
     header: 'NCM', 
     initiallyVisible: true,
-    width: 'w-[120px]'
+    width: 'w-24'
   },
   { 
     id: 'cfop', 
     header: 'CFOP', 
     initiallyVisible: true,
-    width: 'w-[100px]'
+    width: 'w-20'
   },
   { 
     id: 'uom', 
     header: 'Unidade', 
     initiallyVisible: true,
-    width: 'w-[100px]'
+    width: 'w-20'
   },
   { 
     id: 'quantity', 
     header: 'Quantidade', 
     initiallyVisible: true, 
     alignment: 'right',
-    width: 'w-[120px]',
+    width: 'w-24',
     format: (value: number) => value.toLocaleString()
   },
   { 
@@ -85,7 +85,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Custo Unit.', 
     initiallyVisible: true, 
     alignment: 'right',
-    width: 'w-[140px]',
+    width: 'w-28',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -93,7 +93,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Valor Total', 
     initiallyVisible: true, 
     alignment: 'right',
-    width: 'w-[140px]',
+    width: 'w-28',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -101,7 +101,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Desconto Total', 
     initiallyVisible: true, 
     alignment: 'right',
-    width: 'w-[140px]',
+    width: 'w-28',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -109,7 +109,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Desconto Unit.', 
     initiallyVisible: true, 
     alignment: 'right',
-    width: 'w-[140px]',
+    width: 'w-28',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
     getValue: (product: Product) => product.quantity > 0 ? product.discount / product.quantity : 0
   },
@@ -118,7 +118,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Valor Líquido', 
     initiallyVisible: true, 
     alignment: 'right',
-    width: 'w-[140px]',
+    width: 'w-28',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -126,7 +126,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Preço Xapuri', 
     initiallyVisible: true, 
     alignment: 'right',
-    width: 'w-[140px]',
+    width: 'w-28',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -134,7 +134,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Preço Epitaciolândia', 
     initiallyVisible: true, 
     alignment: 'right',
-    width: 'w-[160px]',
+    width: 'w-32',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   }
 ];
