@@ -1,4 +1,3 @@
-
 import { Product } from '../../../types/nfe';
 
 export interface Column {
@@ -155,6 +154,16 @@ export const getDefaultColumns = (): Column[] => [
     width: 'w-fit',
     minWidth: 112,
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  },
+  { 
+    id: 'discountPercent', 
+    header: 'Desc. %', 
+    initiallyVisible: true, 
+    alignment: 'right',
+    width: 'w-fit',
+    minWidth: 80,
+    format: (value: number) => value.toFixed(2) + '%',
+    getValue: (product: Product) => product.totalPrice > 0 ? (product.discount / product.totalPrice) * 100 : 0
   }
 ];
 
@@ -167,6 +176,7 @@ export const compactColumns = [
   'quantity',
   'unitPrice',
   'unitDiscount',
+  'discountPercent',
   'xapuriPrice',
   'epitaPrice',
 ];
