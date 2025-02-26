@@ -21,6 +21,13 @@ export const getDefaultColumns = (): Column[] => [
     minWidth: 48
   },
   { 
+    id: 'code', 
+    header: 'Código', 
+    initiallyVisible: true,
+    width: 'w-fit',
+    minWidth: 100
+  },
+  { 
     id: 'name', 
     header: 'Descrição', 
     initiallyVisible: true,
@@ -49,6 +56,34 @@ export const getDefaultColumns = (): Column[] => [
     minWidth: 120
   },
   { 
+    id: 'color', 
+    header: 'Cor', 
+    initiallyVisible: true,
+    width: 'w-fit',
+    minWidth: 96
+  },
+  { 
+    id: 'ncm', 
+    header: 'NCM', 
+    initiallyVisible: true,
+    width: 'w-fit',
+    minWidth: 96
+  },
+  { 
+    id: 'cfop', 
+    header: 'CFOP', 
+    initiallyVisible: true,
+    width: 'w-fit',
+    minWidth: 80
+  },
+  { 
+    id: 'uom', 
+    header: 'UN', 
+    initiallyVisible: true,
+    width: 'w-fit',
+    minWidth: 56
+  },
+  { 
     id: 'quantity', 
     header: 'Qtd.', 
     initiallyVisible: true, 
@@ -56,6 +91,15 @@ export const getDefaultColumns = (): Column[] => [
     width: 'w-fit',
     minWidth: 80,
     format: (value: number) => value.toLocaleString()
+  },
+  { 
+    id: 'unitPrice', 
+    header: 'Custo Un.', 
+    initiallyVisible: true, 
+    alignment: 'right',
+    width: 'w-fit',
+    minWidth: 112,
+    format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
     id: 'totalPrice', 
@@ -67,8 +111,8 @@ export const getDefaultColumns = (): Column[] => [
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
-    id: 'netPrice', 
-    header: 'Líquido', 
+    id: 'discount', 
+    header: 'Desc. Total', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-fit',
@@ -76,14 +120,23 @@ export const getDefaultColumns = (): Column[] => [
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
-    id: 'discountPercent', 
-    header: 'Desc. %', 
+    id: 'unitDiscount', 
+    header: 'Desc. Un.', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-fit',
-    minWidth: 80,
-    format: (value: number) => value.toFixed(2) + '%',
-    getValue: (product: Product) => product.totalPrice > 0 ? (product.discount / product.totalPrice) * 100 : 0
+    minWidth: 112,
+    format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    getValue: (product: Product) => product.quantity > 0 ? product.discount / product.quantity : 0
+  },
+  { 
+    id: 'netPrice', 
+    header: 'Líquido', 
+    initiallyVisible: true, 
+    alignment: 'right',
+    width: 'w-fit',
+    minWidth: 112,
+    format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
     id: 'xapuriPrice', 
@@ -112,9 +165,8 @@ export const compactColumns = [
   'reference',
   'ean',
   'quantity',
-  'totalPrice',
-  'netPrice',
-  'discountPercent',
+  'unitPrice',
+  'unitDiscount',
   'xapuriPrice',
   'epitaPrice',
 ];

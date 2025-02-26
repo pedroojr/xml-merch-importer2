@@ -50,7 +50,8 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(() => {
     const saved = localStorage.getItem('visibleColumns');
     if (saved) {
-      return new Set(JSON.parse(saved));
+      const parsedColumns = JSON.parse(saved) as string[];
+      return new Set(parsedColumns);
     }
     return new Set(compactMode ? compactColumns : columns.map(col => col.id));
   });
@@ -60,8 +61,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     localStorage.setItem('epitaMarkup', epitaMarkup.toString());
     localStorage.setItem('roundingType', roundingType);
     localStorage.setItem('compactMode', JSON.stringify(compactMode));
-    localStorage.setItem('visibleColumns', JSON.stringify(Array.from(visibleColumns)));
-  }, [xapuriMarkup, epitaMarkup, roundingType, compactMode, visibleColumns]);
+  }, [xapuriMarkup, epitaMarkup, roundingType, compactMode]);
 
   const handleMarkupChange = (xapuri: number, epita: number, rounding: RoundingType) => {
     setXapuriMarkup(xapuri);
@@ -83,16 +83,15 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
       newVisibleColumns.add(columnId);
     }
     setVisibleColumns(newVisibleColumns);
+    localStorage.setItem('visibleColumns', JSON.stringify(Array.from(newVisibleColumns)));
   };
 
   const toggleCompactMode = () => {
     const newMode = !compactMode;
     setCompactMode(newMode);
-    if (newMode) {
-      setVisibleColumns(new Set(compactColumns));
-    } else {
-      setVisibleColumns(new Set(columns.map(col => col.id)));
-    }
+    const newColumns = new Set(newMode ? compactColumns : columns.map(col => col.id));
+    setVisibleColumns(newColumns);
+    localStorage.setItem('visibleColumns', JSON.stringify(Array.from(newColumns)));
   };
 
   const handleToggleVisibility = (index: number) => {
