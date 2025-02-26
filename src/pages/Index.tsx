@@ -128,7 +128,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
-      <div className="w-full max-w-[100vw] px-4 py-8">
+      <div className="mx-auto max-w-[2000px] w-full px-4 py-8">
         {products.length === 0 && (
           <div className="max-w-7xl mx-auto space-y-8">
             <div className="text-center">
@@ -159,7 +159,7 @@ const Index = () => {
 
         {products.length > 0 && (
           <div className="w-full animate-fade-up">
-            <div className="w-full">
+            <div className="w-full bg-white rounded-lg shadow-sm border border-slate-200">
               <ProductPreview 
                 products={products} 
                 onProductUpdate={handleProductUpdate}
@@ -167,7 +167,7 @@ const Index = () => {
                 onConfigurationUpdate={handleConfigurationUpdate}
               />
             </div>
-            <div className="flex justify-end gap-4 mt-6 px-4">
+            <div className="flex justify-end gap-4 mt-6">
               <Button 
                 variant="outline"
                 onClick={handleExcelExport}
