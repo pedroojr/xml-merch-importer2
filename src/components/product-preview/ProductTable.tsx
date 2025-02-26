@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Image as ImageIcon, Copy, Check } from "lucide-react";
@@ -11,6 +10,7 @@ import { generateProductDescription } from './productDescription';
 import { formatNumberForCopy } from '../../utils/formatters';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface ProductTableProps {
   products: Product[];
@@ -36,7 +36,14 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   roundingType,
 }) => {
   const [copiedField, setCopiedField] = useState<string>('');
-  const [showHidden, setShowHidden] = useState(false);
+  const [showHidden, setShowHidden] = useState(() => {
+    const saved = localStorage.getItem('showHidden');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('showHidden', JSON.stringify(showHidden));
+  }, [showHidden]);
 
   const openGoogleSearch = (product: Product) => {
     const searchTerms = `${product.ean || ''} ${product.reference || ''} ${product.code || ''}`.trim();
@@ -70,7 +77,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     }
   };
 
-  // Função para filtrar produtos baseado nas configurações
   const filterProducts = (products: Product[]) => {
     return products.filter(product => {
       const isItemHidden = hiddenItems.has(products.indexOf(product));
@@ -80,16 +86,74 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   const filteredProducts = filterProducts(products);
 
+  const totals = filteredProducts.reduce((acc, product) => {
+    const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
+    const baseXapuriPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup);
+    const baseEpitaPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup);
+    
+    const xapuriPrice = roundPrice(baseXapuriPrice, roundingType);
+    const epitaPrice = roundPrice(baseEpitaPrice, roundingType);
+
+    return {
+      quantidade: acc.quantidade + product.quantity,
+      valorTotal: acc.valorTotal + product.totalPrice,
+      valorLiquido: acc.valorLiquido + product.netPrice,
+      xapuri: acc.xapuri + (xapuriPrice * product.quantity),
+      epita: acc.epita + (epitaPrice * product.quantity),
+    };
+  }, {
+    quantidade: 0,
+    valorTotal: 0,
+    valorLiquido: 0,
+    xapuri: 0,
+    epita: 0,
+  });
+
   return (
     <div className="space-y-4">
       <div className="p-4 bg-slate-50 border rounded-lg">
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="show-hidden"
-            checked={showHidden}
-            onCheckedChange={setShowHidden}
-          />
-          <Label htmlFor="show-hidden" className="font-medium">Mostrar apenas ocultados</Label>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="show-hidden"
+              checked={showHidden}
+              onCheckedChange={setShowHidden}
+            />
+            <Label htmlFor="show-hidden" className="font-medium">Mostrar apenas ocultados</Label>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Card>
+              <CardContent className="pt-4">
+                <div className="text-sm font-medium text-muted-foreground mb-1">Quantidade</div>
+                <div className="text-2xl font-bold">{totals.quantidade.toLocaleString('pt-BR')}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="text-sm font-medium text-muted-foreground mb-1">Valor Total</div>
+                <div className="text-2xl font-bold">{totals.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="text-sm font-medium text-muted-foreground mb-1">Valor Líquido</div>
+                <div className="text-2xl font-bold">{totals.valorLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-blue-50">
+              <CardContent className="pt-4">
+                <div className="text-sm font-medium text-blue-600 mb-1">Total Xapuri</div>
+                <div className="text-2xl font-bold text-blue-700">{totals.xapuri.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-emerald-50">
+              <CardContent className="pt-4">
+                <div className="text-sm font-medium text-emerald-600 mb-1">Total Epitaciolândia</div>
+                <div className="text-2xl font-bold text-emerald-700">{totals.epita.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 
