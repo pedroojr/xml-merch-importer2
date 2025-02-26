@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Image as ImageIcon, Copy, Check } from "lucide-react";
+import { Eye, EyeOff, Image as ImageIcon, Copy, Check, GripVertical } from "lucide-react";
 import { Product } from '../../types/nfe';
 import { Column } from './types/column';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
@@ -12,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { extrairTamanhoDaDescricao, extrairTamanhoDaReferencia } from '../../utils/sizeParser';
+import { ResizableBox } from 'react-resizable';
+import 'react-resizable/css/styles.css';
 
 interface ProductTableProps {
   products: Product[];
@@ -41,6 +44,16 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     return saved ? JSON.parse(saved) : false;
   });
   const [copiedField, setCopiedField] = useState<string>('');
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem('columnWidths');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const handleColumnResize = (columnId: string, width: number) => {
+    const newWidths = { ...columnWidths, [columnId]: width };
+    setColumnWidths(newWidths);
+    localStorage.setItem('columnWidths', JSON.stringify(newWidths));
+  };
 
   const handleCopyToClipboard = async (value: any, column: Column, field: string) => {
     try {
@@ -72,16 +85,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   const filteredProducts = products.filter(product => {
     const isItemHidden = hiddenItems.has(products.indexOf(product));
     return showHidden ? isItemHidden : !isItemHidden;
-  });
-
-  const totals = filteredProducts.reduce((acc, product) => ({
-    quantidade: acc.quantidade + product.quantity,
-    valorTotal: acc.valorTotal + product.totalPrice,
-    valorLiquido: acc.valorLiquido + product.netPrice,
-  }), {
-    quantidade: 0,
-    valorTotal: 0,
-    valorLiquido: 0,
   });
 
   return (
@@ -122,7 +125,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         </div>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/80">
@@ -131,14 +134,25 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   <TableHead
                     key={column.id}
                     className={cn(
-                      column.width,
-                      "h-9 px-3 text-xs font-medium",
+                      "h-9 px-3 text-xs font-medium select-none group",
                       column.alignment === 'right' && "text-right",
                       column.id === 'xapuriPrice' && "bg-blue-50/50 text-blue-700",
                       column.id === 'epitaPrice' && "bg-emerald-50/50 text-emerald-700"
                     )}
+                    style={{ width: columnWidths[column.id] || column.minWidth }}
                   >
-                    {column.header}
+                    <div className="flex items-center justify-between">
+                      <span>{column.header}</span>
+                      <ResizableBox
+                        width={columnWidths[column.id] || column.minWidth || 100}
+                        height={0}
+                        minConstraints={[column.minWidth || 100, 0]}
+                        maxConstraints={[1000, 0]}
+                        onResizeStop={(e, { size }) => handleColumnResize(column.id, size.width)}
+                        handle={<GripVertical className="h-4 w-4 opacity-0 group-hover:opacity-100 cursor-col-resize" />}
+                        axis="x"
+                      />
+                    </div>
                   </TableHead>
                 )
               ))}
