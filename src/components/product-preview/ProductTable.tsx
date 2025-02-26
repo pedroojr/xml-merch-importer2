@@ -2,17 +2,17 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Image as ImageIcon, Search, Download, Copy, Check } from "lucide-react";
+import { Eye, EyeOff, Image as ImageIcon, Copy, Check } from "lucide-react";
 import { Product } from '../../types/nfe';
 import { Column } from './types/column';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { generateProductDescription } from './productDescription';
-import { formatNumber, formatCurrency, formatNumberForCopy } from '../../utils/formatters';
+import { formatNumberForCopy } from '../../utils/formatters';
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 interface ProductTableProps {
   products: Product[];
@@ -37,9 +37,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   epitaMarkup,
   roundingType,
 }) => {
-  const [selectedProductIndex, setSelectedProductIndex] = useState<number | null>(null);
-  const [searchResults, setSearchResults] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
   const [copiedField, setCopiedField] = useState<string>('');
   const [showHidden, setShowHidden] = useState(false);
   const [showUnconfirmed, setShowUnconfirmed] = useState(false);
@@ -83,12 +80,20 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   // Função para filtrar produtos baseado nas configurações
   const filterProducts = (products: Product[]) => {
-    if (!showConfirmed && !showUnconfirmed) return products;
     return products.filter(product => {
+      const isItemHidden = hiddenItems.has(products.indexOf(product));
       const isConfirmed = isProductConfirmed(product);
-      if (showConfirmed && !showUnconfirmed) return isConfirmed;
-      if (!showConfirmed && showUnconfirmed) return !isConfirmed;
-      return true;
+
+      if (showHidden && showUnconfirmed) {
+        return isItemHidden && !isConfirmed;
+      }
+      if (showHidden) {
+        return isItemHidden;
+      }
+      if (showUnconfirmed) {
+        return !isConfirmed;
+      }
+      return !isItemHidden;
     });
   };
 
@@ -108,35 +113,43 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="p-4 bg-slate-50 border rounded-lg flex items-center justify-between">
-        <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-hidden"
-              checked={showHidden}
-              onCheckedChange={setShowHidden}
-            />
-            <Label htmlFor="show-hidden">Mostrar apenas ocultados</Label>
+      <div className="p-4 bg-slate-50 border rounded-lg">
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-hidden"
+                  checked={showHidden}
+                  onCheckedChange={setShowHidden}
+                />
+                <Label htmlFor="show-hidden" className="font-medium">Mostrar apenas ocultados</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-unconfirmed"
+                  checked={showUnconfirmed}
+                  onCheckedChange={setShowUnconfirmed}
+                />
+                <Label htmlFor="show-unconfirmed" className="font-medium">Mostrar apenas não confirmados</Label>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-unconfirmed"
-              checked={showUnconfirmed}
-              onCheckedChange={setShowUnconfirmed}
-            />
-            <Label htmlFor="show-unconfirmed">Mostrar apenas não confirmados</Label>
+          <Separator className="my-2" />
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-slate-500">Legenda:</span>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-green-50 text-green-700">
+                Alta Confiança ≥ 80%
+              </Badge>
+              <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                Média Confiança ≥ 60%
+              </Badge>
+              <Badge variant="outline" className="bg-red-50 text-red-700">
+                Baixa Confiança &lt; 60%
+              </Badge>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-green-50 text-green-700">
-            Alta Confiança ≥ 80%
-          </Badge>
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-            Média Confiança ≥ 60%
-          </Badge>
-          <Badge variant="outline" className="bg-red-50 text-red-700">
-            Baixa Confiança &lt; 60%
-          </Badge>
         </div>
       </div>
 
@@ -177,9 +190,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map((product, index) => {
-                  if (hiddenItems.has(index)) return null;
-
+                {filteredProducts.map((product) => {
+                  const productIndex = products.indexOf(product);
                   const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
                   const baseXapuriPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup);
                   const baseEpitaPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup);
@@ -189,7 +201,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
                   const betterDescription = generateProductDescription(product);
 
-                  // Define a classe de confiança para colorir a linha
                   const confidenceClass = product.brandConfidence >= 0.8 
                     ? 'bg-green-50/50' 
                     : product.brandConfidence >= 0.6 
@@ -198,7 +209,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
                   return (
                     <TableRow 
-                      key={product.code}
+                      key={`${product.code}-${productIndex}`}
                       className={`
                         hover:bg-slate-100 transition-colors
                         ${confidenceClass}
@@ -230,7 +241,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                         if (column.id === 'netPrice') value = unitNetPrice;
                         if (column.id === 'name') value = betterDescription;
 
-                        const copyId = `${column.id}-${index}`;
+                        const copyId = `${column.id}-${productIndex}`;
                         const isCopied = copiedField === copyId;
 
                         return (
@@ -263,9 +274,13 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleToggleVisibility(index)}
+                            onClick={() => handleToggleVisibility(productIndex)}
                           >
-                            <EyeOff className="h-4 w-4" />
+                            {hiddenItems.has(productIndex) ? (
+                              <Eye className="h-4 w-4" />
+                            ) : (
+                              <EyeOff className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                       </TableCell>
