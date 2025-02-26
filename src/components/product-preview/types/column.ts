@@ -111,13 +111,16 @@ export const getDefaultColumns = (): Column[] => [
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
-    id: 'discount', 
-    header: 'Desc. Total', 
+    id: 'netPrice', 
+    header: 'Líquido', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-fit',
-    minWidth: 112,
-    format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    minWidth: 140,
+    format: (value: number, product: Product) => {
+      const discountPercent = product.totalPrice > 0 ? (product.discount / product.totalPrice) * 100 : 0;
+      return `${value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${discountPercent.toFixed(1)}%)`;
+    }
   },
   { 
     id: 'unitDiscount', 
@@ -128,15 +131,6 @@ export const getDefaultColumns = (): Column[] => [
     minWidth: 112,
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
     getValue: (product: Product) => product.quantity > 0 ? product.discount / product.quantity : 0
-  },
-  { 
-    id: 'netPrice', 
-    header: 'Líquido', 
-    initiallyVisible: true, 
-    alignment: 'right',
-    width: 'w-fit',
-    minWidth: 112,
-    format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
     id: 'xapuriPrice', 
@@ -167,6 +161,7 @@ export const compactColumns = [
   'quantity',
   'unitPrice',
   'unitDiscount',
+  'netPrice',
   'xapuriPrice',
   'epitaPrice',
 ];
