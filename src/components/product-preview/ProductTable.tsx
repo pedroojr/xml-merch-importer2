@@ -11,6 +11,7 @@ import { formatNumberForCopy } from '../../utils/formatters';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface ProductTableProps {
   products: Product[];
@@ -73,14 +74,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     }
   };
 
-  const filterProducts = (products: Product[]) => {
-    return products.filter(product => {
-      const isItemHidden = hiddenItems.has(products.indexOf(product));
-      return showHidden ? isItemHidden : !isItemHidden;
-    });
-  };
-
-  const filteredProducts = filterProducts(products);
+  const filteredProducts = products.filter(product => {
+    const isItemHidden = hiddenItems.has(products.indexOf(product));
+    return showHidden ? isItemHidden : !isItemHidden;
+  });
 
   const totals = filteredProducts.reduce((acc, product) => ({
     quantidade: acc.quantidade + product.quantity,
@@ -94,7 +91,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   return (
     <div className="w-full">
-      <div className="bg-slate-50 p-4">
+      <div className="bg-slate-50 p-4 mb-4">
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
             <Switch
@@ -138,19 +135,19 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 visibleColumns.has(column.id) && (
                   <TableHead
                     key={column.id}
-                    className={`px-4 ${
-                      column.alignment === 'right' ? 'text-right' : ''
-                    } ${
-                      column.id === 'xapuriPrice' ? 'bg-blue-50 text-blue-700' : ''
-                    } ${
-                      column.id === 'epitaPrice' ? 'bg-emerald-50 text-emerald-700' : ''
-                    }`}
+                    className={cn(
+                      column.width,
+                      column.alignment === 'right' && "text-right",
+                      column.id === 'xapuriPrice' && "bg-blue-50 text-blue-700",
+                      column.id === 'epitaPrice' && "bg-emerald-50 text-emerald-700",
+                      "px-4 py-2 font-medium"
+                    )}
                   >
                     {column.header}
                   </TableHead>
                 )
               ))}
-              <TableHead className="w-[80px]">Ações</TableHead>
+              <TableHead className="w-[80px] text-center">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -199,34 +196,40 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     return (
                       <TableCell
                         key={column.id}
-                        className={`px-4 ${
-                          column.alignment === 'right' ? 'text-right tabular-nums' : ''
-                        } ${
-                          column.id === 'xapuriPrice' ? 'bg-blue-50' : ''
-                        } ${
-                          column.id === 'epitaPrice' ? 'bg-emerald-50' : ''
-                        } group relative cursor-pointer`}
+                        className={cn(
+                          column.width,
+                          "px-4 py-2",
+                          column.alignment === 'right' && "text-right tabular-nums",
+                          column.id === 'xapuriPrice' && "bg-blue-50",
+                          column.id === 'epitaPrice' && "bg-emerald-50",
+                          "group relative cursor-pointer"
+                        )}
                         onClick={() => handleCopyToClipboard(value, column, copyId)}
                       >
                         <div className="flex items-center gap-2 justify-between">
-                          <span className="truncate">{column.format ? column.format(value) : value}</span>
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className={cn(
+                            "truncate",
+                            column.alignment === 'right' ? "ml-auto" : "mr-auto"
+                          )}>
+                            {column.format ? column.format(value) : value}
+                          </span>
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                             {isCopied ? (
-                              <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                              <Check className="h-4 w-4 text-green-500" />
                             ) : (
-                              <Copy className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                              <Copy className="h-4 w-4 text-gray-500" />
                             )}
                           </span>
                         </div>
                       </TableCell>
                     );
                   })}
-                  <TableCell className="w-[80px]">
+                  <TableCell className="w-[80px] text-center">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleToggleVisibility(productIndex)}
-                      className="w-full"
+                      className="w-8 h-8 p-0"
                     >
                       {hiddenItems.has(productIndex) ? (
                         <Eye className="h-4 w-4" />

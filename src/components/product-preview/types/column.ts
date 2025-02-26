@@ -6,6 +6,7 @@ export interface Column {
   header: string;
   initiallyVisible: boolean;
   alignment?: 'left' | 'right';
+  width?: string;
   format?: (value: any) => string;
   getValue?: (product: Product) => any;
 }
@@ -14,22 +15,69 @@ export const getDefaultColumns = (): Column[] => [
   { 
     id: 'image', 
     header: 'Imagem', 
-    initiallyVisible: true
+    initiallyVisible: true,
+    width: 'w-[80px]'
   },
-  { id: 'code', header: 'Código', initiallyVisible: true },
-  { id: 'ean', header: 'EAN', initiallyVisible: true },
-  { id: 'reference', header: 'Referência', initiallyVisible: true },
-  { id: 'name', header: 'Descrição', initiallyVisible: true },
-  { id: 'size', header: 'Tamanho', initiallyVisible: true },
-  { id: 'color', header: 'Cor', initiallyVisible: true },
-  { id: 'ncm', header: 'NCM', initiallyVisible: true },
-  { id: 'cfop', header: 'CFOP', initiallyVisible: true },
-  { id: 'uom', header: 'Unidade', initiallyVisible: true },
+  { 
+    id: 'code', 
+    header: 'Código', 
+    initiallyVisible: true,
+    width: 'w-[120px]'
+  },
+  { 
+    id: 'ean', 
+    header: 'EAN', 
+    initiallyVisible: true,
+    width: 'w-[140px]'
+  },
+  { 
+    id: 'reference', 
+    header: 'Referência', 
+    initiallyVisible: true,
+    width: 'w-[160px]'
+  },
+  { 
+    id: 'name', 
+    header: 'Descrição', 
+    initiallyVisible: true,
+    width: 'min-w-[200px] max-w-xl'
+  },
+  { 
+    id: 'size', 
+    header: 'Tamanho', 
+    initiallyVisible: true,
+    width: 'w-[100px]'
+  },
+  { 
+    id: 'color', 
+    header: 'Cor', 
+    initiallyVisible: true,
+    width: 'w-[120px]'
+  },
+  { 
+    id: 'ncm', 
+    header: 'NCM', 
+    initiallyVisible: true,
+    width: 'w-[120px]'
+  },
+  { 
+    id: 'cfop', 
+    header: 'CFOP', 
+    initiallyVisible: true,
+    width: 'w-[100px]'
+  },
+  { 
+    id: 'uom', 
+    header: 'Unidade', 
+    initiallyVisible: true,
+    width: 'w-[100px]'
+  },
   { 
     id: 'quantity', 
     header: 'Quantidade', 
     initiallyVisible: true, 
     alignment: 'right',
+    width: 'w-[120px]',
     format: (value: number) => value.toLocaleString()
   },
   { 
@@ -37,6 +85,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Custo Unit.', 
     initiallyVisible: true, 
     alignment: 'right',
+    width: 'w-[140px]',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -44,6 +93,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Valor Total', 
     initiallyVisible: true, 
     alignment: 'right',
+    width: 'w-[140px]',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -51,6 +101,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Desconto Total', 
     initiallyVisible: true, 
     alignment: 'right',
+    width: 'w-[140px]',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -58,6 +109,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Desconto Unit.', 
     initiallyVisible: true, 
     alignment: 'right',
+    width: 'w-[140px]',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
     getValue: (product: Product) => product.quantity > 0 ? product.discount / product.quantity : 0
   },
@@ -66,6 +118,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Valor Líquido', 
     initiallyVisible: true, 
     alignment: 'right',
+    width: 'w-[140px]',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -73,6 +126,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Preço Xapuri', 
     initiallyVisible: true, 
     alignment: 'right',
+    width: 'w-[140px]',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -80,6 +134,7 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Preço Epitaciolândia', 
     initiallyVisible: true, 
     alignment: 'right',
+    width: 'w-[160px]',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   }
 ];
