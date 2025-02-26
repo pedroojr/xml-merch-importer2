@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Product } from '../../types/nfe';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
@@ -57,7 +56,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     return new Set(compactMode ? compactColumns : columns.map(col => col.id));
   });
 
-  // Persistir configurações
   useEffect(() => {
     localStorage.setItem('xapuriMarkup', xapuriMarkup.toString());
     localStorage.setItem('epitaMarkup', epitaMarkup.toString());
@@ -127,55 +125,47 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   };
 
   return (
-    <div className="w-full">
-      <div className="rounded-lg border bg-white shadow-sm animate-fade-up">
+    <div className="w-full max-w-full flex-1">
+      <div className="rounded-lg border bg-white shadow-sm">
         <Tabs defaultValue="unified" className="w-full">
           <div className="sticky top-0 z-10 bg-white border-b">
-            <TabsList className="w-full justify-start rounded-none h-auto flex-wrap">
-              <TabsTrigger value="unified" className="data-[state=active]:bg-slate-100">
-                Visão Unificada
-              </TabsTrigger>
-              <TabsTrigger value="insights" className="data-[state=active]:bg-slate-100">
-                Insights e Análises
-              </TabsTrigger>
+            <TabsList className="w-full justify-start rounded-none border-0">
+              <TabsTrigger value="unified">Visão Unificada</TabsTrigger>
+              <TabsTrigger value="insights">Insights e Análises</TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="unified" className="relative p-0">
-            <div className="w-full">
-              <ProductToolbar
-                xapuriMarkup={xapuriMarkup}
-                epitaMarkup={epitaMarkup}
-                roundingType={roundingType}
-                onXapuriMarkupChange={(value) => handleMarkupChange(value, epitaMarkup, roundingType)}
-                onEpitaMarkupChange={(value) => handleMarkupChange(xapuriMarkup, value, roundingType)}
-                onRoundingChange={(value) => handleMarkupChange(xapuriMarkup, epitaMarkup, value)}
-                compactMode={compactMode}
-                toggleCompactMode={toggleCompactMode}
-                columns={columns}
-                visibleColumns={visibleColumns}
-                onToggleColumn={toggleColumn}
-                onNewFileRequest={handleNewFileRequest}
-              />
-            </div>
+          <TabsContent value="unified" className="p-0 w-full">
+            <ProductToolbar
+              xapuriMarkup={xapuriMarkup}
+              epitaMarkup={epitaMarkup}
+              roundingType={roundingType}
+              onXapuriMarkupChange={(value) => handleMarkupChange(value, epitaMarkup, roundingType)}
+              onEpitaMarkupChange={(value) => handleMarkupChange(xapuriMarkup, value, roundingType)}
+              onRoundingChange={(value) => handleMarkupChange(xapuriMarkup, epitaMarkup, value)}
+              compactMode={compactMode}
+              toggleCompactMode={toggleCompactMode}
+              columns={columns}
+              visibleColumns={visibleColumns}
+              onToggleColumn={toggleColumn}
+              onNewFileRequest={handleNewFileRequest}
+            />
 
-            <div className="w-full">
-              <ProductTable
-                products={products}
-                visibleColumns={visibleColumns}
-                columns={columns}
-                hiddenItems={hiddenItems}
-                handleToggleVisibility={handleToggleVisibility}
-                handleImageSearch={handleImageSearch}
-                xapuriMarkup={xapuriMarkup}
-                epitaMarkup={epitaMarkup}
-                roundingType={roundingType}
-              />
-            </div>
+            <ProductTable
+              products={products}
+              visibleColumns={visibleColumns}
+              columns={columns}
+              hiddenItems={hiddenItems}
+              handleToggleVisibility={handleToggleVisibility}
+              handleImageSearch={handleImageSearch}
+              xapuriMarkup={xapuriMarkup}
+              epitaMarkup={epitaMarkup}
+              roundingType={roundingType}
+            />
           </TabsContent>
 
           <TabsContent value="insights" className="p-4">
-            <div className="space-y-8 w-full max-w-full">
+            <div className="space-y-8 w-full">
               <ProfitabilityAnalysis
                 products={products}
                 xapuriMarkup={xapuriMarkup}
