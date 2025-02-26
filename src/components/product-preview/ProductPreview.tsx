@@ -127,16 +127,22 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   };
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="w-full">
       <div className="rounded-lg border bg-white shadow-sm animate-fade-up">
         <Tabs defaultValue="unified" className="w-full">
-          <TabsList className="w-full justify-start border-b rounded-none px-4 overflow-x-auto flex-nowrap">
-            <TabsTrigger value="unified">Visão Unificada</TabsTrigger>
-            <TabsTrigger value="insights">Insights e Análises</TabsTrigger>
-          </TabsList>
+          <div className="sticky top-0 z-10 bg-white border-b">
+            <TabsList className="w-full justify-start rounded-none h-auto flex-wrap">
+              <TabsTrigger value="unified" className="data-[state=active]:bg-slate-100">
+                Visão Unificada
+              </TabsTrigger>
+              <TabsTrigger value="insights" className="data-[state=active]:bg-slate-100">
+                Insights e Análises
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="unified" className="relative">
-            <div className="md:px-4 px-2">
+          <TabsContent value="unified" className="relative p-0">
+            <div className="w-full">
               <ProductToolbar
                 xapuriMarkup={xapuriMarkup}
                 epitaMarkup={epitaMarkup}
@@ -153,7 +159,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
               />
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="w-full">
               <ProductTable
                 products={products}
                 visibleColumns={visibleColumns}
@@ -168,13 +174,15 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="insights" className="space-y-8 p-6">
-            <ProfitabilityAnalysis
-              products={products}
-              xapuriMarkup={xapuriMarkup}
-              epitaMarkup={epitaMarkup}
-            />
-            <ProductAnalysis products={products} />
+          <TabsContent value="insights" className="p-4">
+            <div className="space-y-8 w-full max-w-full">
+              <ProfitabilityAnalysis
+                products={products}
+                xapuriMarkup={xapuriMarkup}
+                epitaMarkup={epitaMarkup}
+              />
+              <ProductAnalysis products={products} />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

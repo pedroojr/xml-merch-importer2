@@ -44,22 +44,24 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
   onNewFileRequest,
 }) => {
   return (
-    <div className="py-4">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <MarkupControls
-          xapuriMarkup={xapuriMarkup}
-          epitaMarkup={epitaMarkup}
-          roundingType={roundingType}
-          onXapuriMarkupChange={onXapuriMarkupChange}
-          onEpitaMarkupChange={onEpitaMarkupChange}
-          onRoundingChange={onRoundingChange}
-        />
-        <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
+    <div className="w-full p-4 border-b bg-white">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 w-full">
+        <div className="w-full lg:w-auto">
+          <MarkupControls
+            xapuriMarkup={xapuriMarkup}
+            epitaMarkup={epitaMarkup}
+            roundingType={roundingType}
+            onXapuriMarkupChange={onXapuriMarkupChange}
+            onEpitaMarkupChange={onEpitaMarkupChange}
+            onRoundingChange={onRoundingChange}
+          />
+        </div>
+        <div className="flex flex-wrap gap-2 w-full lg:w-auto lg:ml-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={onNewFileRequest}
-            className="flex-1 md:flex-none md:min-w-[140px]"
+            className="flex-1 lg:flex-none"
           >
             <FileText className="h-4 w-4 mr-2" />
             Nova Nota
@@ -68,7 +70,7 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
             variant="outline"
             size="sm"
             onClick={toggleCompactMode}
-            className="flex-1 md:flex-none md:min-w-[140px]"
+            className="flex-1 lg:flex-none"
           >
             {compactMode ? 'Modo Detalhado' : 'Modo Compacto'}
           </Button>
@@ -76,8 +78,8 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="outline" 
-                size="sm" 
-                className="flex-1 md:flex-none md:min-w-[160px]"
+                size="sm"
+                className="flex-1 lg:flex-none"
               >
                 <Columns className="h-4 w-4 mr-2" />
                 Personalizar Visão

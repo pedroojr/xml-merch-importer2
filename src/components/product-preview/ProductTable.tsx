@@ -97,155 +97,159 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   });
 
   return (
-    <div className="space-y-4">
-      <div className="p-4 bg-slate-50 border rounded-lg">
-        <div className="space-y-4">
+    <div className="w-full">
+      <div className="p-4 bg-slate-50">
+        <div className="space-y-4 w-full">
           <div className="flex items-center space-x-2">
             <Switch
               id="show-hidden"
               checked={showHidden}
               onCheckedChange={setShowHidden}
             />
-            <Label htmlFor="show-hidden" className="font-medium">Mostrar apenas ocultados</Label>
+            <Label htmlFor="show-hidden" className="font-medium">
+              Mostrar apenas ocultados
+            </Label>
           </div>
           
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card>
-              <CardContent className="py-2">
+              <CardContent className="p-3">
                 <div className="text-xs font-medium text-muted-foreground">Quantidade</div>
-                <div className="text-lg font-semibold">{totals.quantidade.toLocaleString('pt-BR')}</div>
+                <div className="text-base font-semibold">{totals.quantidade.toLocaleString('pt-BR')}</div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="py-2">
+              <CardContent className="p-3">
                 <div className="text-xs font-medium text-muted-foreground">Valor Total</div>
-                <div className="text-lg font-semibold">{totals.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                <div className="text-base font-semibold">{totals.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="py-2">
+              <CardContent className="p-3">
                 <div className="text-xs font-medium text-muted-foreground">Valor Líquido</div>
-                <div className="text-lg font-semibold">{totals.valorLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                <div className="text-base font-semibold">{totals.valorLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-slate-50/50">
-              {columns.map((column) => (
-                visibleColumns.has(column.id) && (
-                  <TableHead
-                    key={column.id}
-                    className={`font-semibold px-6 ${
-                      column.alignment === 'right' ? 'text-right' : ''
-                    } ${
-                      column.id === 'xapuriPrice' ? 'bg-blue-50 text-blue-700' : ''
-                    } ${
-                      column.id === 'epitaPrice' ? 'bg-emerald-50 text-emerald-700' : ''
-                    }`}
+      <div className="w-full overflow-x-auto">
+        <div className="min-w-full">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50/50">
+                {columns.map((column) => (
+                  visibleColumns.has(column.id) && (
+                    <TableHead
+                      key={column.id}
+                      className={`whitespace-nowrap px-4 ${
+                        column.alignment === 'right' ? 'text-right' : ''
+                      } ${
+                        column.id === 'xapuriPrice' ? 'bg-blue-50 text-blue-700' : ''
+                      } ${
+                        column.id === 'epitaPrice' ? 'bg-emerald-50 text-emerald-700' : ''
+                      }`}
+                    >
+                      {column.header}
+                    </TableHead>
+                  )
+                ))}
+                <TableHead className="w-20 whitespace-nowrap">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredProducts.map((product) => {
+                const productIndex = products.indexOf(product);
+                const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
+                const baseXapuriPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup);
+                const baseEpitaPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup);
+                
+                const xapuriPrice = roundPrice(baseXapuriPrice, roundingType);
+                const epitaPrice = roundPrice(baseEpitaPrice, roundingType);
+
+                const betterDescription = generateProductDescription(product);
+
+                return (
+                  <TableRow 
+                    key={`${product.code}-${productIndex}`}
+                    className="hover:bg-slate-100 transition-colors"
                   >
-                    {column.header}
-                  </TableHead>
-                )
-              ))}
-              <TableHead className="font-semibold w-20">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredProducts.map((product) => {
-              const productIndex = products.indexOf(product);
-              const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
-              const baseXapuriPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup);
-              const baseEpitaPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup);
-              
-              const xapuriPrice = roundPrice(baseXapuriPrice, roundingType);
-              const epitaPrice = roundPrice(baseEpitaPrice, roundingType);
-
-              const betterDescription = generateProductDescription(product);
-
-              return (
-                <TableRow 
-                  key={`${product.code}-${productIndex}`}
-                  className="hover:bg-slate-100 transition-colors"
-                >
-                  {visibleColumns.has('image') && (
-                    <TableCell className="w-20">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openGoogleSearch(product)}
-                        className="w-full"
-                        title="Buscar imagem no Google"
-                      >
-                        <ImageIcon className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  )}
-                  {columns.map((column) => {
-                    if (!visibleColumns.has(column.id) || column.id === 'image') return null;
-
-                    let value: any = column.getValue ? 
-                      column.getValue(product) : 
-                      product[column.id as keyof Product];
-
-                    if (column.id === 'xapuriPrice') value = xapuriPrice;
-                    if (column.id === 'epitaPrice') value = epitaPrice;
-                    if (column.id === 'unitPrice') value = product.unitPrice;
-                    if (column.id === 'netPrice') value = unitNetPrice;
-                    if (column.id === 'name') value = betterDescription;
-
-                    const copyId = `${column.id}-${productIndex}`;
-                    const isCopied = copiedField === copyId;
-
-                    return (
-                      <TableCell
-                        key={column.id}
-                        className={`px-6 py-4 ${
-                          column.alignment === 'right' ? 'text-right tabular-nums' : ''
-                        } ${
-                          column.id === 'xapuriPrice' ? 'bg-blue-50' : ''
-                        } ${
-                          column.id === 'epitaPrice' ? 'bg-emerald-50' : ''
-                        } group relative cursor-pointer hover:bg-slate-200`}
-                        onClick={() => handleCopyToClipboard(value, column, copyId)}
-                      >
-                        <div className="flex items-center gap-2 justify-between">
-                          <span>{column.format ? column.format(value) : value}</span>
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            {isCopied ? (
-                              <Check className="h-4 w-4 text-green-500" />
-                            ) : (
-                              <Copy className="h-4 w-4 text-gray-500" />
-                            )}
-                          </span>
-                        </div>
+                    {visibleColumns.has('image') && (
+                      <TableCell className="w-20">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openGoogleSearch(product)}
+                          className="w-full"
+                          title="Buscar imagem no Google"
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                        </Button>
                       </TableCell>
-                    );
-                  })}
-                  <TableCell className="px-6">
-                    <div className="flex justify-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleVisibility(productIndex)}
-                      >
-                        {hiddenItems.has(productIndex) ? (
-                          <Eye className="h-4 w-4" />
-                        ) : (
-                          <EyeOff className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                    )}
+                    {columns.map((column) => {
+                      if (!visibleColumns.has(column.id) || column.id === 'image') return null;
+
+                      let value: any = column.getValue ? 
+                        column.getValue(product) : 
+                        product[column.id as keyof Product];
+
+                      if (column.id === 'xapuriPrice') value = xapuriPrice;
+                      if (column.id === 'epitaPrice') value = epitaPrice;
+                      if (column.id === 'unitPrice') value = product.unitPrice;
+                      if (column.id === 'netPrice') value = unitNetPrice;
+                      if (column.id === 'name') value = betterDescription;
+
+                      const copyId = `${column.id}-${productIndex}`;
+                      const isCopied = copiedField === copyId;
+
+                      return (
+                        <TableCell
+                          key={column.id}
+                          className={`px-6 py-4 ${
+                            column.alignment === 'right' ? 'text-right tabular-nums' : ''
+                          } ${
+                            column.id === 'xapuriPrice' ? 'bg-blue-50' : ''
+                          } ${
+                            column.id === 'epitaPrice' ? 'bg-emerald-50' : ''
+                          } group relative cursor-pointer hover:bg-slate-200`}
+                          onClick={() => handleCopyToClipboard(value, column, copyId)}
+                        >
+                          <div className="flex items-center gap-2 justify-between">
+                            <span>{column.format ? column.format(value) : value}</span>
+                            <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              {isCopied ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4 text-gray-500" />
+                              )}
+                            </span>
+                          </div>
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="px-6">
+                      <div className="flex justify-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleVisibility(productIndex)}
+                        >
+                          {hiddenItems.has(productIndex) ? (
+                            <Eye className="h-4 w-4" />
+                          ) : (
+                            <EyeOff className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
