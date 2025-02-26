@@ -9,10 +9,8 @@ import { calculateSalePrice, roundPrice, RoundingType } from './productCalculati
 import { toast } from "sonner";
 import { generateProductDescription } from './productDescription';
 import { formatNumberForCopy } from '../../utils/formatters';
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 
 interface ProductTableProps {
   products: Product[];
@@ -39,7 +37,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 }) => {
   const [copiedField, setCopiedField] = useState<string>('');
   const [showHidden, setShowHidden] = useState(false);
-  const [showUnconfirmed, setShowUnconfirmed] = useState(false);
 
   const openGoogleSearch = (product: Product) => {
     const searchTerms = `${product.ean || ''} ${product.reference || ''} ${product.code || ''}`.trim();
@@ -73,27 +70,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     }
   };
 
-  // Função para verificar se um produto está confirmado
-  const isProductConfirmed = (product: Product) => {
-    return product.brandConfidence >= 0.8;
-  };
-
   // Função para filtrar produtos baseado nas configurações
   const filterProducts = (products: Product[]) => {
     return products.filter(product => {
       const isItemHidden = hiddenItems.has(products.indexOf(product));
-      const isConfirmed = isProductConfirmed(product);
-
-      if (showHidden && showUnconfirmed) {
-        return isItemHidden && !isConfirmed;
-      }
-      if (showHidden) {
-        return isItemHidden;
-      }
-      if (showUnconfirmed) {
-        return !isConfirmed;
-      }
-      return !isItemHidden;
+      return showHidden ? isItemHidden : !isItemHidden;
     });
   };
 
@@ -114,42 +95,13 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   return (
     <div className="space-y-4">
       <div className="p-4 bg-slate-50 border rounded-lg">
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-hidden"
-                  checked={showHidden}
-                  onCheckedChange={setShowHidden}
-                />
-                <Label htmlFor="show-hidden" className="font-medium">Mostrar apenas ocultados</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-unconfirmed"
-                  checked={showUnconfirmed}
-                  onCheckedChange={setShowUnconfirmed}
-                />
-                <Label htmlFor="show-unconfirmed" className="font-medium">Mostrar apenas não confirmados</Label>
-              </div>
-            </div>
-          </div>
-          <Separator className="my-2" />
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-slate-500">Legenda:</span>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-green-50 text-green-700">
-                Alta Confiança ≥ 80%
-              </Badge>
-              <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-                Média Confiança ≥ 60%
-              </Badge>
-              <Badge variant="outline" className="bg-red-50 text-red-700">
-                Baixa Confiança &lt; 60%
-              </Badge>
-            </div>
-          </div>
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="show-hidden"
+            checked={showHidden}
+            onCheckedChange={setShowHidden}
+          />
+          <Label htmlFor="show-hidden" className="font-medium">Mostrar apenas ocultados</Label>
         </div>
       </div>
 
@@ -201,19 +153,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
                   const betterDescription = generateProductDescription(product);
 
-                  const confidenceClass = product.brandConfidence >= 0.8 
-                    ? 'bg-green-50/50' 
-                    : product.brandConfidence >= 0.6 
-                      ? 'bg-yellow-50/50' 
-                      : 'bg-red-50/50';
-
                   return (
                     <TableRow 
                       key={`${product.code}-${productIndex}`}
-                      className={`
-                        hover:bg-slate-100 transition-colors
-                        ${confidenceClass}
-                      `}
+                      className="hover:bg-slate-100 transition-colors"
                     >
                       {visibleColumns.has('image') && (
                         <TableCell className="w-20">
