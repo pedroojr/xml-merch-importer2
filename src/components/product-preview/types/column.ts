@@ -7,7 +7,7 @@ export interface Column {
   initiallyVisible: boolean;
   alignment?: 'left' | 'right';
   width?: string;
-  format?: (value: any, product?: Product) => string;
+  format?: (value: any) => string;
   getValue?: (product: Product) => any;
   minWidth?: number;
 }
@@ -117,8 +117,7 @@ export const getDefaultColumns = (): Column[] => [
     alignment: 'right',
     width: 'w-fit',
     minWidth: 140,
-    format: (value: number, product?: Product) => {
-      if (!product) return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    format: (value: number, product: Product) => {
       const discountPercent = product.totalPrice > 0 ? (product.discount / product.totalPrice) * 100 : 0;
       return `${value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${discountPercent.toFixed(1)}%)`;
     }
