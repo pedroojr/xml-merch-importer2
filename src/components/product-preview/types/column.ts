@@ -16,13 +16,13 @@ export const getDefaultColumns = (): Column[] => [
     id: 'image', 
     header: 'Imagem', 
     initiallyVisible: true,
-    width: 'w-16'
+    width: 'w-12'
   },
   { 
     id: 'code', 
     header: 'Código', 
     initiallyVisible: true,
-    width: 'w-24'
+    width: 'w-28'
   },
   { 
     id: 'ean', 
@@ -34,25 +34,25 @@ export const getDefaultColumns = (): Column[] => [
     id: 'reference', 
     header: 'Referência', 
     initiallyVisible: true,
-    width: 'w-36'
+    width: 'w-32'
   },
   { 
     id: 'name', 
     header: 'Descrição', 
     initiallyVisible: true,
-    width: 'min-w-[180px] max-w-[300px]'
+    width: 'min-w-[200px] max-w-[280px]'
   },
   { 
     id: 'size', 
-    header: 'Tamanho', 
+    header: 'Tam.', 
     initiallyVisible: true,
-    width: 'w-20'
+    width: 'w-16'
   },
   { 
     id: 'color', 
     header: 'Cor', 
     initiallyVisible: true,
-    width: 'w-28'
+    width: 'w-24'
   },
   { 
     id: 'ncm', 
@@ -68,21 +68,21 @@ export const getDefaultColumns = (): Column[] => [
   },
   { 
     id: 'uom', 
-    header: 'Unidade', 
+    header: 'UN', 
     initiallyVisible: true,
-    width: 'w-20'
+    width: 'w-14'
   },
   { 
     id: 'quantity', 
-    header: 'Quantidade', 
+    header: 'Qtd.', 
     initiallyVisible: true, 
     alignment: 'right',
-    width: 'w-24',
+    width: 'w-20',
     format: (value: number) => value.toLocaleString()
   },
   { 
     id: 'unitPrice', 
-    header: 'Custo Unit.', 
+    header: 'Custo Un.', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-28',
@@ -90,7 +90,7 @@ export const getDefaultColumns = (): Column[] => [
   },
   { 
     id: 'totalPrice', 
-    header: 'Valor Total', 
+    header: 'Total', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-28',
@@ -98,7 +98,7 @@ export const getDefaultColumns = (): Column[] => [
   },
   { 
     id: 'discount', 
-    header: 'Desconto Total', 
+    header: 'Desc. Total', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-28',
@@ -106,7 +106,7 @@ export const getDefaultColumns = (): Column[] => [
   },
   { 
     id: 'unitDiscount', 
-    header: 'Desconto Unit.', 
+    header: 'Desc. Un.', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-28',
@@ -115,7 +115,7 @@ export const getDefaultColumns = (): Column[] => [
   },
   { 
     id: 'netPrice', 
-    header: 'Valor Líquido', 
+    header: 'Líquido', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-28',
@@ -123,7 +123,7 @@ export const getDefaultColumns = (): Column[] => [
   },
   { 
     id: 'xapuriPrice', 
-    header: 'Preço Xapuri', 
+    header: 'Preço Xap.', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-28',
@@ -131,10 +131,10 @@ export const getDefaultColumns = (): Column[] => [
   },
   { 
     id: 'epitaPrice', 
-    header: 'Preço Epitaciolândia', 
+    header: 'Preço Epit.', 
     initiallyVisible: true, 
     alignment: 'right',
-    width: 'w-32',
+    width: 'w-28',
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   }
 ];

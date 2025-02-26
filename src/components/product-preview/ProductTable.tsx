@@ -86,164 +86,167 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   });
 
   return (
-    <div className="w-full">
-      <div className="bg-slate-50 p-4 mb-4">
-        <div className="space-y-4">
+    <div className="w-full space-y-4">
+      <div className="bg-slate-50/80 p-3 rounded-lg border border-slate-200">
+        <div className="space-y-3">
           <div className="flex items-center space-x-2">
             <Switch
               id="show-hidden"
               checked={showHidden}
               onCheckedChange={setShowHidden}
             />
-            <Label htmlFor="show-hidden" className="font-medium">
+            <Label htmlFor="show-hidden" className="text-sm font-medium">
               Mostrar apenas ocultados
             </Label>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Card className="bg-white/50">
               <CardContent className="p-3">
                 <div className="text-xs font-medium text-muted-foreground">Quantidade</div>
-                <div className="text-base font-semibold">{totals.quantidade.toLocaleString('pt-BR')}</div>
+                <div className="text-sm font-medium">{products.length} itens</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-white/50">
               <CardContent className="p-3">
                 <div className="text-xs font-medium text-muted-foreground">Valor Total</div>
-                <div className="text-base font-semibold">{totals.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                <div className="text-sm font-medium tabular-nums">{products.reduce((acc, p) => acc + p.totalPrice, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-white/50">
               <CardContent className="p-3">
                 <div className="text-xs font-medium text-muted-foreground">Valor Líquido</div>
-                <div className="text-base font-semibold">{totals.valorLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                <div className="text-sm font-medium tabular-nums">{products.reduce((acc, p) => acc + p.netPrice, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
 
-      <div className="w-full">
-        <div className="border rounded-md">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50/50">
-                {columns.map((column) => (
-                  visibleColumns.has(column.id) && (
-                    <TableHead
-                      key={column.id}
-                      className={cn(
-                        column.width,
-                        column.alignment === 'right' && "text-right",
-                        column.id === 'xapuriPrice' && "bg-blue-50 text-blue-700",
-                        column.id === 'epitaPrice' && "bg-emerald-50 text-emerald-700",
-                        "font-medium"
-                      )}
-                    >
-                      {column.header}
-                    </TableHead>
-                  )
-                ))}
-                <TableHead className="w-16 text-center">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProducts.map((product, index) => {
-                const productIndex = products.indexOf(product);
-                const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
-                const baseXapuriPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup);
-                const baseEpitaPrice = calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup);
-                
-                const xapuriPrice = roundPrice(baseXapuriPrice, roundingType);
-                const epitaPrice = roundPrice(baseEpitaPrice, roundingType);
-                
-                const tamanhoDescricao = extrairTamanhoDaDescricao(product.name);
-                const tamanhoReferencia = extrairTamanhoDaDescricao(product.reference);
-                const tamanho = tamanhoDescricao || tamanhoReferencia;
-
-                return (
-                  <TableRow 
-                    key={`${product.code}-${productIndex}`}
-                    className="hover:bg-slate-100 transition-colors"
-                  >
-                    {visibleColumns.has('image') && (
-                      <TableCell className="w-16">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleImageSearch(productIndex, product)}
-                          className="w-full h-8"
-                          title="Buscar imagem no Google"
-                        >
-                          <ImageIcon className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-slate-50/80">
+              {columns.map((column) => (
+                visibleColumns.has(column.id) && (
+                  <TableHead
+                    key={column.id}
+                    className={cn(
+                      column.width,
+                      "h-9 px-3 text-xs font-medium",
+                      column.alignment === 'right' && "text-right",
+                      column.id === 'xapuriPrice' && "bg-blue-50/50 text-blue-700",
+                      column.id === 'epitaPrice' && "bg-emerald-50/50 text-emerald-700"
                     )}
-                    {columns.map((column) => {
-                      if (!visibleColumns.has(column.id) || column.id === 'image') return null;
+                  >
+                    {column.header}
+                  </TableHead>
+                )
+              ))}
+              <TableHead className="w-12 text-center text-xs font-medium">
+                Ações
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {products.map((product, index) => {
+              const isHidden = hiddenItems.has(index);
+              if (showHidden ? !isHidden : isHidden) return null;
 
-                      let value: any = column.getValue ? 
-                        column.getValue(product) : 
-                        product[column.id as keyof Product];
+              const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
+              const xapuriPrice = roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup), roundingType);
+              const epitaPrice = roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup), roundingType);
+              
+              const tamanhoDescricao = extrairTamanhoDaDescricao(product.name);
+              const tamanhoReferencia = extrairTamanhoDaDescricao(product.reference);
+              const tamanho = tamanhoDescricao || tamanhoReferencia;
 
-                      if (column.id === 'xapuriPrice') value = xapuriPrice;
-                      if (column.id === 'epitaPrice') value = epitaPrice;
-                      if (column.id === 'size') value = tamanho;
-
-                      const copyId = `${column.id}-${productIndex}`;
-                      const isCopied = copiedField === copyId;
-
-                      return (
-                        <TableCell
-                          key={column.id}
-                          className={cn(
-                            column.width,
-                            column.alignment === 'right' && "text-right tabular-nums",
-                            column.id === 'xapuriPrice' && "bg-blue-50",
-                            column.id === 'epitaPrice' && "bg-emerald-50",
-                            "group relative cursor-pointer hover:bg-slate-50"
-                          )}
-                          title={value?.toString()}
-                          onClick={() => handleCopyToClipboard(value, column, copyId)}
-                        >
-                          <div className="flex items-center gap-1 justify-between overflow-hidden">
-                            <span className={cn(
-                              "truncate",
-                              column.alignment === 'right' ? "ml-auto" : "mr-auto"
-                            )}>
-                              {column.format ? column.format(value) : value}
-                            </span>
-                            <span className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                              {isCopied ? (
-                                <Check className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <Copy className="h-4 w-4 text-gray-500" />
-                              )}
-                            </span>
-                          </div>
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell className="w-16 text-center">
+              return (
+                <TableRow 
+                  key={`${product.code}-${index}`}
+                  className={cn(
+                    "h-10 hover:bg-slate-50/80 transition-colors",
+                    isHidden && "opacity-60"
+                  )}
+                >
+                  {visibleColumns.has('image') && (
+                    <TableCell className="w-12 p-0">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleToggleVisibility(productIndex)}
-                        className="w-8 h-8 p-0"
+                        onClick={() => handleImageSearch(index, product)}
+                        className="h-10 w-full rounded-none"
                       >
-                        {hiddenItems.has(productIndex) ? (
-                          <Eye className="h-4 w-4" />
-                        ) : (
-                          <EyeOff className="h-4 w-4" />
-                        )}
+                        <ImageIcon className="h-4 w-4" />
                       </Button>
                     </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                  )}
+                  {columns.map((column) => {
+                    if (!visibleColumns.has(column.id) || column.id === 'image') return null;
+
+                    let value: any = column.getValue ? 
+                      column.getValue(product) : 
+                      product[column.id as keyof Product];
+
+                    if (column.id === 'xapuriPrice') value = xapuriPrice;
+                    if (column.id === 'epitaPrice') value = epitaPrice;
+                    if (column.id === 'size') value = tamanho;
+
+                    const copyId = `${column.id}-${index}`;
+                    const isCopied = copiedField === copyId;
+
+                    return (
+                      <TableCell
+                        key={column.id}
+                        className={cn(
+                          column.width,
+                          "px-3 group relative cursor-pointer text-sm",
+                          column.alignment === 'right' && "text-right tabular-nums",
+                          column.id === 'xapuriPrice' && "bg-blue-50/50",
+                          column.id === 'epitaPrice' && "bg-emerald-50/50"
+                        )}
+                        onClick={() => handleCopyToClipboard(value, column, copyId)}
+                      >
+                        <div className="flex items-center gap-1 justify-between">
+                          <span className={cn(
+                            "truncate",
+                            column.alignment === 'right' ? "ml-auto" : "mr-auto"
+                          )}>
+                            {column.format ? column.format(value) : value}
+                          </span>
+                          <span className={cn(
+                            "transition-opacity flex-shrink-0",
+                            isCopied ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                          )}>
+                            {isCopied ? (
+                              <Check className="h-3.5 w-3.5 text-green-500" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5 text-gray-400" />
+                            )}
+                          </span>
+                        </div>
+                      </TableCell>
+                    );
+                  })}
+                  <TableCell className="w-12 p-0 text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToggleVisibility(index)}
+                      className="h-10 w-full rounded-none"
+                    >
+                      {isHidden ? (
+                        <Eye className="h-4 w-4" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
