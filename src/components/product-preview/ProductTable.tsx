@@ -6,12 +6,12 @@ import { Product } from '../../types/nfe';
 import { Column } from './types/column';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
 import { toast } from "sonner";
-import { generateProductDescription } from './productDescription';
 import { formatNumberForCopy } from '../../utils/formatters';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { extrairTamanhoDaDescricao } from '../../utils/sizeParser';
 
 interface ProductTableProps {
   products: Product[];
@@ -159,7 +159,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               
               const xapuriPrice = roundPrice(baseXapuriPrice, roundingType);
               const epitaPrice = roundPrice(baseEpitaPrice, roundingType);
-              const betterDescription = generateProductDescription(product);
+              
+              const tamanhoDescricao = extrairTamanhoDaDescricao(product.name);
+              const tamanhoReferencia = extrairTamanhoDaDescricao(product.reference);
+              const tamanho = tamanhoDescricao || tamanhoReferencia;
 
               return (
                 <TableRow 
@@ -188,7 +191,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
                     if (column.id === 'xapuriPrice') value = xapuriPrice;
                     if (column.id === 'epitaPrice') value = epitaPrice;
-                    if (column.id === 'name') value = betterDescription;
+                    if (column.id === 'size') value = tamanho;
 
                     const copyId = `${column.id}-${productIndex}`;
                     const isCopied = copiedField === copyId;
