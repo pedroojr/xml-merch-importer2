@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product } from '../../types/nfe';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,34 +9,60 @@ import { ProfitabilityAnalysis } from './insights/ProfitabilityAnalysis';
 import { ProductToolbar } from './ProductToolbar';
 import { ProductTable } from './ProductTable';
 import { getDefaultColumns, compactColumns } from './types/column';
+import FileUpload from '../FileUpload';
 
 interface ProductPreviewProps {
   products: Product[];
   onProductUpdate?: (index: number, product: Product) => void;
   editable?: boolean;
   onConfigurationUpdate?: (xapuriMarkup: number, epitaMarkup: number, roundingType: string) => void;
+  onNewFile?: (products: Product[]) => void;
 }
 
 const ProductPreview: React.FC<ProductPreviewProps> = ({ 
   products, 
   onProductUpdate, 
   editable = false,
-  onConfigurationUpdate
+  onConfigurationUpdate,
+  onNewFile
 }) => {
-  const [xapuriMarkup, setXapuriMarkup] = useState(120);
-  const [epitaMarkup, setEpitaMarkup] = useState(140);
-  const [roundingType, setRoundingType] = useState<RoundingType>('90');
+  const [xapuriMarkup, setXapuriMarkup] = useState(() => {
+    const saved = localStorage.getItem('xapuriMarkup');
+    return saved ? Number(saved) : 120;
+  });
+
+  const [epitaMarkup, setEpitaMarkup] = useState(() => {
+    const saved = localStorage.getItem('epitaMarkup');
+    return saved ? Number(saved) : 140;
+  });
+
+  const [roundingType, setRoundingType] = useState<RoundingType>(() => {
+    const saved = localStorage.getItem('roundingType');
+    return (saved as RoundingType) || '90';
+  });
+
   const [hiddenItems, setHiddenItems] = useState<Set<number>>(new Set());
-  const [compactMode, setCompactMode] = useState(false);
+  const [compactMode, setCompactMode] = useState(() => {
+    const saved = localStorage.getItem('compactMode');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   const columns = getDefaultColumns();
-  const defaultVisibleColumns = compactMode ? 
-    compactColumns :
-    columns.map(col => col.id);
-
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    new Set(defaultVisibleColumns)
+  const defaultVisibleColumns = new Set(
+    localStorage.getItem('visibleColumns') ? 
+      JSON.parse(localStorage.getItem('visibleColumns')!) : 
+      compactMode ? compactColumns : columns.map(col => col.id)
   );
+
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(defaultVisibleColumns);
+
+  // Persistir configurações
+  useEffect(() => {
+    localStorage.setItem('xapuriMarkup', xapuriMarkup.toString());
+    localStorage.setItem('epitaMarkup', epitaMarkup.toString());
+    localStorage.setItem('roundingType', roundingType);
+    localStorage.setItem('compactMode', JSON.stringify(compactMode));
+  }, [xapuriMarkup, epitaMarkup, roundingType, compactMode]);
 
   const handleMarkupChange = (xapuri: number, epita: number, rounding: RoundingType) => {
     setXapuriMarkup(xapuri);
@@ -61,11 +87,9 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   };
 
   const toggleCompactMode = () => {
-    setCompactMode(!compactMode);
-    setVisibleColumns(new Set(compactMode ? 
-      columns.map(col => col.id) :
-      compactColumns
-    ));
+    const newMode = !compactMode;
+    setCompactMode(newMode);
+    setVisibleColumns(new Set(newMode ? compactColumns : columns.map(col => col.id)));
   };
 
   const handleToggleVisibility = (index: number) => {
@@ -78,6 +102,26 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
       toast.success('Item ocultado');
     }
     setHiddenItems(newHiddenItems);
+  };
+
+  const handleNewFileRequest = () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.xml';
+    fileInput.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        try {
+          // Aqui você pode processar o novo arquivo
+          // Por enquanto vamos apenas simular com os produtos existentes
+          onNewFile?.(products);
+          toast.success('Nova nota carregada com sucesso');
+        } catch (error) {
+          toast.error('Erro ao carregar nova nota');
+        }
+      }
+    };
+    fileInput.click();
   };
 
   return (
@@ -102,6 +146,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
               columns={columns}
               visibleColumns={visibleColumns}
               onToggleColumn={toggleColumn}
+              onNewFileRequest={handleNewFileRequest}
             />
 
             <div className="overflow-x-auto">

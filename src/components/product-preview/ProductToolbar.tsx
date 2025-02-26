@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Columns } from "lucide-react";
+import { Columns, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +26,7 @@ interface ProductToolbarProps {
   columns: Column[];
   visibleColumns: Set<string>;
   onToggleColumn: (columnId: string) => void;
+  onNewFileRequest: () => void;
 }
 
 export const ProductToolbar: React.FC<ProductToolbarProps> = ({
@@ -40,7 +41,20 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
   columns,
   visibleColumns,
   onToggleColumn,
+  onNewFileRequest,
 }) => {
+  const handleColumnToggle = (columnId: string) => {
+    onToggleColumn(columnId);
+    // Salva a configuração atual no localStorage
+    const currentConfig = new Set(visibleColumns);
+    if (currentConfig.has(columnId)) {
+      currentConfig.delete(columnId);
+    } else {
+      currentConfig.add(columnId);
+    }
+    localStorage.setItem('visibleColumns', JSON.stringify(Array.from(currentConfig)));
+  };
+
   return (
     <div className="p-4 border-b">
       <div className="flex items-center justify-between mb-4">
@@ -53,6 +67,15 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
           onRoundingChange={onRoundingChange}
         />
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onNewFileRequest}
+            className="min-w-[140px]"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Nova Nota
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -75,7 +98,7 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
                 <DropdownMenuCheckboxItem
                   key={column.id}
                   checked={visibleColumns.has(column.id)}
-                  onCheckedChange={() => onToggleColumn(column.id)}
+                  onCheckedChange={() => handleColumnToggle(column.id)}
                 >
                   {column.header}
                 </DropdownMenuCheckboxItem>
