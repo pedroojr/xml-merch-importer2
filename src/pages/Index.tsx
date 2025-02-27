@@ -4,21 +4,58 @@ import FileUpload from '../components/FileUpload';
 import { ProductPreview } from '../components/product-preview';
 import { Button } from "@/components/ui/button";
 import { toast } from 'sonner';
-import { Info, FileSpreadsheet } from 'lucide-react';
+import { Info, FileSpreadsheet, Save, History } from 'lucide-react';
 import { parseNFeXML } from '../utils/nfeParser';
 import { Product } from '../types/nfe';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const STORAGE_KEYS = {
   XAPURI_MARKUP: 'nfe_import_xapuri_markup',
   EPITA_MARKUP: 'nfe_import_epita_markup',
-  ROUNDING_TYPE: 'nfe_import_rounding_type'
+  ROUNDING_TYPE: 'nfe_import_rounding_type',
+  SAVED_NFES: 'nfe_import_saved_nfes'
 };
+
+interface SavedNFe {
+  id: string;
+  products: Product[];
+  date: string;
+  name: string;
+  hiddenItems?: Set<number>;
+  xapuriMarkup?: number;
+  epitaMarkup?: number;
+  roundingType?: string;
+}
 
 const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [hiddenItems, setHiddenItems] = useState<Set<number>>(new Set());
+  const [savedNFes, setSavedNFes] = useState<SavedNFe[]>([]);
+  const [currentNFeId, setCurrentNFeId] = useState<string | null>(null);
 
+  // Carregar as notas salvas ao iniciar
   useEffect(() => {
+    const savedNFesJson = localStorage.getItem(STORAGE_KEYS.SAVED_NFES);
+    if (savedNFesJson) {
+      try {
+        const parsedNFes = JSON.parse(savedNFesJson);
+        // Converte os hiddenItems de volta para Set
+        const processedNFes = parsedNFes.map((nfe: any) => ({
+          ...nfe,
+          hiddenItems: nfe.hiddenItems ? new Set(nfe.hiddenItems) : new Set()
+        }));
+        setSavedNFes(processedNFes);
+      } catch (error) {
+        console.error('Erro ao carregar notas salvas:', error);
+      }
+    }
+    
     const savedXapuriMarkup = localStorage.getItem(STORAGE_KEYS.XAPURI_MARKUP);
     const savedEpitaMarkup = localStorage.getItem(STORAGE_KEYS.EPITA_MARKUP);
     const savedRoundingType = localStorage.getItem(STORAGE_KEYS.ROUNDING_TYPE);
@@ -60,6 +97,11 @@ const Index = () => {
       const text = await file.text();
       const parsedProducts = parseNFeXML(text);
       setProducts(parsedProducts);
+      
+      // Limpar o estado ao carregar nova nota
+      setHiddenItems(new Set());
+      setCurrentNFeId(null);
+      
       toast.success('Arquivo XML processado com sucesso');
     } catch (error) {
       toast.error('Erro ao processar o arquivo XML');
@@ -119,11 +161,115 @@ const Index = () => {
     localStorage.setItem(STORAGE_KEYS.EPITA_MARKUP, epitaMarkup.toString());
     localStorage.setItem(STORAGE_KEYS.ROUNDING_TYPE, roundingType);
     
+    // Se estiver visualizando uma NF salva, atualizar suas configurações
+    if (currentNFeId) {
+      const updatedNFes = savedNFes.map(nfe => {
+        if (nfe.id === currentNFeId) {
+          return {
+            ...nfe,
+            xapuriMarkup,
+            epitaMarkup,
+            roundingType
+          };
+        }
+        return nfe;
+      });
+      
+      setSavedNFes(updatedNFes);
+      saveNFesToLocalStorage(updatedNFes);
+    }
+    
     console.log('Configurações salvas:', {
       xapuriMarkup,
       epitaMarkup,
       roundingType
     });
+  };
+  
+  const handleToggleVisibility = (index: number) => {
+    const newHiddenItems = new Set(hiddenItems);
+    if (newHiddenItems.has(index)) {
+      newHiddenItems.delete(index);
+    } else {
+      newHiddenItems.add(index);
+    }
+    setHiddenItems(newHiddenItems);
+    
+    // Se estiver visualizando uma NF salva, atualizar seus itens ocultos
+    if (currentNFeId) {
+      const updatedNFes = savedNFes.map(nfe => {
+        if (nfe.id === currentNFeId) {
+          return {
+            ...nfe,
+            hiddenItems: newHiddenItems
+          };
+        }
+        return nfe;
+      });
+      
+      setSavedNFes(updatedNFes);
+      saveNFesToLocalStorage(updatedNFes);
+    }
+  };
+
+  const saveNFesToLocalStorage = (nfes: SavedNFe[]) => {
+    // Converter os Sets para arrays antes de salvar no localStorage
+    const serializableNFes = nfes.map(nfe => ({
+      ...nfe,
+      hiddenItems: nfe.hiddenItems ? Array.from(nfe.hiddenItems) : []
+    }));
+    
+    localStorage.setItem(STORAGE_KEYS.SAVED_NFES, JSON.stringify(serializableNFes));
+  };
+
+  const handleSaveCurrentNFe = () => {
+    if (products.length === 0) {
+      toast.error('Não há produtos para salvar');
+      return;
+    }
+    
+    // Criar uma nova entrada para a NF atual
+    const now = new Date();
+    const newNFe: SavedNFe = {
+      id: now.getTime().toString(),
+      products: [...products],
+      date: now.toLocaleString('pt-BR'),
+      name: `NF ${now.toLocaleDateString('pt-BR')}`,
+      hiddenItems: new Set(hiddenItems),
+      xapuriMarkup: Number(localStorage.getItem(STORAGE_KEYS.XAPURI_MARKUP) || '120'),
+      epitaMarkup: Number(localStorage.getItem(STORAGE_KEYS.EPITA_MARKUP) || '140'),
+      roundingType: localStorage.getItem(STORAGE_KEYS.ROUNDING_TYPE) || '90'
+    };
+    
+    // Manter apenas as 3 últimas NFs (incluindo a atual)
+    const updatedNFes = [newNFe, ...savedNFes.filter(nfe => nfe.id !== currentNFeId)].slice(0, 3);
+    
+    setSavedNFes(updatedNFes);
+    setCurrentNFeId(newNFe.id);
+    saveNFesToLocalStorage(updatedNFes);
+    
+    toast.success('Nota fiscal salva com sucesso');
+  };
+
+  const handleLoadNFe = (nfe: SavedNFe) => {
+    setProducts(nfe.products);
+    setHiddenItems(nfe.hiddenItems || new Set());
+    setCurrentNFeId(nfe.id);
+    
+    // Restaurar as configurações desta NF
+    if (nfe.xapuriMarkup) {
+      localStorage.setItem(STORAGE_KEYS.XAPURI_MARKUP, nfe.xapuriMarkup.toString());
+    }
+    
+    if (nfe.epitaMarkup) {
+      localStorage.setItem(STORAGE_KEYS.EPITA_MARKUP, nfe.epitaMarkup.toString());
+    }
+    
+    if (nfe.roundingType) {
+      localStorage.setItem(STORAGE_KEYS.ROUNDING_TYPE, nfe.roundingType);
+    }
+    
+    toast.success(`Nota fiscal ${nfe.name} carregada com sucesso`);
   };
 
   return (
@@ -145,6 +291,25 @@ const Index = () => {
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
               <div className="max-w-3xl mx-auto">
                 <FileUpload onFileSelect={handleFileSelect} />
+                
+                {savedNFes.length > 0 && (
+                  <div className="mt-8 text-center">
+                    <p className="text-slate-600 mb-3">Ou carregue uma nota fiscal salva anteriormente:</p>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      {savedNFes.map((nfe) => (
+                        <Button
+                          key={nfe.id}
+                          variant="outline"
+                          onClick={() => handleLoadNFe(nfe)}
+                          className="flex items-center gap-2"
+                        >
+                          <History size={16} />
+                          {nfe.name} ({nfe.products.length} itens)
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -159,12 +324,61 @@ const Index = () => {
 
         {products.length > 0 && (
           <div className="w-full animate-fade-up">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-medium">
+                  {currentNFeId ? 
+                    savedNFes.find(nfe => nfe.id === currentNFeId)?.name || 'Nota Fiscal' :
+                    'Nova Nota Fiscal'}
+                </h2>
+                <span className="text-sm text-slate-500">
+                  ({products.length} produtos)
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={handleSaveCurrentNFe}
+                  className="flex items-center gap-2"
+                >
+                  <Save size={16} />
+                  Salvar Nota
+                </Button>
+                {savedNFes.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <History size={16} />
+                        Histórico
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {savedNFes.map((nfe) => (
+                        <DropdownMenuItem
+                          key={nfe.id}
+                          onClick={() => handleLoadNFe(nfe)}
+                          className="cursor-pointer"
+                        >
+                          {nfe.name} - {nfe.date}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </div>
+            
             <div className="w-full bg-white rounded-lg shadow-sm border border-slate-200">
               <ProductPreview 
                 products={products} 
                 onProductUpdate={handleProductUpdate}
                 editable={true}
                 onConfigurationUpdate={handleConfigurationUpdate}
+                hiddenItems={hiddenItems}
+                onToggleVisibility={handleToggleVisibility}
               />
             </div>
             <div className="flex justify-end gap-4 mt-6">

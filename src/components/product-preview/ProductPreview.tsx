@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Product } from '../../types/nfe';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
@@ -16,6 +17,8 @@ interface ProductPreviewProps {
   editable?: boolean;
   onConfigurationUpdate?: (xapuriMarkup: number, epitaMarkup: number, roundingType: string) => void;
   onNewFile?: (products: Product[]) => void;
+  hiddenItems?: Set<number>;
+  onToggleVisibility?: (index: number) => void;
 }
 
 const ProductPreview: React.FC<ProductPreviewProps> = ({ 
@@ -23,7 +26,9 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   onProductUpdate, 
   editable = false,
   onConfigurationUpdate,
-  onNewFile
+  onNewFile,
+  hiddenItems = new Set(),
+  onToggleVisibility
 }) => {
   const [xapuriMarkup, setXapuriMarkup] = useState(() => {
     const saved = localStorage.getItem('xapuriMarkup');
@@ -40,7 +45,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     return (saved as RoundingType) || '90';
   });
 
-  const [hiddenItems, setHiddenItems] = useState<Set<number>>(new Set());
+  const [localHiddenItems, setLocalHiddenItems] = useState<Set<number>>(hiddenItems);
   const [compactMode, setCompactMode] = useState(() => {
     const saved = localStorage.getItem('compactMode');
     return saved ? JSON.parse(saved) : false;
@@ -55,6 +60,11 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     }
     return new Set(compactMode ? compactColumns : columns.map(col => col.id));
   });
+
+  // Atualizar o estado local quando as props mudarem
+  useEffect(() => {
+    setLocalHiddenItems(hiddenItems);
+  }, [hiddenItems]);
 
   useEffect(() => {
     localStorage.setItem('xapuriMarkup', xapuriMarkup.toString());
@@ -95,15 +105,20 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   };
 
   const handleToggleVisibility = (index: number) => {
-    const newHiddenItems = new Set(hiddenItems);
-    if (newHiddenItems.has(index)) {
-      newHiddenItems.delete(index);
-      toast.success('Item exibido novamente');
+    // Usar a função de callback prop se fornecida, caso contrário usar a local
+    if (onToggleVisibility) {
+      onToggleVisibility(index);
     } else {
-      newHiddenItems.add(index);
-      toast.success('Item ocultado');
+      const newHiddenItems = new Set(localHiddenItems);
+      if (newHiddenItems.has(index)) {
+        newHiddenItems.delete(index);
+        toast.success('Item exibido novamente');
+      } else {
+        newHiddenItems.add(index);
+        toast.success('Item ocultado');
+      }
+      setLocalHiddenItems(newHiddenItems);
     }
-    setHiddenItems(newHiddenItems);
   };
 
   const handleNewFileRequest = () => {
@@ -123,6 +138,9 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     };
     fileInput.click();
   };
+
+  // Determinar qual conjunto de itens ocultos usar
+  const effectiveHiddenItems = onToggleVisibility ? hiddenItems : localHiddenItems;
 
   return (
     <div className="w-full max-w-full flex-1">
@@ -155,7 +173,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
               products={products}
               visibleColumns={visibleColumns}
               columns={columns}
-              hiddenItems={hiddenItems}
+              hiddenItems={effectiveHiddenItems}
               handleToggleVisibility={handleToggleVisibility}
               handleImageSearch={handleImageSearch}
               xapuriMarkup={xapuriMarkup}
