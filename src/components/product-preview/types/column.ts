@@ -116,12 +116,8 @@ export const getDefaultColumns = (): Column[] => [
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-fit',
-    minWidth: 140,
-    format: (value: number, product?: Product) => {
-      if (!product) return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      const discountPercent = product.totalPrice > 0 ? (product.discount / product.totalPrice) * 100 : 0;
-      return `${value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${discountPercent.toFixed(1)}%)`;
-    }
+    minWidth: 112,
+    format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
     id: 'unitDiscount', 

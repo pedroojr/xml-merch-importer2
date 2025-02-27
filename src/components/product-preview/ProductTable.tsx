@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -90,6 +91,18 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     return showHidden ? isItemHidden : !isItemHidden;
   });
 
+  // Calcular a média de desconto em percentual
+  const calculateAverageDiscountPercent = () => {
+    if (products.length === 0) return 0;
+    
+    const totalOriginalPrice = products.reduce((acc, p) => acc + p.totalPrice, 0);
+    const totalDiscount = products.reduce((acc, p) => acc + p.discount, 0);
+    
+    return totalOriginalPrice > 0 ? (totalDiscount / totalOriginalPrice) * 100 : 0;
+  };
+
+  const averageDiscountPercent = calculateAverageDiscountPercent();
+
   return (
     <div className="w-full space-y-4">
       <div className="bg-slate-50/80 p-3 rounded-lg border border-slate-200">
@@ -105,7 +118,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             </Label>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <Card className="bg-white/50">
               <CardContent className="p-3">
                 <div className="text-xs font-medium text-muted-foreground">Quantidade</div>
@@ -115,13 +128,23 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             <Card className="bg-white/50">
               <CardContent className="p-3">
                 <div className="text-xs font-medium text-muted-foreground">Valor Total</div>
-                <div className="text-sm font-medium tabular-nums">{products.reduce((acc, p) => acc + p.totalPrice, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                <div className="text-sm font-medium tabular-nums">
+                  {products.reduce((acc, p) => acc + p.totalPrice, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </div>
               </CardContent>
             </Card>
             <Card className="bg-white/50">
               <CardContent className="p-3">
                 <div className="text-xs font-medium text-muted-foreground">Valor Líquido</div>
-                <div className="text-sm font-medium tabular-nums">{products.reduce((acc, p) => acc + p.netPrice, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                <div className="text-sm font-medium tabular-nums">
+                  {products.reduce((acc, p) => acc + p.netPrice, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white/50">
+              <CardContent className="p-3">
+                <div className="text-xs font-medium text-muted-foreground">Desconto Médio</div>
+                <div className="text-sm font-medium tabular-nums">{averageDiscountPercent.toFixed(1)}%</div>
               </CardContent>
             </Card>
           </div>
@@ -232,7 +255,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                             column.id === 'name' ? "whitespace-normal" : "truncate",
                             column.alignment === 'right' ? "ml-auto" : "mr-auto"
                           )}>
-                            {column.format ? column.format(value, products[index]) : value}
+                            {column.format ? column.format(value) : value}
                           </span>
                           <span className={cn(
                             "transition-opacity flex-shrink-0",
