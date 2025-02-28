@@ -4,7 +4,7 @@ import { Product } from '../../../types/nfe';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from '../../../utils/formatters';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Info, TrendingUp, BarChart3, DollarSign } from 'lucide-react';
+import { Info, TrendingUp, BarChart3, DollarSign, ArrowUpRight } from 'lucide-react';
 
 interface PricingAnalysisProps {
   products: Product[];
@@ -25,6 +25,7 @@ export const PricingAnalysis: React.FC<PricingAnalysisProps> = ({
 }) => {
   // Calculando os totais e médias
   const totalCost = products.reduce((sum, product) => sum + product.netPrice, 0);
+  const totalGrossCost = products.reduce((sum, product) => sum + product.totalPrice, 0);
   const freightCost = totalCost * (freightCostPercentage / 100);
   const taxCost = totalCost * (taxRate / 100);
   
@@ -38,6 +39,10 @@ export const PricingAnalysis: React.FC<PricingAnalysisProps> = ({
   
   const avgXapuriPrice = avgUnitCost * (1 + suggestedXapuriMarkup / 100);
   const avgEpitaPrice = avgUnitCost * (1 + suggestedEpitaMarkup / 100);
+  
+  // Novas fórmulas de precificação sugeridas
+  const avgXapuriSuggestedPrice = (totalGrossCost / Math.max(1, products.length)) * 2.2;
+  const avgEpitaSuggestedPrice = (totalCost / Math.max(1, products.length)) * 2.3;
   
   // Calculando margens
   const xapuriMargin = ((avgXapuriPrice - avgUnitCost) / avgXapuriPrice) * 100;
@@ -122,6 +127,49 @@ export const PricingAnalysis: React.FC<PricingAnalysisProps> = ({
             <p className="text-sm text-muted-foreground mt-1">
               Para cobrir custos fixos mensais
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Cards de preços sugeridos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-blue-700 flex items-center">
+              <ArrowUpRight className="w-4 h-4 mr-2" />
+              Preço Sugerido - Xapuri
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-800">{formatCurrency(avgXapuriSuggestedPrice)}</div>
+            <p className="text-sm text-blue-600 mt-1">
+              Custo bruto × 2.2
+            </p>
+            <div className="bg-white p-2 rounded-md mt-2 border border-blue-100">
+              <p className="text-xs text-slate-600">
+                Fórmula: {formatCurrency(totalGrossCost / Math.max(1, products.length))} × 2.2 = {formatCurrency(avgXapuriSuggestedPrice)}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-emerald-200 bg-emerald-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-emerald-700 flex items-center">
+              <ArrowUpRight className="w-4 h-4 mr-2" />
+              Preço Sugerido - Epitaciolândia
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-800">{formatCurrency(avgEpitaSuggestedPrice)}</div>
+            <p className="text-sm text-emerald-600 mt-1">
+              Custo líquido × 2.3
+            </p>
+            <div className="bg-white p-2 rounded-md mt-2 border border-emerald-100">
+              <p className="text-xs text-slate-600">
+                Fórmula: {formatCurrency(totalCost / Math.max(1, products.length))} × 2.3 = {formatCurrency(avgEpitaSuggestedPrice)}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
