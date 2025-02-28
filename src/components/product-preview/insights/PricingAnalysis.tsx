@@ -4,7 +4,7 @@ import { Product } from '../../../types/nfe';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from '../../../utils/formatters';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Info, TrendingUp, BarChart3, DollarSign, ArrowUpRight } from 'lucide-react';
+import { Info, TrendingUp, BarChart3, DollarSign, ArrowUpRight, Percent } from 'lucide-react';
 
 interface PricingAnalysisProps {
   products: Product[];
@@ -43,6 +43,10 @@ export const PricingAnalysis: React.FC<PricingAnalysisProps> = ({
   // Novos cálculos para preços sugeridos com as fórmulas específicas
   const avgXapuriSuggestedPrice = (totalGrossCost / Math.max(1, products.length)) * 2.2;
   const avgEpitaSuggestedPrice = (totalCost / Math.max(1, products.length)) * 2.3;
+  
+  // Markups sugeridos pelas fórmulas específicas
+  const xapuriSuggestedMarkup = 120; // Equivalente a preço = custo bruto * 2.2
+  const epitaSuggestedMarkup = 130; // Equivalente a preço = custo líquido * 2.3
   
   // Calculando margens
   const xapuriMargin = ((avgXapuriPrice - avgUnitCost) / avgXapuriPrice) * 100;
@@ -91,12 +95,12 @@ export const PricingAnalysis: React.FC<PricingAnalysisProps> = ({
         <Card className="border-green-100 bg-green-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-green-700 flex items-center">
-              <ArrowUpRight className="w-4 h-4 mr-2" />
-              Preço Sugerido Xapuri
+              <Percent className="w-4 h-4 mr-2" />
+              Markup Sugerido Xapuri
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-700">{formatCurrency(avgXapuriSuggestedPrice)}</div>
+            <div className="text-2xl font-bold text-green-700">{xapuriSuggestedMarkup}%</div>
             <p className="text-xs text-green-600 mt-1">
               Custo bruto × 2.2
             </p>
@@ -106,12 +110,12 @@ export const PricingAnalysis: React.FC<PricingAnalysisProps> = ({
         <Card className="border-blue-100 bg-blue-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-blue-700 flex items-center">
-              <ArrowUpRight className="w-4 h-4 mr-2" />
-              Preço Sugerido Epitaciolândia
+              <Percent className="w-4 h-4 mr-2" />
+              Markup Sugerido Epitaciolândia
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-700">{formatCurrency(avgEpitaSuggestedPrice)}</div>
+            <div className="text-2xl font-bold text-blue-700">{epitaSuggestedMarkup}%</div>
             <p className="text-xs text-blue-600 mt-1">
               Custo líquido × 2.3
             </p>
