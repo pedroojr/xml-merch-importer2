@@ -94,7 +94,7 @@ export const getDefaultColumns = (): Column[] => [
   },
   { 
     id: 'unitPrice', 
-    header: 'Custo Un.', 
+    header: 'Custo Bruto', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-fit',
@@ -112,7 +112,7 @@ export const getDefaultColumns = (): Column[] => [
   },
   { 
     id: 'netPrice', 
-    header: 'Líquido', 
+    header: 'Custo Líquido', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-fit',

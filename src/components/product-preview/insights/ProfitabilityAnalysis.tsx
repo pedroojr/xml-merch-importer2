@@ -25,9 +25,6 @@ export const ProfitabilityAnalysis: React.FC<ProfitabilityAnalysisProps> = ({
   // Custos operacionais estimados (exemplo)
   const operationalCosts = {
     impostos: totalCost * 0.0925, // 9.25% (PIS/COFINS)
-    cartao: projectedRevenue * 0.03, // 3% taxa média de cartão
-    freteEstimado: totalCost * 0.05, // 5% estimativa de frete
-    despesasOperacionais: projectedRevenue * 0.15 // 15% despesas operacionais
   };
 
   const totalOperationalCosts = Object.values(operationalCosts).reduce((a, b) => a + b, 0);
@@ -93,22 +90,10 @@ export const ProfitabilityAnalysis: React.FC<ProfitabilityAnalysisProps> = ({
           <div className="space-y-4">
             <div>
               <h4 className="font-medium mb-2">Custos Operacionais Estimados</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Impostos (PIS/COFINS)</p>
                   <p className="font-medium">{formatCurrency(operationalCosts.impostos)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Taxas de Cartão</p>
-                  <p className="font-medium">{formatCurrency(operationalCosts.cartao)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Frete Estimado</p>
-                  <p className="font-medium">{formatCurrency(operationalCosts.freteEstimado)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Despesas Operacionais</p>
-                  <p className="font-medium">{formatCurrency(operationalCosts.despesasOperacionais)}</p>
                 </div>
               </div>
             </div>
