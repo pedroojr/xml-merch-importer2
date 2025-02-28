@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle, Percent } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
 interface MarkupControlsProps {
   xapuriMarkup: number;
@@ -48,21 +48,22 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          </div>
+          <div className="relative">
+            <Input
+              id="xapuri-markup"
+              type="number"
+              value={xapuriMarkup}
+              onChange={(e) => onXapuriMarkupChange(Number(e.target.value))}
+              className="w-full border-blue-200 focus:border-blue-400 pr-32"
+              step="5"
+            />
             {xapuriSuggestedMarkup && (
-              <span className="ml-auto text-xs font-medium text-blue-600 flex items-center">
-                <Percent className="h-3 w-3 mr-1" />
-                <span>Sugerido: {xapuriSuggestedMarkup}%</span>
-              </span>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-medium text-blue-600">
+                % Sugerido: {xapuriSuggestedMarkup}%
+              </div>
             )}
           </div>
-          <Input
-            id="xapuri-markup"
-            type="number"
-            value={xapuriMarkup}
-            onChange={(e) => onXapuriMarkupChange(Number(e.target.value))}
-            className="w-full border-blue-200 focus:border-blue-400"
-            step="5"
-          />
         </div>
         
         <div className="space-y-2">
@@ -70,21 +71,22 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
             <Label htmlFor="epita-markup" className="text-sm font-medium text-emerald-700">
               Markup Epitaciolândia (%)
             </Label>
+          </div>
+          <div className="relative">
+            <Input
+              id="epita-markup"
+              type="number"
+              value={epitaMarkup}
+              onChange={(e) => onEpitaMarkupChange(Number(e.target.value))}
+              className="w-full border-emerald-200 focus:border-emerald-400 pr-32"
+              step="5"
+            />
             {epitaSuggestedMarkup && (
-              <span className="ml-auto text-xs font-medium text-emerald-600 flex items-center">
-                <Percent className="h-3 w-3 mr-1" />
-                <span>Sugerido: {epitaSuggestedMarkup}%</span>
-              </span>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-medium text-emerald-600">
+                % Sugerido: {epitaSuggestedMarkup}%
+              </div>
             )}
           </div>
-          <Input
-            id="epita-markup"
-            type="number"
-            value={epitaMarkup}
-            onChange={(e) => onEpitaMarkupChange(Number(e.target.value))}
-            className="w-full border-emerald-200 focus:border-emerald-400"
-            step="5"
-          />
         </div>
 
         <div className="space-y-2">
