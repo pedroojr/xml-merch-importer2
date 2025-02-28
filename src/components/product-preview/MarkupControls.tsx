@@ -59,9 +59,13 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
               step="5"
             />
             {xapuriSuggestedMarkup && (
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-medium text-blue-600">
+              <button 
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-medium text-blue-600 hover:text-blue-800"
+                onClick={() => onXapuriMarkupChange(xapuriSuggestedMarkup)}
+                type="button"
+              >
                 % Sugerido: {xapuriSuggestedMarkup}%
-              </div>
+              </button>
             )}
           </div>
         </div>
@@ -82,9 +86,13 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
               step="5"
             />
             {epitaSuggestedMarkup && (
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-medium text-emerald-600">
+              <button 
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-medium text-emerald-600 hover:text-emerald-800"
+                onClick={() => onEpitaMarkupChange(epitaSuggestedMarkup)}
+                type="button"
+              >
                 % Sugerido: {epitaSuggestedMarkup}%
-              </div>
+              </button>
             )}
           </div>
         </div>

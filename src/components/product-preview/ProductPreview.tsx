@@ -28,14 +28,25 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   hiddenItems = new Set(),
   onToggleVisibility
 }) => {
+  // Calculate suggested markups
+  const totalBruto = products.reduce((sum, p) => sum + p.totalPrice, 0);
+  const totalLiquido = products.reduce((sum, p) => sum + p.netPrice, 0);
+  
+  // Markup sugerido para Xapuri (ajustando para custo líquido)
+  const precoVendaXapuri = totalBruto * 2.2;
+  const xapuriSuggestedMarkup = totalLiquido > 0 ? Math.round(((precoVendaXapuri / totalLiquido) - 1) * 100) : 120;
+  
+  // Markup sugerido para Epitaciolândia (já está em relação ao custo líquido)
+  const epitaSuggestedMarkup = 130; // Equivalente a preço = custo líquido * 2.3
+
   const [xapuriMarkup, setXapuriMarkup] = useState(() => {
     const saved = localStorage.getItem('xapuriMarkup');
-    return saved ? Number(saved) : 120;
+    return saved ? Number(saved) : xapuriSuggestedMarkup;
   });
 
   const [epitaMarkup, setEpitaMarkup] = useState(() => {
     const saved = localStorage.getItem('epitaMarkup');
-    return saved ? Number(saved) : 140;
+    return saved ? Number(saved) : epitaSuggestedMarkup;
   });
 
   const [roundingType, setRoundingType] = useState<RoundingType>(() => {
@@ -136,20 +147,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   };
 
   const effectiveHiddenItems = onToggleVisibility ? hiddenItems : localHiddenItems;
-
-  // Markups sugeridos pelas fórmulas específicas
-  // Para Xapuri, usando a fórmula custo bruto * 2.2, calculamos o markup equivalente para custo líquido
-  const totalBruto = products.reduce((sum, p) => sum + p.totalPrice, 0);
-  const totalLiquido = products.reduce((sum, p) => sum + p.netPrice, 0);
-  
-  // Markup sugerido para Xapuri (ajustando para custo líquido)
-  // Se custo bruto * 2.2 = preço de venda
-  // Então, markup em relação ao custo líquido = ((preço de venda / custo líquido) - 1) * 100
-  const precoVendaXapuri = totalBruto * 2.2;
-  const xapuriSuggestedMarkup = totalLiquido > 0 ? Math.round(((precoVendaXapuri / totalLiquido) - 1) * 100) : 120;
-  
-  // Markup sugerido para Epitaciolândia (já está em relação ao custo líquido)
-  const epitaSuggestedMarkup = 130; // Equivalente a preço = custo líquido * 2.3
 
   return (
     <div className="w-full max-w-full flex-1">
