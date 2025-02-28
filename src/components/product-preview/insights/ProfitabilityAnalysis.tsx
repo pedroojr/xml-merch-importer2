@@ -8,27 +8,41 @@ interface ProfitabilityAnalysisProps {
   products: Product[];
   xapuriMarkup: number;
   epitaMarkup: number;
+  taxRate: number;
+  freightCostPercentage: number;
+  monthlyFixedCosts: number;
 }
 
 export const ProfitabilityAnalysis: React.FC<ProfitabilityAnalysisProps> = ({
   products,
   xapuriMarkup,
-  epitaMarkup
+  epitaMarkup,
+  taxRate,
+  freightCostPercentage,
+  monthlyFixedCosts
 }) => {
   // Cálculos base
   const totalCost = products.reduce((sum, product) => sum + product.netPrice, 0);
+  const freightCost = totalCost * (freightCostPercentage / 100);
+  const taxCost = totalCost * (taxRate / 100);
+  
+  // Custo total ajustado
+  const totalAdjustedCost = totalCost + freightCost + taxCost;
+  
   const avgMarkup = (xapuriMarkup + epitaMarkup) / 2;
-  const projectedRevenue = totalCost * (1 + avgMarkup / 100);
-  const grossProfit = projectedRevenue - totalCost;
+  const projectedRevenue = totalAdjustedCost * (1 + avgMarkup / 100);
+  const grossProfit = projectedRevenue - totalAdjustedCost;
   const grossMargin = (grossProfit / projectedRevenue) * 100;
 
-  // Custos operacionais estimados (exemplo)
+  // Custos operacionais
   const operationalCosts = {
-    impostos: totalCost * 0.0925, // 9.25% (PIS/COFINS)
+    custoFixoMensal: monthlyFixedCosts,
+    frete: freightCost,
+    impostos: taxCost
   };
 
   const totalOperationalCosts = Object.values(operationalCosts).reduce((a, b) => a + b, 0);
-  const netProfit = grossProfit - totalOperationalCosts;
+  const netProfit = grossProfit - monthlyFixedCosts;
   const netMargin = (netProfit / projectedRevenue) * 100;
 
   return (
@@ -37,11 +51,14 @@ export const ProfitabilityAnalysis: React.FC<ProfitabilityAnalysisProps> = ({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Custo Total (CPV)
+              Custo Total Ajustado
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalCost)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalAdjustedCost)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Inclui frete e impostos
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -89,11 +106,19 @@ export const ProfitabilityAnalysis: React.FC<ProfitabilityAnalysisProps> = ({
         <CardContent>
           <div className="space-y-4">
             <div>
-              <h4 className="font-medium mb-2">Custos Operacionais Estimados</h4>
-              <div className="grid grid-cols-1 gap-4">
+              <h4 className="font-medium mb-2">Custos Operacionais</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Impostos (PIS/COFINS)</p>
+                  <p className="text-sm text-muted-foreground">Custos Fixos Mensais</p>
+                  <p className="font-medium">{formatCurrency(operationalCosts.custoFixoMensal)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Impostos ({taxRate}%)</p>
                   <p className="font-medium">{formatCurrency(operationalCosts.impostos)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Frete ({freightCostPercentage}%)</p>
+                  <p className="font-medium">{formatCurrency(operationalCosts.frete)}</p>
                 </div>
               </div>
             </div>
@@ -112,6 +137,10 @@ export const ProfitabilityAnalysis: React.FC<ProfitabilityAnalysisProps> = ({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Lucro Líquido Projetado</span>
                   <span className="font-medium">{formatCurrency(netProfit)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">ROI (Retorno sobre Investimento)</span>
+                  <span className="font-medium">{(netProfit / totalAdjustedCost * 100).toFixed(1)}%</span>
                 </div>
               </div>
             </div>

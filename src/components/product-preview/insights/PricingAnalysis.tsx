@@ -10,34 +10,53 @@ interface PricingAnalysisProps {
   products: Product[];
   xapuriMarkup: number;
   epitaMarkup: number;
+  monthlyFixedCosts: number;
+  taxRate: number;
+  freightCostPercentage: number;
 }
 
 export const PricingAnalysis: React.FC<PricingAnalysisProps> = ({
   products,
   xapuriMarkup,
-  epitaMarkup
+  epitaMarkup,
+  monthlyFixedCosts,
+  taxRate,
+  freightCostPercentage
 }) => {
   // Calculando os totais e médias
   const totalCost = products.reduce((sum, product) => sum + product.netPrice, 0);
-  const avgUnitCost = totalCost / Math.max(1, products.length);
-  const avgXapuriPrice = avgUnitCost * (1 + xapuriMarkup / 100);
-  const avgEpitaPrice = avgUnitCost * (1 + epitaMarkup / 100);
+  const freightCost = totalCost * (freightCostPercentage / 100);
+  const taxCost = totalCost * (taxRate / 100);
+  
+  // Custo total incluindo frete e impostos
+  const totalCostWithFreightAndTax = totalCost + freightCost + taxCost;
+  const avgUnitCost = totalCostWithFreightAndTax / Math.max(1, products.length);
+  
+  // Calculando preços sugeridos com base nos custos adicionais
+  const suggestedXapuriMarkup = xapuriMarkup;
+  const suggestedEpitaMarkup = epitaMarkup;
+  
+  const avgXapuriPrice = avgUnitCost * (1 + suggestedXapuriMarkup / 100);
+  const avgEpitaPrice = avgUnitCost * (1 + suggestedEpitaMarkup / 100);
   
   // Calculando margens
   const xapuriMargin = ((avgXapuriPrice - avgUnitCost) / avgXapuriPrice) * 100;
   const epitaMargin = ((avgEpitaPrice - avgUnitCost) / avgEpitaPrice) * 100;
   
-  // Estimativa de ponto de equilíbrio (simplificado)
-  const estimatedMonthlyCosts = 10000; // Custos mensais fixos estimados
+  // Estimativa de ponto de equilíbrio
   const avgProfit = (avgXapuriPrice + avgEpitaPrice) / 2 - avgUnitCost;
-  const breakEvenUnits = Math.ceil(estimatedMonthlyCosts / avgProfit);
+  const breakEvenUnits = Math.ceil(monthlyFixedCosts / avgProfit);
   
   // Distribuição de preços (agrupando produtos por faixas de preço)
   const priceRanges = [0, 50, 100, 200, 500, 1000, Infinity];
   const priceDistribution = priceRanges.slice(0, -1).map((min, index) => {
     const max = priceRanges[index + 1];
     const count = products.filter(p => {
-      const avgPrice = (p.netPrice * (1 + xapuriMarkup / 100) + p.netPrice * (1 + epitaMarkup / 100)) / 2;
+      const productCostWithFreightAndTax = p.netPrice * (1 + freightCostPercentage / 100) + (p.netPrice * (taxRate / 100));
+      const avgPrice = (
+        productCostWithFreightAndTax * (1 + suggestedXapuriMarkup / 100) + 
+        productCostWithFreightAndTax * (1 + suggestedEpitaMarkup / 100)
+      ) / 2;
       return avgPrice >= min && avgPrice < max;
     }).length;
     const label = max === Infinity 
@@ -58,6 +77,9 @@ export const PricingAnalysis: React.FC<PricingAnalysisProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(avgUnitCost)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Inclui frete e impostos
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -138,7 +160,7 @@ export const PricingAnalysis: React.FC<PricingAnalysisProps> = ({
               <Info className="h-4 w-4" />
               <AlertTitle>Percepção de Valor</AlertTitle>
               <AlertDescription>
-                A sua margem média está em {((xapuriMargin + epitaMargin) / 2).toFixed(1)}%. Considere analisar produtos de alto custo para ajustes de markup específicos, melhorando a percepção de valor.
+                A sua margem média está em {((xapuriMargin + epitaMargin) / 2).toFixed(1)}%. Com os custos adicionais considerados, essa margem reflete melhor o valor real dos produtos.
               </AlertDescription>
             </Alert>
             
@@ -146,14 +168,14 @@ export const PricingAnalysis: React.FC<PricingAnalysisProps> = ({
               <TrendingUp className="h-4 w-4" />
               <AlertTitle>Sugestão de Ajuste</AlertTitle>
               <AlertDescription>
-                Avaliar produtos com preço acima de {formatCurrency(500)} para garantir competitividade no mercado. Considere estratégias de volume para produtos de menor valor.
+                Com a inclusão de {formatCurrency(freightCost)} de frete e {formatCurrency(taxCost)} de impostos, o preço sugerido já considera custos operacionais importantes para sua rentabilidade.
               </AlertDescription>
             </Alert>
             
             <div className="pt-2">
               <h4 className="font-medium text-sm mb-2">Impacto de Ajustes de Preço:</h4>
               <p className="text-sm text-slate-600">
-                Um aumento de 5% no markup resultaria em uma margem de {((xapuriMargin * 1.05 + epitaMargin * 1.05) / 2).toFixed(1)}% e reduziria o ponto de equilíbrio para aproximadamente {Math.ceil(estimatedMonthlyCosts / (avgProfit * 1.05))} unidades.
+                Um aumento de 5% no markup resultaria em uma margem de {((xapuriMargin * 1.05 + epitaMargin * 1.05) / 2).toFixed(1)}% e reduziria o ponto de equilíbrio para aproximadamente {Math.ceil(monthlyFixedCosts / (avgProfit * 1.05))} unidades.
               </p>
             </div>
           </CardContent>

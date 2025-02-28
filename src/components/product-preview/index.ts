@@ -5,3 +5,4 @@ export * from './ProductTableRow';
 export * from './productCalculations';
 export * from './insights/PricingAnalysis';
 export * from './insights/ProfitabilityAnalysis';
+export * from './ProductAnalysisTabs';
