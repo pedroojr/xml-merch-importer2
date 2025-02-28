@@ -8,6 +8,8 @@ import { ProductToolbar } from './ProductToolbar';
 import { ProductTable } from './ProductTable';
 import { getDefaultColumns, compactColumns } from './types/column';
 import { ProductAnalysisTabs } from './ProductAnalysisTabs';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Percent } from "lucide-react";
 
 interface ProductPreviewProps {
   products: Product[];
@@ -137,6 +139,20 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
 
   const effectiveHiddenItems = onToggleVisibility ? hiddenItems : localHiddenItems;
 
+  // Markups sugeridos pelas fórmulas específicas
+  // Para Xapuri, usando a fórmula custo bruto * 2.2, calculamos o markup equivalente para custo líquido
+  const totalBruto = products.reduce((sum, p) => sum + p.totalPrice, 0);
+  const totalLiquido = products.reduce((sum, p) => sum + p.netPrice, 0);
+  
+  // Markup sugerido para Xapuri (ajustando para custo líquido)
+  // Se custo bruto * 2.2 = preço de venda
+  // Então, markup em relação ao custo líquido = ((preço de venda / custo líquido) - 1) * 100
+  const precoVendaXapuri = totalBruto * 2.2;
+  const xapuriSuggestedMarkup = totalLiquido > 0 ? Math.round(((precoVendaXapuri / totalLiquido) - 1) * 100) : 120;
+  
+  // Markup sugerido para Epitaciolândia (já está em relação ao custo líquido)
+  const epitaSuggestedMarkup = 130; // Equivalente a preço = custo líquido * 2.3
+
   return (
     <div className="w-full max-w-full flex-1">
       <div className="rounded-lg border bg-white shadow-sm">
@@ -164,6 +180,39 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
               onToggleColumn={toggleColumn}
               onNewFileRequest={handleNewFileRequest}
             />
+
+            {/* Cards de Markup Sugerido */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+              <Card className="border-green-100 bg-green-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-green-700 flex items-center">
+                    <Percent className="w-4 h-4 mr-2" />
+                    Markup Sugerido Xapuri
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-700">{xapuriSuggestedMarkup}%</div>
+                  <p className="text-xs text-green-600 mt-1">
+                    Baseado em: Custo bruto × 2.2
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="border-blue-100 bg-blue-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-blue-700 flex items-center">
+                    <Percent className="w-4 h-4 mr-2" />
+                    Markup Sugerido Epitaciolândia
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-700">{epitaSuggestedMarkup}%</div>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Custo líquido × 2.3
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
 
             <ProductTable
               products={products}
