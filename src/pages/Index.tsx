@@ -3,10 +3,11 @@ import React, { useState, useEffect } from 'react';
 import FileUpload from '../components/FileUpload';
 import { ProductPreview } from '../components/product-preview';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
-import { Info, FileSpreadsheet, Save, History } from 'lucide-react';
+import { Info, FileSpreadsheet, Save, History, Edit2 } from 'lucide-react';
 import { parseNFeXML } from '../utils/nfeParser';
-import { Product } from '../types/nfe';
+import { Product, SavedNFe } from '../types/nfe';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -21,23 +22,15 @@ const STORAGE_KEYS = {
   SAVED_NFES: 'nfe_import_saved_nfes'
 };
 
-interface SavedNFe {
-  id: string;
-  products: Product[];
-  date: string;
-  name: string;
-  hiddenItems?: Set<number>;
-  xapuriMarkup?: number;
-  epitaMarkup?: number;
-  roundingType?: string;
-}
-
 const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hiddenItems, setHiddenItems] = useState<Set<number>>(new Set());
   const [savedNFes, setSavedNFes] = useState<SavedNFe[]>([]);
   const [currentNFeId, setCurrentNFeId] = useState<string | null>(null);
+  const [invoiceNumber, setInvoiceNumber] = useState<string>("");
+  const [brandName, setBrandName] = useState<string>("");
+  const [isEditingBrand, setIsEditingBrand] = useState<boolean>(false);
 
   // Carregar as notas salvas ao iniciar
   useEffect(() => {
@@ -98,9 +91,19 @@ const Index = () => {
       const parsedProducts = parseNFeXML(text);
       setProducts(parsedProducts);
       
+      // Extrair número da nota e outras informações do XML
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(text, "text/xml");
+      const nfNumber = extractInvoiceNumber(xmlDoc);
+      
+      // Definir valores iniciais
+      setInvoiceNumber(nfNumber || "");
+      setBrandName("Fornecedor");
+      
       // Limpar o estado ao carregar nova nota
       setHiddenItems(new Set());
       setCurrentNFeId(null);
+      setIsEditingBrand(false);
       
       toast.success('Arquivo XML processado com sucesso');
     } catch (error) {
@@ -109,6 +112,20 @@ const Index = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const extractInvoiceNumber = (xmlDoc: Document): string => {
+    try {
+      const ns = "http://www.portalfiscal.inf.br/nfe";
+      const ide = xmlDoc.getElementsByTagNameNS(ns, "ide")[0];
+      if (ide) {
+        const nNF = ide.getElementsByTagNameNS(ns, "nNF")[0];
+        return nNF ? nNF.textContent || "" : "";
+      }
+    } catch (error) {
+      console.error("Erro ao extrair número da nota:", error);
+    }
+    return "";
   };
 
   const handleProductUpdate = (index: number, updatedProduct: Product) => {
@@ -222,6 +239,10 @@ const Index = () => {
     localStorage.setItem(STORAGE_KEYS.SAVED_NFES, JSON.stringify(serializableNFes));
   };
 
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString('pt-BR');
+  };
+
   const handleSaveCurrentNFe = () => {
     if (products.length === 0) {
       toast.error('Não há produtos para salvar');
@@ -233,8 +254,10 @@ const Index = () => {
     const newNFe: SavedNFe = {
       id: now.getTime().toString(),
       products: [...products],
-      date: now.toLocaleString('pt-BR'),
-      name: `NF ${now.toLocaleDateString('pt-BR')}`,
+      date: formatDate(now),
+      name: `NF ${formatDate(now)}`,
+      invoiceNumber: invoiceNumber,
+      brandName: brandName,
       hiddenItems: new Set(hiddenItems),
       xapuriMarkup: Number(localStorage.getItem(STORAGE_KEYS.XAPURI_MARKUP) || '120'),
       epitaMarkup: Number(localStorage.getItem(STORAGE_KEYS.EPITA_MARKUP) || '140'),
@@ -255,6 +278,9 @@ const Index = () => {
     setProducts(nfe.products);
     setHiddenItems(nfe.hiddenItems || new Set());
     setCurrentNFeId(nfe.id);
+    setInvoiceNumber(nfe.invoiceNumber || "");
+    setBrandName(nfe.brandName || "Fornecedor");
+    setIsEditingBrand(false);
     
     // Restaurar as configurações desta NF
     if (nfe.xapuriMarkup) {
@@ -304,7 +330,7 @@ const Index = () => {
                           className="flex items-center gap-2"
                         >
                           <History size={16} />
-                          {nfe.name} ({nfe.products.length} itens)
+                          {nfe.brandName || "NF"}: {nfe.invoiceNumber || nfe.name} ({nfe.products.length} itens)
                         </Button>
                       ))}
                     </div>
@@ -326,12 +352,43 @@ const Index = () => {
           <div className="w-full animate-fade-up">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-medium">
-                  {currentNFeId ? 
-                    savedNFes.find(nfe => nfe.id === currentNFeId)?.name || 'Nota Fiscal' :
-                    'Nova Nota Fiscal'}
-                </h2>
-                <span className="text-sm text-slate-500">
+                {isEditingBrand ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={brandName}
+                      onChange={(e) => setBrandName(e.target.value)}
+                      className="w-40 text-base font-medium"
+                      autoFocus
+                      onBlur={() => setIsEditingBrand(false)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') setIsEditingBrand(false);
+                      }}
+                    />
+                    <button 
+                      onClick={() => setIsEditingBrand(false)}
+                      className="text-blue-600 text-sm"
+                    >
+                      OK
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-medium">
+                      NF: <span className="font-semibold">{brandName}</span>
+                    </h2>
+                    <button 
+                      onClick={() => setIsEditingBrand(true)}
+                      className="text-gray-500 hover:text-blue-600"
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                    <span className="text-gray-600">-</span>
+                    <span className="text-gray-600">
+                      {invoiceNumber}, {formatDate(new Date())}
+                    </span>
+                  </div>
+                )}
+                <span className="text-sm text-slate-500 ml-2">
                   ({products.length} produtos)
                 </span>
               </div>
@@ -362,7 +419,7 @@ const Index = () => {
                           onClick={() => handleLoadNFe(nfe)}
                           className="cursor-pointer"
                         >
-                          {nfe.name} - {nfe.date}
+                          {nfe.brandName || "NF"}: {nfe.invoiceNumber || nfe.name} - {nfe.date}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>

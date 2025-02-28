@@ -1,7 +1,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { ArrowsUpDown } from "lucide-react"
+import { ArrowUpDown } from "lucide-react"
 
 const Table = React.forwardRef<
   HTMLTableElement,
@@ -90,7 +90,7 @@ const TableHead = React.forwardRef<
             if (onMoveStart) onMoveStart();
           }}
         >
-          <ArrowsUpDown className="h-3 w-3" />
+          <ArrowUpDown className="h-3 w-3" />
         </button>
       )}
       {children}

@@ -21,3 +21,16 @@ export interface Product {
   brand: string;        // Marca identificada do produto
   brandConfidence: number; // Nível de confiança na identificação da marca (0-1)
 }
+
+export interface SavedNFe {
+  id: string;
+  products: Product[];
+  date: string;
+  name: string;
+  invoiceNumber?: string;
+  brandName?: string;
+  hiddenItems?: Set<number>;
+  xapuriMarkup?: number;
+  epitaMarkup?: number;
+  roundingType?: string;
+}
