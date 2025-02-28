@@ -121,7 +121,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
       const draggedIndex = sortedColumns.findIndex(col => col.id === draggedColumn);
       const dropIndex = sortedColumns.findIndex(col => col.id === dragOverColumn);
       
-      if (draggedIndex !== -1 && dropIndex !== -1) {
+      if (draggedIndex !== -1 && dropIndex !== -1 && draggedIndex !== dropIndex) {
         const newColumns = [...sortedColumns];
         const [draggedItem] = newColumns.splice(draggedIndex, 1);
         newColumns.splice(dropIndex, 0, draggedItem);
@@ -246,9 +246,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product, index) => {
-              const isHidden = hiddenItems.has(index);
-              if (showHidden ? !isHidden : isHidden) return null;
+            {filteredProducts.map((product, index) => {
+              const productIndex = products.indexOf(product);
+              const isHidden = hiddenItems.has(productIndex);
 
               const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
               const xapuriPrice = roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup), roundingType);
@@ -260,7 +260,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
               return (
                 <TableRow 
-                  key={`${product.code}-${index}`}
+                  key={`${product.code}-${productIndex}`}
                   className={cn(
                     "h-10 hover:bg-slate-50/80 transition-colors",
                     isHidden && "opacity-60"
@@ -275,8 +275,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleImageSearch(index, product)}
-                            className="h-10 w-full rounded-none"
+                            onClick={() => handleImageSearch(productIndex, product)}
+                            className="h-10 w-full rounded-none opacity-0 hover:opacity-100 focus:opacity-100 group-hover:opacity-100"
                           >
                             <ImageIcon className="h-4 w-4" />
                           </Button>
@@ -292,7 +292,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     if (column.id === 'epitaPrice') value = epitaPrice;
                     if (column.id === 'size') value = tamanho;
 
-                    const copyId = `${column.id}-${index}`;
+                    const copyId = `${column.id}-${productIndex}`;
                     const isCopied = copiedField === copyId;
 
                     return (
@@ -336,8 +336,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleToggleVisibility(index)}
-                      className="h-10 w-full rounded-none"
+                      onClick={() => handleToggleVisibility(productIndex)}
+                      className="h-10 w-full rounded-none opacity-0 hover:opacity-100 focus:opacity-100 group-hover:opacity-100"
                     >
                       {isHidden ? (
                         <Eye className="h-4 w-4" />
@@ -355,4 +355,3 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     </div>
   );
 };
-
