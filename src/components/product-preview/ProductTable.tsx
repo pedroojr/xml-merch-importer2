@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Image as ImageIcon, Copy, Check, GripVertical } from "lucide-react";
+import { Eye, EyeOff, Image as ImageIcon, Copy, Check, ArrowsLeftRight } from "lucide-react";
 import { Product } from '../../types/nfe';
 import { Column } from './types/column';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
@@ -48,16 +48,36 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     const saved = localStorage.getItem('columnWidths');
     return saved ? JSON.parse(saved) : {};
   });
+  const [sortedColumns, setSortedColumns] = useState<Column[]>(() => {
+    const savedColumnOrder = localStorage.getItem('columnOrder');
+    if (savedColumnOrder) {
+      const orderMap = JSON.parse(savedColumnOrder) as Record<string, number>;
+      return [...columns].sort((a, b) => (orderMap[a.id] || a.order || 0) - (orderMap[b.id] || b.order || 0));
+    }
+    return [...columns].sort((a, b) => (a.order || 0) - (b.order || 0));
+  });
+  const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem('showHidden', JSON.stringify(showHidden));
   }, [showHidden]);
 
-  const handleColumnResize = (columnId: string, width: number) => {
+  // Effect to persist column order
+  useEffect(() => {
+    const orderMap = sortedColumns.reduce((acc, col, index) => {
+      acc[col.id] = index;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    localStorage.setItem('columnOrder', JSON.stringify(orderMap));
+  }, [sortedColumns]);
+
+  const handleColumnResize = useCallback((columnId: string, width: number) => {
     const newWidths = { ...columnWidths, [columnId]: width };
     setColumnWidths(newWidths);
     localStorage.setItem('columnWidths', JSON.stringify(newWidths));
-  };
+  }, [columnWidths]);
 
   const handleCopyToClipboard = async (value: any, column: Column, field: string) => {
     try {
@@ -84,6 +104,35 @@ export const ProductTable: React.FC<ProductTableProps> = ({
       }
     }
     return value?.toString() || '';
+  };
+
+  const handleDragStart = (columnId: string) => {
+    setDraggedColumn(columnId);
+  };
+
+  const handleDragOver = (columnId: string) => {
+    if (draggedColumn && draggedColumn !== columnId) {
+      setDragOverColumn(columnId);
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (draggedColumn && dragOverColumn) {
+      const draggedIndex = sortedColumns.findIndex(col => col.id === draggedColumn);
+      const dropIndex = sortedColumns.findIndex(col => col.id === dragOverColumn);
+      
+      if (draggedIndex !== -1 && dropIndex !== -1) {
+        const newColumns = [...sortedColumns];
+        const [draggedItem] = newColumns.splice(draggedIndex, 1);
+        newColumns.splice(dropIndex, 0, draggedItem);
+        
+        setSortedColumns(newColumns);
+        toast.success(`Coluna "${draggedItem.header}" movida com sucesso`);
+      }
+    }
+    
+    setDraggedColumn(null);
+    setDragOverColumn(null);
   };
 
   const filteredProducts = products.filter(product => {
@@ -155,30 +204,39 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/80">
-              {columns.map((column) => (
+              {sortedColumns.map((column) => (
                 visibleColumns.has(column.id) && (
                   <TableHead
                     key={column.id}
                     className={cn(
-                      "h-9 px-3 text-xs font-medium select-none group",
+                      "h-9 px-3 text-xs font-medium select-none group relative",
                       column.alignment === 'right' && "text-right",
                       column.id === 'xapuriPrice' && "bg-blue-50/50 text-blue-700",
-                      column.id === 'epitaPrice' && "bg-emerald-50/50 text-emerald-700"
+                      column.id === 'epitaPrice' && "bg-emerald-50/50 text-emerald-700",
+                      dragOverColumn === column.id && "bg-slate-200"
                     )}
                     style={{ width: columnWidths[column.id] || column.minWidth }}
+                    isDraggable={column.id !== 'image'}
+                    onMoveStart={() => handleDragStart(column.id)}
+                    onMouseEnter={() => draggedColumn && handleDragOver(column.id)}
+                    onMouseUp={handleDragEnd}
                   >
-                    <div className="flex items-center justify-between">
-                      <span>{column.header}</span>
+                    <span>{column.header}</span>
+                    {column.id !== 'image' && (
                       <ResizableBox
                         width={columnWidths[column.id] || column.minWidth || 100}
                         height={0}
                         minConstraints={[column.minWidth || 100, 0]}
                         maxConstraints={[1000, 0]}
                         onResizeStop={(e, { size }) => handleColumnResize(column.id, size.width)}
-                        handle={<GripVertical className="h-4 w-4 opacity-0 group-hover:opacity-100 cursor-col-resize" />}
+                        handle={
+                          <div className="absolute right-0 top-0 bottom-0 w-5 flex items-center justify-center cursor-col-resize opacity-0 group-hover:opacity-100">
+                            <ArrowsLeftRight className="h-3 w-3 text-slate-400" />
+                          </div>
+                        }
                         axis="x"
                       />
-                    </div>
+                    )}
                   </TableHead>
                 )
               ))}
@@ -208,20 +266,23 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     isHidden && "opacity-60"
                   )}
                 >
-                  {visibleColumns.has('image') && (
-                    <TableCell className="w-12 p-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleImageSearch(index, product)}
-                        className="h-10 w-full rounded-none"
-                      >
-                        <ImageIcon className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  )}
-                  {columns.map((column) => {
-                    if (!visibleColumns.has(column.id) || column.id === 'image') return null;
+                  {sortedColumns.map((column) => {
+                    if (!visibleColumns.has(column.id)) return null;
+
+                    if (column.id === 'image') {
+                      return (
+                        <TableCell key={column.id} className="w-12 p-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleImageSearch(index, product)}
+                            className="h-10 w-full rounded-none"
+                          >
+                            <ImageIcon className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      );
+                    }
 
                     let value: any = column.getValue ? 
                       column.getValue(product) : 

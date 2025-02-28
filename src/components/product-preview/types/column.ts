@@ -10,6 +10,7 @@ export interface Column {
   format?: (value: any, product?: Product) => string;
   getValue?: (product: Product) => any;
   minWidth?: number;
+  order?: number; // Add an order property to track column position
 }
 
 export const getDefaultColumns = (): Column[] => [
@@ -18,70 +19,80 @@ export const getDefaultColumns = (): Column[] => [
     header: 'Imagem', 
     initiallyVisible: true,
     width: 'w-fit',
-    minWidth: 48
+    minWidth: 48,
+    order: 0
   },
   { 
     id: 'code', 
     header: 'Código', 
     initiallyVisible: true,
     width: 'w-fit',
-    minWidth: 100
+    minWidth: 100,
+    order: 1
   },
   { 
     id: 'name', 
     header: 'Descrição', 
     initiallyVisible: true,
     width: 'w-fit',
-    minWidth: 300
+    minWidth: 300,
+    order: 2
   },
   { 
     id: 'size', 
     header: 'Tam.', 
     initiallyVisible: true,
     width: 'w-fit',
-    minWidth: 64
+    minWidth: 64,
+    order: 3
   },
   { 
     id: 'reference', 
     header: 'Referência', 
     initiallyVisible: true,
     width: 'w-fit',
-    minWidth: 120
+    minWidth: 120,
+    order: 4
   },
   { 
     id: 'ean', 
     header: 'EAN', 
     initiallyVisible: true,
     width: 'w-fit',
-    minWidth: 120
+    minWidth: 120,
+    order: 5
   },
   { 
     id: 'color', 
     header: 'Cor', 
     initiallyVisible: true,
     width: 'w-fit',
-    minWidth: 96
+    minWidth: 96,
+    order: 6
   },
   { 
     id: 'ncm', 
     header: 'NCM', 
     initiallyVisible: true,
     width: 'w-fit',
-    minWidth: 96
+    minWidth: 96,
+    order: 7
   },
   { 
     id: 'cfop', 
     header: 'CFOP', 
     initiallyVisible: true,
     width: 'w-fit',
-    minWidth: 80
+    minWidth: 80,
+    order: 8
   },
   { 
     id: 'uom', 
     header: 'UN', 
     initiallyVisible: true,
     width: 'w-fit',
-    minWidth: 56
+    minWidth: 56,
+    order: 9
   },
   { 
     id: 'quantity', 
@@ -90,6 +101,7 @@ export const getDefaultColumns = (): Column[] => [
     alignment: 'right',
     width: 'w-fit',
     minWidth: 80,
+    order: 10,
     format: (value: number) => value.toLocaleString()
   },
   { 
@@ -99,6 +111,7 @@ export const getDefaultColumns = (): Column[] => [
     alignment: 'right',
     width: 'w-fit',
     minWidth: 112,
+    order: 11,
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -108,6 +121,7 @@ export const getDefaultColumns = (): Column[] => [
     alignment: 'right',
     width: 'w-fit',
     minWidth: 112,
+    order: 12,
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -117,6 +131,7 @@ export const getDefaultColumns = (): Column[] => [
     alignment: 'right',
     width: 'w-fit',
     minWidth: 112,
+    order: 13,
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -126,6 +141,7 @@ export const getDefaultColumns = (): Column[] => [
     alignment: 'right',
     width: 'w-fit',
     minWidth: 112,
+    order: 14,
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
     getValue: (product: Product) => product.quantity > 0 ? product.discount / product.quantity : 0
   },
@@ -136,6 +152,7 @@ export const getDefaultColumns = (): Column[] => [
     alignment: 'right',
     width: 'w-fit',
     minWidth: 112,
+    order: 15,
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -145,6 +162,7 @@ export const getDefaultColumns = (): Column[] => [
     alignment: 'right',
     width: 'w-fit',
     minWidth: 112,
+    order: 16,
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   }
 ];

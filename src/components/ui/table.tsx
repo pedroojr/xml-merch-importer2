@@ -1,6 +1,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { ArrowsUpDown } from "lucide-react"
 
 const Table = React.forwardRef<
   HTMLTableElement,
@@ -65,16 +66,36 @@ TableRow.displayName = "TableRow"
 
 const TableHead = React.forwardRef<
   HTMLTableCellElement,
-  React.ThHTMLAttributes<HTMLTableCellElement>
->(({ className, ...props }, ref) => (
+  React.ThHTMLAttributes<HTMLTableCellElement> & { 
+    onMoveStart?: () => void;
+    isDraggable?: boolean;
+  }
+>(({ className, children, isDraggable, onMoveStart, ...props }, ref) => (
   <th
     ref={ref}
     className={cn(
       "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 whitespace-nowrap",
+      isDraggable && "cursor-move",
       className
     )}
     {...props}
-  />
+  >
+    <div className="flex items-center gap-1">
+      {isDraggable && (
+        <button 
+          type="button"
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-6 w-6"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            if (onMoveStart) onMoveStart();
+          }}
+        >
+          <ArrowsUpDown className="h-3 w-3" />
+        </button>
+      )}
+      {children}
+    </div>
+  </th>
 ))
 TableHead.displayName = "TableHead"
 
