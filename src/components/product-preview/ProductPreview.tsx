@@ -1,16 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Product } from '../../types/nfe';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ProductAnalysis } from './insights/ProductAnalysis';
-import { ProfitabilityAnalysis } from './insights/ProfitabilityAnalysis';
-import { PricingAnalysis } from './insights/PricingAnalysis';
 import { ProductToolbar } from './ProductToolbar';
 import { ProductTable } from './ProductTable';
 import { getDefaultColumns, compactColumns } from './types/column';
-import FileUpload from '../FileUpload';
+import { ProductAnalysisTabs } from './ProductAnalysisTabs';
 
 interface ProductPreviewProps {
   products: Product[];
@@ -62,7 +59,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     return new Set(compactMode ? compactColumns : columns.map(col => col.id));
   });
 
-  // Atualizar o estado local quando as props mudarem
   useEffect(() => {
     setLocalHiddenItems(hiddenItems);
   }, [hiddenItems]);
@@ -106,7 +102,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   };
 
   const handleToggleVisibility = (index: number) => {
-    // Usar a função de callback prop se fornecida, caso contrário usar a local
     if (onToggleVisibility) {
       onToggleVisibility(index);
     } else {
@@ -140,7 +135,6 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     fileInput.click();
   };
 
-  // Determinar qual conjunto de itens ocultos usar
   const effectiveHiddenItems = onToggleVisibility ? hiddenItems : localHiddenItems;
 
   return (
@@ -186,10 +180,10 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
 
           <TabsContent value="insights" className="p-4">
             <div className="space-y-8 w-full">
-              <ProfitabilityAnalysis
-                products={products}
-                xapuriMarkup={xapuriMarkup}
-                epitaMarkup={epitaMarkup}
+              <ProductAnalysisTabs 
+                products={products} 
+                xapuriMarkup={xapuriMarkup} 
+                epitaMarkup={epitaMarkup} 
               />
               <ProductAnalysis products={products} />
             </div>
@@ -197,10 +191,10 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
           
           <TabsContent value="pricing" className="p-4">
             <div className="space-y-8 w-full">
-              <PricingAnalysis
-                products={products}
-                xapuriMarkup={xapuriMarkup}
-                epitaMarkup={epitaMarkup}
+              <ProductAnalysisTabs 
+                products={products} 
+                xapuriMarkup={xapuriMarkup} 
+                epitaMarkup={epitaMarkup} 
               />
             </div>
           </TabsContent>
