@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Image as ImageIcon, Copy, Check, ArrowsLeftRight } from "lucide-react";
+import { Eye, EyeOff, Image as ImageIcon, Copy, Check, ArrowLeftRight } from "lucide-react";
 import { Product } from '../../types/nfe';
 import { Column } from './types/column';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
@@ -231,7 +231,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                         onResizeStop={(e, { size }) => handleColumnResize(column.id, size.width)}
                         handle={
                           <div className="absolute right-0 top-0 bottom-0 w-5 flex items-center justify-center cursor-col-resize opacity-0 group-hover:opacity-100">
-                            <ArrowsLeftRight className="h-3 w-3 text-slate-400" />
+                            <ArrowLeftRight className="h-3 w-3 text-slate-400" />
                           </div>
                         }
                         axis="x"
@@ -355,3 +355,4 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     </div>
   );
 };
+
