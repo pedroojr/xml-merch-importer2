@@ -39,7 +39,7 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="w-[220px] text-sm">
-                    Markup Xapuri fixo em 120% (Custo Bruto * 2.2)
+                    Markup sugerido para Xapuri
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -49,8 +49,8 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
             id="xapuri-markup"
             type="number"
             value={xapuriMarkup}
-            disabled={true}
-            className="w-full border-blue-200 focus:border-blue-400 bg-blue-50"
+            onChange={(e) => onXapuriMarkupChange(Number(e.target.value))}
+            className="w-full border-blue-200 focus:border-blue-400"
             step="5"
           />
         </div>
