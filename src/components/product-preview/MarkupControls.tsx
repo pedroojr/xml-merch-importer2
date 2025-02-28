@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, Percent } from "lucide-react";
 
 interface MarkupControlsProps {
   xapuriMarkup: number;
@@ -14,6 +14,8 @@ interface MarkupControlsProps {
   onXapuriMarkupChange: (value: number) => void;
   onEpitaMarkupChange: (value: number) => void;
   onRoundingChange: (value: RoundingType) => void;
+  xapuriSuggestedMarkup?: number;
+  epitaSuggestedMarkup?: number;
 }
 
 export const MarkupControls: React.FC<MarkupControlsProps> = ({
@@ -23,6 +25,8 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
   onXapuriMarkupChange,
   onEpitaMarkupChange,
   onRoundingChange,
+  xapuriSuggestedMarkup,
+  epitaSuggestedMarkup,
 }) => {
   return (
     <div className="p-4 border-b bg-slate-50">
@@ -44,6 +48,12 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            {xapuriSuggestedMarkup && (
+              <span className="ml-auto text-xs font-medium text-blue-600 flex items-center">
+                <Percent className="h-3 w-3 mr-1" />
+                <span>Sugerido: {xapuriSuggestedMarkup}%</span>
+              </span>
+            )}
           </div>
           <Input
             id="xapuri-markup"
@@ -56,9 +66,17 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="epita-markup" className="text-sm font-medium text-emerald-700">
-            Markup Epitaciolândia (%)
-          </Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="epita-markup" className="text-sm font-medium text-emerald-700">
+              Markup Epitaciolândia (%)
+            </Label>
+            {epitaSuggestedMarkup && (
+              <span className="ml-auto text-xs font-medium text-emerald-600 flex items-center">
+                <Percent className="h-3 w-3 mr-1" />
+                <span>Sugerido: {epitaSuggestedMarkup}%</span>
+              </span>
+            )}
+          </div>
           <Input
             id="epita-markup"
             type="number"

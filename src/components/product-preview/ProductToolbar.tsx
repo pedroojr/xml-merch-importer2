@@ -27,6 +27,8 @@ interface ProductToolbarProps {
   visibleColumns: Set<string>;
   onToggleColumn: (columnId: string) => void;
   onNewFileRequest: () => void;
+  xapuriSuggestedMarkup?: number;
+  epitaSuggestedMarkup?: number;
 }
 
 export const ProductToolbar: React.FC<ProductToolbarProps> = ({
@@ -42,6 +44,8 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
   visibleColumns,
   onToggleColumn,
   onNewFileRequest,
+  xapuriSuggestedMarkup,
+  epitaSuggestedMarkup,
 }) => {
   return (
     <div className="w-full p-4 border-b bg-white">
@@ -54,6 +58,8 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
             onXapuriMarkupChange={onXapuriMarkupChange}
             onEpitaMarkupChange={onEpitaMarkupChange}
             onRoundingChange={onRoundingChange}
+            xapuriSuggestedMarkup={xapuriSuggestedMarkup}
+            epitaSuggestedMarkup={epitaSuggestedMarkup}
           />
         </div>
         <div className="flex flex-wrap gap-2 w-full lg:w-auto lg:ml-auto">
