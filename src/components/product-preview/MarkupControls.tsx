@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { RoundingType } from './productCalculations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -22,26 +22,20 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
   onEpitaMarkupChange,
   onRoundingChange,
 }) => {
-  useEffect(() => {
-    // Calcular o markup como 120% (equivalente a multiplicar por 2.2)
-    const calculatedMarkup = 120;
-    onXapuriMarkupChange(calculatedMarkup);
-  }, [onXapuriMarkupChange]);
-
   return (
     <div className="p-4 border-b bg-slate-50">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-2">
           <Label htmlFor="xapuri-markup" className="text-sm font-medium text-blue-700">
-            Markup Xapuri (%) - Fixo em 120%
+            Markup Xapuri (%)
           </Label>
           <Input
             id="xapuri-markup"
             type="number"
             value={xapuriMarkup}
-            disabled
-            className="w-full border-blue-200 focus:border-blue-400 bg-blue-50 opacity-70"
-            title="Markup fixo: Custo Bruto × 2.2 (equivalente a 120%)"
+            onChange={(e) => onXapuriMarkupChange(Number(e.target.value))}
+            className="w-full border-blue-200 focus:border-blue-400"
+            step="5"
           />
         </div>
         

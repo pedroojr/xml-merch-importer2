@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Product } from '../../types/nfe';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
@@ -29,8 +30,11 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   hiddenItems = new Set(),
   onToggleVisibility
 }) => {
-  const [xapuriMarkup, setXapuriMarkup] = useState(120); // Markup fixo em 120%
-  
+  const [xapuriMarkup, setXapuriMarkup] = useState(() => {
+    const saved = localStorage.getItem('xapuriMarkup');
+    return saved ? Number(saved) : 120;
+  });
+
   const [epitaMarkup, setEpitaMarkup] = useState(() => {
     const saved = localStorage.getItem('epitaMarkup');
     return saved ? Number(saved) : 140;
@@ -63,18 +67,17 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
   }, [hiddenItems]);
 
   useEffect(() => {
-    // Não salvamos xapuriMarkup no localStorage mais, pois é fixo
+    localStorage.setItem('xapuriMarkup', xapuriMarkup.toString());
     localStorage.setItem('epitaMarkup', epitaMarkup.toString());
     localStorage.setItem('roundingType', roundingType);
     localStorage.setItem('compactMode', JSON.stringify(compactMode));
-  }, [epitaMarkup, roundingType, compactMode]);
+  }, [xapuriMarkup, epitaMarkup, roundingType, compactMode]);
 
   const handleMarkupChange = (xapuri: number, epita: number, rounding: RoundingType) => {
-    // Garantimos que xapuriMarkup seja sempre 120% (equivalente a multiplicar por 2.2)
-    setXapuriMarkup(120);
+    setXapuriMarkup(xapuri);
     setEpitaMarkup(epita);
     setRoundingType(rounding);
-    onConfigurationUpdate?.(120, epita, rounding);
+    onConfigurationUpdate?.(xapuri, epita, rounding);
   };
 
   const handleImageSearch = async (index: number, product: Product) => {
