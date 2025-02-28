@@ -4,6 +4,8 @@ import { RoundingType } from './productCalculations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpCircle } from "lucide-react";
 
 interface MarkupControlsProps {
   xapuriMarkup: number;
@@ -26,15 +28,29 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
     <div className="p-4 border-b bg-slate-50">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="xapuri-markup" className="text-sm font-medium text-blue-700">
-            Markup Xapuri (%)
-          </Label>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="xapuri-markup" className="text-sm font-medium text-blue-700">
+              Markup Xapuri (%)
+            </Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-blue-500" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="w-[220px] text-sm">
+                    Markup Xapuri fixo em 120% (Custo Bruto * 2.2)
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Input
             id="xapuri-markup"
             type="number"
             value={xapuriMarkup}
-            onChange={(e) => onXapuriMarkupChange(Number(e.target.value))}
-            className="w-full border-blue-200 focus:border-blue-400"
+            disabled={true}
+            className="w-full border-blue-200 focus:border-blue-400 bg-blue-50"
             step="5"
           />
         </div>

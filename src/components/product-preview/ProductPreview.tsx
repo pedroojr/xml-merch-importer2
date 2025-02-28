@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ProductAnalysis } from './insights/ProductAnalysis';
 import { ProfitabilityAnalysis } from './insights/ProfitabilityAnalysis';
+import { PricingAnalysis } from './insights/PricingAnalysis';
 import { ProductToolbar } from './ProductToolbar';
 import { ProductTable } from './ProductTable';
 import { getDefaultColumns, compactColumns } from './types/column';
@@ -150,6 +151,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
             <TabsList className="w-full justify-start rounded-none border-0">
               <TabsTrigger value="unified">Visão Unificada</TabsTrigger>
               <TabsTrigger value="insights">Insights e Análises</TabsTrigger>
+              <TabsTrigger value="pricing">Precificação Estratégica</TabsTrigger>
             </TabsList>
           </div>
 
@@ -190,6 +192,16 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
                 epitaMarkup={epitaMarkup}
               />
               <ProductAnalysis products={products} />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="pricing" className="p-4">
+            <div className="space-y-8 w-full">
+              <PricingAnalysis
+                products={products}
+                xapuriMarkup={xapuriMarkup}
+                epitaMarkup={epitaMarkup}
+              />
             </div>
           </TabsContent>
         </Tabs>
