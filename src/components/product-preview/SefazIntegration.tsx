@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,12 +5,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import { FileSearch, Download, Check, Clock, Upload, Shield } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Product } from '@/types/nfe';
-import { parseNFeXML } from '@/utils/nfeParser';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SefazIntegrationProps {
-  onNfeLoaded: (products: Product[]) => void;
+  onNfeLoaded: (xmlContent: string) => void;
 }
 
 interface InvoiceItem {
@@ -59,10 +56,8 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
 
     setLoading(true);
     try {
-      // Simulação - em produção, isso seria uma chamada de API real
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Simulando uma resposta XML mock para fins de demonstração
       const mockXmlResponse = `
         <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
           <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
@@ -101,12 +96,9 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         </nfeProc>
       `;
       
-      const parsedProducts = parseNFeXML(mockXmlResponse);
-      
-      // Atualiza a lista de invoices recentes
       const newInvoice: InvoiceItem = {
         id: new Date().getTime().toString(),
-        number: '123456', // Em produção, extrair do XML
+        number: '123456',
         date: new Date().toLocaleDateString('pt-BR'),
         supplier: 'Fornecedor via SEFAZ',
         status: 'processed'
@@ -114,8 +106,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       
       setRecentInvoices([newInvoice, ...recentInvoices]);
       
-      // Passa os produtos para o componente pai
-      onNfeLoaded(parsedProducts);
+      onNfeLoaded(mockXmlResponse);
       
       toast.success('NF-e carregada com sucesso!');
     } catch (error) {
@@ -134,9 +125,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     
     setLoading(true);
     
-    // Simulação de carregamento
     setTimeout(() => {
-      // Simulação de uma consulta bem sucedida
       const mockXmlResponse = `
         <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
           <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
@@ -162,23 +151,18 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         </nfeProc>
       `;
       
-      const parsedProducts = parseNFeXML(mockXmlResponse);
-      
-      // Atualiza o status da invoice
       const updatedInvoices = recentInvoices.map(inv => 
         inv.id === invoice.id ? { ...inv, status: 'processed' as const } : inv
       );
       setRecentInvoices(updatedInvoices);
       
-      // Passa os produtos para o componente pai
-      onNfeLoaded(parsedProducts);
+      onNfeLoaded(mockXmlResponse);
       
       toast.success(`Nota ${invoice.number} carregada com sucesso!`);
       setLoading(false);
     }, 1500);
   };
 
-  // Formata o CNPJ enquanto o usuário digita
   const formatCNPJ = (value: string) => {
     const digits = value.replace(/\D/g, '');
     let formatted = '';
@@ -192,7 +176,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     return formatted;
   };
 
-  // Formata a chave da NF-e enquanto o usuário digita
   const formatNfeKey = (value: string) => {
     const digits = value.replace(/\D/g, '');
     return digits.substring(0, 44);
@@ -219,7 +202,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
 
     setLoading(true);
 
-    // Simulação da instalação do certificado
     setTimeout(() => {
       const newCertificate: Certificate = {
         name: certificateFile.name,
@@ -238,7 +220,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
 
   return (
     <div className="space-y-6">
-      {/* Seção de certificado digital */}
       <Card>
         <CardHeader>
           <CardTitle>Certificado Digital A1</CardTitle>
@@ -314,7 +295,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         </CardContent>
       </Card>
 
-      {/* Seção de consulta NF-e */}
       <Card>
         <CardHeader>
           <CardTitle>Consulta NF-e via SEFAZ</CardTitle>
@@ -370,7 +350,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         </CardFooter>
       </Card>
       
-      {/* Seção de notas disponíveis */}
       <Card>
         <CardHeader>
           <CardTitle>Notas Fiscais Disponíveis</CardTitle>
