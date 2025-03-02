@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { FileSearch, Download, Check, Clock } from "lucide-react";
+import { FileSearch, Download, Check, Clock, Upload, Shield } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Product } from '@/types/nfe';
 import { parseNFeXML } from '@/utils/nfeParser';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SefazIntegrationProps {
   onNfeLoaded: (products: Product[]) => void;
@@ -21,10 +22,19 @@ interface InvoiceItem {
   status: 'processed' | 'pending';
 }
 
+interface Certificate {
+  name: string;
+  expiry: string;
+  isActive: boolean;
+}
+
 const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   const [nfeKey, setNfeKey] = useState<string>('');
   const [cnpj, setCnpj] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const [certificatePassword, setCertificatePassword] = useState<string>('');
+  const [activeCertificate, setActiveCertificate] = useState<Certificate | null>(null);
   const [recentInvoices, setRecentInvoices] = useState<InvoiceItem[]>([
     { id: '1', number: '12345678', date: '15/05/2023', supplier: 'Fornecedor ABC', status: 'processed' },
     { id: '2', number: '87654321', date: '10/05/2023', supplier: 'Distribuidora XYZ', status: 'pending' },
@@ -39,6 +49,11 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
 
     if (!cnpj || cnpj.length < 14) {
       toast.error('CNPJ inválido.');
+      return;
+    }
+
+    if (!activeCertificate) {
+      toast.error('Certificado A1 não configurado. Por favor, configure um certificado válido.');
       return;
     }
 
@@ -183,8 +198,123 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     return digits.substring(0, 44);
   };
 
+  const handleCertificateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setCertificateFile(file);
+      toast.info(`Arquivo de certificado ${file.name} selecionado.`);
+    }
+  };
+
+  const handleInstallCertificate = () => {
+    if (!certificateFile) {
+      toast.error('Selecione um arquivo de certificado A1.');
+      return;
+    }
+
+    if (!certificatePassword) {
+      toast.error('Digite a senha do certificado.');
+      return;
+    }
+
+    setLoading(true);
+
+    // Simulação da instalação do certificado
+    setTimeout(() => {
+      const newCertificate: Certificate = {
+        name: certificateFile.name,
+        expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR'),
+        isActive: true
+      };
+      
+      setActiveCertificate(newCertificate);
+      setCertificateFile(null);
+      setCertificatePassword('');
+      
+      toast.success('Certificado A1 instalado com sucesso!');
+      setLoading(false);
+    }, 1500);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Seção de certificado digital */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Certificado Digital A1</CardTitle>
+          <CardDescription>
+            Configure seu certificado digital A1 para autenticação junto à SEFAZ.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {activeCertificate ? (
+            <Alert className="bg-green-50 border-green-200">
+              <Shield className="h-5 w-5 text-green-500" />
+              <AlertTitle>Certificado ativo</AlertTitle>
+              <AlertDescription className="space-y-1">
+                <p><strong>Nome:</strong> {activeCertificate.name}</p>
+                <p><strong>Validade:</strong> {activeCertificate.expiry}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2" 
+                  onClick={() => setActiveCertificate(null)}
+                >
+                  Remover certificado
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="certificateFile">
+                  Arquivo do Certificado (.pfx)
+                </Label>
+                <Input
+                  id="certificateFile"
+                  type="file"
+                  accept=".pfx,.p12"
+                  onChange={handleCertificateUpload}
+                  className="cursor-pointer"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="certificatePassword">
+                  Senha do Certificado
+                </Label>
+                <Input
+                  id="certificatePassword"
+                  type="password"
+                  placeholder="Digite a senha do certificado"
+                  value={certificatePassword}
+                  onChange={(e) => setCertificatePassword(e.target.value)}
+                />
+              </div>
+              
+              <Button 
+                onClick={handleInstallCertificate} 
+                disabled={loading || !certificateFile || !certificatePassword}
+                className="w-full"
+              >
+                {loading ? (
+                  <>
+                    <span className="animate-spin mr-2">⟳</span>
+                    Instalando...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Instalar Certificado
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Seção de consulta NF-e */}
       <Card>
         <CardHeader>
           <CardTitle>Consulta NF-e via SEFAZ</CardTitle>
@@ -222,7 +352,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         <CardFooter>
           <Button 
             onClick={handleConsultNfe} 
-            disabled={loading || !nfeKey || !cnpj}
+            disabled={loading || !nfeKey || !cnpj || !activeCertificate}
             className="w-full"
           >
             {loading ? (
@@ -240,6 +370,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         </CardFooter>
       </Card>
       
+      {/* Seção de notas disponíveis */}
       <Card>
         <CardHeader>
           <CardTitle>Notas Fiscais Disponíveis</CardTitle>
