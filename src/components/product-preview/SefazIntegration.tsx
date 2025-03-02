@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { FileSearch, Download, Check, Clock, Upload, Shield } from "lucide-react";
+import { FileSearch, Download, Check, Clock, Upload, Shield, Calendar } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format, subDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface SefazIntegrationProps {
   onNfeLoaded: (xmlContent: string) => void;
@@ -17,6 +23,7 @@ interface InvoiceItem {
   date: string;
   supplier: string;
   status: 'processed' | 'pending';
+  emissionDate: Date;
 }
 
 interface Certificate {
@@ -25,18 +32,118 @@ interface Certificate {
   isActive: boolean;
 }
 
+interface DateRangeFilter {
+  start: Date | undefined;
+  end: Date | undefined;
+}
+
 const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   const [nfeKey, setNfeKey] = useState<string>('');
   const [cnpj, setCnpj] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingInvoices, setLoadingInvoices] = useState<boolean>(false);
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [certificatePassword, setCertificatePassword] = useState<string>('');
   const [activeCertificate, setActiveCertificate] = useState<Certificate | null>(null);
-  const [recentInvoices, setRecentInvoices] = useState<InvoiceItem[]>([
-    { id: '1', number: '12345678', date: '15/05/2023', supplier: 'Fornecedor ABC', status: 'processed' },
-    { id: '2', number: '87654321', date: '10/05/2023', supplier: 'Distribuidora XYZ', status: 'pending' },
-    { id: '3', number: '45678123', date: '05/05/2023', supplier: 'Indústria 123', status: 'pending' }
-  ]);
+  const [dateRange, setDateRange] = useState<DateRangeFilter>({
+    start: subDays(new Date(), 30), // Últimos 30 dias como padrão
+    end: new Date()
+  });
+  const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
+  const [periodFilter, setPeriodFilter] = useState<string>('30days');
+  const [recentInvoices, setRecentInvoices] = useState<InvoiceItem[]>([]);
+  const [allInvoices, setAllInvoices] = useState<InvoiceItem[]>([]);
+
+  // Carregar notas fiscais com base no filtro de período
+  useEffect(() => {
+    if (activeCertificate) {
+      fetchInvoicesByPeriod();
+    }
+  }, [dateRange, activeCertificate]);
+
+  // Simular carregamento de notas fiscais quando o certificado é ativado
+  useEffect(() => {
+    if (activeCertificate) {
+      generateRandomInvoices();
+    }
+  }, [activeCertificate]);
+
+  // Gerar notas fiscais simuladas para demonstração
+  const generateRandomInvoices = () => {
+    const mockInvoices: InvoiceItem[] = [];
+    const today = new Date();
+    
+    // Gerar 50 notas fiscais aleatórias nos últimos 90 dias
+    for (let i = 0; i < 50; i++) {
+      const randomDaysAgo = Math.floor(Math.random() * 90);
+      const emissionDate = subDays(today, randomDaysAgo);
+      
+      mockInvoices.push({
+        id: `mock-${i}`,
+        number: Math.floor(10000000 + Math.random() * 90000000).toString(),
+        date: format(emissionDate, 'dd/MM/yyyy'),
+        supplier: `Fornecedor ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
+        status: Math.random() > 0.3 ? 'pending' : 'processed',
+        emissionDate
+      });
+    }
+    
+    // Ordenar por data de emissão (mais recente primeiro)
+    mockInvoices.sort((a, b) => b.emissionDate.getTime() - a.emissionDate.getTime());
+    
+    setAllInvoices(mockInvoices);
+    fetchInvoicesByPeriod(mockInvoices);
+  };
+
+  const fetchInvoicesByPeriod = (invoices = allInvoices) => {
+    if (dateRange.start && dateRange.end) {
+      setLoadingInvoices(true);
+      
+      setTimeout(() => {
+        const filteredInvoices = invoices.filter(invoice => {
+          return invoice.emissionDate >= dateRange.start! && invoice.emissionDate <= dateRange.end!;
+        });
+        
+        setRecentInvoices(filteredInvoices);
+        setLoadingInvoices(false);
+      }, 800);
+    }
+  };
+
+  const handlePeriodChange = (value: string) => {
+    const today = new Date();
+    let start: Date;
+    
+    setPeriodFilter(value);
+    
+    switch (value) {
+      case '7days':
+        start = subDays(today, 7);
+        break;
+      case '15days':
+        start = subDays(today, 15);
+        break;
+      case '30days':
+        start = subDays(today, 30);
+        break;
+      case '60days':
+        start = subDays(today, 60);
+        break;
+      case '90days':
+        start = subDays(today, 90);
+        break;
+      case 'custom':
+        setIsCalendarOpen(true);
+        return;
+      default:
+        start = subDays(today, 30);
+    }
+    
+    setDateRange({
+      start,
+      end: today
+    });
+  };
 
   const handleConsultNfe = async () => {
     if (!nfeKey || nfeKey.length !== 44) {
@@ -101,7 +208,8 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         number: '123456',
         date: new Date().toLocaleDateString('pt-BR'),
         supplier: 'Fornecedor via SEFAZ',
-        status: 'processed'
+        status: 'processed',
+        emissionDate: new Date()
       };
       
       setRecentInvoices([newInvoice, ...recentInvoices]);
@@ -218,8 +326,17 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     }, 1500);
   };
 
+  const getFormattedPeriod = () => {
+    if (!dateRange.start || !dateRange.end) {
+      return "Selecione um período";
+    }
+    
+    const formatDate = (date: Date) => format(date, 'dd/MM/yyyy');
+    return `${formatDate(dateRange.start)} até ${formatDate(dateRange.end)}`;
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       <Card>
         <CardHeader>
           <CardTitle>Certificado Digital A1</CardTitle>
@@ -295,108 +412,174 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Consulta NF-e via SEFAZ</CardTitle>
-          <CardDescription>
-            Consulte e importe uma NF-e diretamente dos servidores da SEFAZ usando a chave de acesso.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="nfeKey">
-              Chave da NF-e (44 dígitos)
-            </Label>
-            <Input
-              id="nfeKey"
-              placeholder="Digite a chave da NF-e"
-              value={nfeKey}
-              onChange={(e) => setNfeKey(formatNfeKey(e.target.value))}
-              maxLength={44}
-            />
-          </div>
+      {activeCertificate && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Consulta NF-e via SEFAZ</CardTitle>
+              <CardDescription>
+                Consulte e importe uma NF-e diretamente dos servidores da SEFAZ usando a chave de acesso.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="nfeKey">
+                  Chave da NF-e (44 dígitos)
+                </Label>
+                <Input
+                  id="nfeKey"
+                  placeholder="Digite a chave da NF-e"
+                  value={nfeKey}
+                  onChange={(e) => setNfeKey(formatNfeKey(e.target.value))}
+                  maxLength={44}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="cnpj">
+                  CNPJ da Empresa
+                </Label>
+                <Input
+                  id="cnpj"
+                  placeholder="Digite o CNPJ"
+                  value={cnpj}
+                  onChange={(e) => setCnpj(formatCNPJ(e.target.value))}
+                  maxLength={18}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                onClick={handleConsultNfe} 
+                disabled={loading || !nfeKey || !cnpj}
+                className="w-full"
+              >
+                {loading ? (
+                  <>
+                    <span className="animate-spin mr-2">⟳</span>
+                    Consultando...
+                  </>
+                ) : (
+                  <>
+                    <FileSearch className="h-4 w-4 mr-2" />
+                    Consultar NF-e
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
           
-          <div className="space-y-2">
-            <Label htmlFor="cnpj">
-              CNPJ da Empresa
-            </Label>
-            <Input
-              id="cnpj"
-              placeholder="Digite o CNPJ"
-              value={cnpj}
-              onChange={(e) => setCnpj(formatCNPJ(e.target.value))}
-              maxLength={18}
-            />
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button 
-            onClick={handleConsultNfe} 
-            disabled={loading || !nfeKey || !cnpj || !activeCertificate}
-            className="w-full"
-          >
-            {loading ? (
-              <>
-                <span className="animate-spin mr-2">⟳</span>
-                Consultando...
-              </>
-            ) : (
-              <>
-                <FileSearch className="h-4 w-4 mr-2" />
-                Consultar NF-e
-              </>
-            )}
-          </Button>
-        </CardFooter>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Notas Fiscais Disponíveis</CardTitle>
-          <CardDescription>
-            Notas fiscais emitidas contra seu CNPJ
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {recentInvoices.length > 0 ? (
-            <div className="space-y-3">
-              {recentInvoices.map((invoice) => (
-                <div 
-                  key={invoice.id}
-                  className={`flex items-center justify-between p-3 rounded-md border
-                    ${invoice.status === 'processed' 
-                      ? 'border-green-200 bg-green-50' 
-                      : 'border-gray-200 bg-white hover:bg-gray-50'}`}
-                >
-                  <div className="flex items-center space-x-3">
-                    {invoice.status === 'processed' ? (
-                      <Check className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <Clock className="h-5 w-5 text-gray-400" />
-                    )}
-                    <div>
-                      <p className="font-medium">NF-e: {invoice.number}</p>
-                      <p className="text-sm text-gray-500">{invoice.supplier} - {invoice.date}</p>
-                    </div>
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleLoadInvoice(invoice)}
-                    disabled={loading}
-                    className={invoice.status === 'processed' ? 'text-green-600' : ''}
-                  >
-                    {invoice.status === 'processed' ? 'Importada' : 'Importar'}
-                  </Button>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle>Notas Fiscais Disponíveis</CardTitle>
+                <CardDescription>
+                  Filtrar notas fiscais emitidas contra seu CNPJ
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={periodFilter} onValueChange={handlePeriodChange}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Selecione o período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7days">Últimos 7 dias</SelectItem>
+                    <SelectItem value="15days">Últimos 15 dias</SelectItem>
+                    <SelectItem value="30days">Últimos 30 dias</SelectItem>
+                    <SelectItem value="60days">Últimos 60 dias</SelectItem>
+                    <SelectItem value="90days">Últimos 90 dias</SelectItem>
+                    <SelectItem value="custom">Período personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {periodFilter === 'custom' && (
+                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="ml-2">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        {getFormattedPeriod()}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <div className="p-3 border-b">
+                        <h4 className="font-medium text-sm">Selecione o período</h4>
+                      </div>
+                      <CalendarComponent
+                        mode="range"
+                        selected={{
+                          from: dateRange.start,
+                          to: dateRange.end
+                        }}
+                        onSelect={(range) => {
+                          if (range?.from && range?.to) {
+                            setDateRange({
+                              start: range.from,
+                              end: range.to
+                            });
+                          }
+                        }}
+                        locale={ptBR}
+                        className="rounded-md border p-3"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loadingInvoices ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 italic">Nenhuma nota fiscal disponível.</p>
-          )}
-        </CardContent>
-      </Card>
+              ) : recentInvoices.length > 0 ? (
+                <div className="space-y-3">
+                  {recentInvoices.map((invoice) => (
+                    <div 
+                      key={invoice.id}
+                      className={`flex items-center justify-between p-3 rounded-md border
+                        ${invoice.status === 'processed' 
+                          ? 'border-green-200 bg-green-50' 
+                          : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        {invoice.status === 'processed' ? (
+                          <Check className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Clock className="h-5 w-5 text-gray-400" />
+                        )}
+                        <div>
+                          <p className="font-medium">NF-e: {invoice.number}</p>
+                          <p className="text-sm text-gray-500">{invoice.supplier} - {invoice.date}</p>
+                        </div>
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleLoadInvoice(invoice)}
+                        disabled={loading}
+                        className={invoice.status === 'processed' ? 'text-green-600' : ''}
+                      >
+                        {invoice.status === 'processed' ? 'Importada' : 'Importar'}
+                      </Button>
+                    </div>
+                  ))}
+                  
+                  <div className="text-sm text-gray-500 mt-2 text-center">
+                    Mostrando {recentInvoices.length} notas fiscais {dateRange.start && dateRange.end ? `de ${format(dateRange.start, 'dd/MM/yyyy')} até ${format(dateRange.end, 'dd/MM/yyyy')}` : ''}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500 italic">
+                    Nenhuma nota fiscal encontrada no período selecionado.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 };

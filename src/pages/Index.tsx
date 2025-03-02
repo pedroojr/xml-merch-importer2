@@ -288,21 +288,28 @@ const Index = () => {
     toast.success(`Nota fiscal ${nfe.name} carregada com sucesso`);
   };
 
-  const handleLoadProductsFromSefaz = (parsedProducts: Product[]) => {
-    if (parsedProducts.length === 0) {
-      toast.error('Não há produtos para carregar');
-      return;
+  const handleLoadProductsFromSefaz = (xmlContent: string) => {
+    try {
+      const parsedProducts = parseNFeXML(xmlContent);
+      
+      if (parsedProducts.length === 0) {
+        toast.error('Não há produtos para carregar');
+        return;
+      }
+      
+      setProducts(parsedProducts);
+      
+      setHiddenItems(new Set());
+      setCurrentNFeId(null);
+      setInvoiceNumber("Nota SEFAZ");
+      setBrandName("Sefaz Import");
+      setIsEditingBrand(false);
+      
+      toast.success(`${parsedProducts.length} produtos importados via SEFAZ`);
+    } catch (error) {
+      console.error('Erro ao processar XML da NF-e:', error);
+      toast.error('Erro ao processar o arquivo XML da NF-e.');
     }
-    
-    setProducts(parsedProducts);
-    
-    setHiddenItems(new Set());
-    setCurrentNFeId(null);
-    setInvoiceNumber("Nota SEFAZ");
-    setBrandName("Sefaz Import");
-    setIsEditingBrand(false);
-    
-    toast.success(`${parsedProducts.length} produtos importados via SEFAZ`);
   };
 
   return (
