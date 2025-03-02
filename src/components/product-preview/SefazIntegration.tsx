@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { FileSearch, Download, Check, Clock, Upload, Shield, Calendar } from "lucide-react";
+import { FileSearch, Download, Check, Clock, Upload, Shield, Calendar, Building2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SefazIntegrationProps {
   onNfeLoaded: (xmlContent: string) => void;
@@ -24,18 +25,26 @@ interface InvoiceItem {
   supplier: string;
   status: 'processed' | 'pending';
   emissionDate: Date;
+  branch: 'matriz' | 'filial';
 }
 
 interface Certificate {
   name: string;
   expiry: string;
   isActive: boolean;
+  password?: string;
+  fileData?: string;
 }
 
 interface DateRangeFilter {
   start: Date | undefined;
   end: Date | undefined;
 }
+
+const STORAGE_KEYS = {
+  CERTIFICATE: 'sefaz_certificate',
+  SELECTED_BRANCH: 'sefaz_selected_branch'
+};
 
 const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   const [nfeKey, setNfeKey] = useState<string>('');
@@ -53,13 +62,38 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   const [periodFilter, setPeriodFilter] = useState<string>('30days');
   const [recentInvoices, setRecentInvoices] = useState<InvoiceItem[]>([]);
   const [allInvoices, setAllInvoices] = useState<InvoiceItem[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<'matriz' | 'filial' | 'todas'>('todas');
+
+  // Carregar certificado salvo ao iniciar
+  useEffect(() => {
+    const savedCertificate = localStorage.getItem(STORAGE_KEYS.CERTIFICATE);
+    if (savedCertificate) {
+      try {
+        const parsedCertificate = JSON.parse(savedCertificate) as Certificate;
+        setActiveCertificate(parsedCertificate);
+        
+        if (parsedCertificate.password) {
+          setCertificatePassword(parsedCertificate.password);
+        }
+        
+        toast.success('Certificado digital carregado com sucesso');
+      } catch (error) {
+        console.error('Erro ao carregar certificado salvo:', error);
+      }
+    }
+    
+    const savedBranch = localStorage.getItem(STORAGE_KEYS.SELECTED_BRANCH);
+    if (savedBranch) {
+      setSelectedBranch(savedBranch as 'matriz' | 'filial' | 'todas');
+    }
+  }, []);
 
   // Carregar notas fiscais com base no filtro de período
   useEffect(() => {
     if (activeCertificate) {
       fetchInvoicesByPeriod();
     }
-  }, [dateRange, activeCertificate]);
+  }, [dateRange, activeCertificate, selectedBranch]);
 
   // Simular carregamento de notas fiscais quando o certificado é ativado
   useEffect(() => {
@@ -77,6 +111,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     for (let i = 0; i < 50; i++) {
       const randomDaysAgo = Math.floor(Math.random() * 90);
       const emissionDate = subDays(today, randomDaysAgo);
+      const branch = Math.random() > 0.5 ? 'matriz' : 'filial';
       
       mockInvoices.push({
         id: `mock-${i}`,
@@ -84,7 +119,8 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         date: format(emissionDate, 'dd/MM/yyyy'),
         supplier: `Fornecedor ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
         status: Math.random() > 0.3 ? 'pending' : 'processed',
-        emissionDate
+        emissionDate,
+        branch
       });
     }
     
@@ -100,14 +136,24 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       setLoadingInvoices(true);
       
       setTimeout(() => {
-        const filteredInvoices = invoices.filter(invoice => {
+        let filteredInvoices = invoices.filter(invoice => {
           return invoice.emissionDate >= dateRange.start! && invoice.emissionDate <= dateRange.end!;
         });
+        
+        // Filtrar por matriz/filial se necessário
+        if (selectedBranch !== 'todas') {
+          filteredInvoices = filteredInvoices.filter(invoice => invoice.branch === selectedBranch);
+        }
         
         setRecentInvoices(filteredInvoices);
         setLoadingInvoices(false);
       }, 800);
     }
+  };
+
+  const handleBranchChange = (value: 'matriz' | 'filial' | 'todas') => {
+    setSelectedBranch(value);
+    localStorage.setItem(STORAGE_KEYS.SELECTED_BRANCH, value);
   };
 
   const handlePeriodChange = (value: string) => {
@@ -209,11 +255,13 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         date: new Date().toLocaleDateString('pt-BR'),
         supplier: 'Fornecedor via SEFAZ',
         status: 'processed',
-        emissionDate: new Date()
+        emissionDate: new Date(),
+        branch: selectedBranch === 'todas' ? 'matriz' : selectedBranch
       };
       
       setRecentInvoices([newInvoice, ...recentInvoices]);
       
+      // Enviar o XML para o componente pai processar
       onNfeLoaded(mockXmlResponse);
       
       toast.success('NF-e carregada com sucesso!');
@@ -245,7 +293,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                 <prod>
                   <cProd>003</cProd>
                   <cEAN>7891234567892</cEAN>
-                  <xProd>PRODUTO ${invoice.supplier} VERDE</xProd>
+                  <xProd>PRODUTO ${invoice.supplier} ${invoice.branch === 'matriz' ? 'MATRIZ' : 'FILIAL'} VERDE</xProd>
                   <NCM>12345678</NCM>
                   <CFOP>5102</CFOP>
                   <uCom>UN</uCom>
@@ -264,6 +312,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       );
       setRecentInvoices(updatedInvoices);
       
+      // Enviar o XML para o componente pai
       onNfeLoaded(mockXmlResponse);
       
       toast.success(`Nota ${invoice.number} carregada com sucesso!`);
@@ -293,6 +342,18 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setCertificateFile(file);
+      
+      // Converter o arquivo para Base64 para poder salvá-lo
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target && event.target.result) {
+          const fileData = event.target.result.toString();
+          // Armazenar temporariamente
+          setCertificateFile(file);
+        }
+      };
+      reader.readAsDataURL(file);
+      
       toast.info(`Arquivo de certificado ${file.name} selecionado.`);
     }
   };
@@ -310,20 +371,39 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
 
     setLoading(true);
 
-    setTimeout(() => {
-      const newCertificate: Certificate = {
-        name: certificateFile.name,
-        expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR'),
-        isActive: true
-      };
-      
-      setActiveCertificate(newCertificate);
-      setCertificateFile(null);
-      setCertificatePassword('');
-      
-      toast.success('Certificado A1 instalado com sucesso!');
-      setLoading(false);
-    }, 1500);
+    // Converter o arquivo para Base64 para armazenamento
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target && event.target.result) {
+        setTimeout(() => {
+          const fileData = event.target.result?.toString();
+          
+          const newCertificate: Certificate = {
+            name: certificateFile.name,
+            expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR'),
+            isActive: true,
+            password: certificatePassword,
+            fileData: fileData
+          };
+          
+          // Salvar no localStorage
+          localStorage.setItem(STORAGE_KEYS.CERTIFICATE, JSON.stringify(newCertificate));
+          
+          setActiveCertificate(newCertificate);
+          setCertificateFile(null);
+          
+          toast.success('Certificado A1 instalado com sucesso!');
+          setLoading(false);
+        }, 1500);
+      }
+    };
+    reader.readAsDataURL(certificateFile);
+  };
+
+  const handleRemoveCertificate = () => {
+    setActiveCertificate(null);
+    localStorage.removeItem(STORAGE_KEYS.CERTIFICATE);
+    toast.success('Certificado removido com sucesso.');
   };
 
   const getFormattedPeriod = () => {
@@ -334,6 +414,15 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     const formatDate = (date: Date) => format(date, 'dd/MM/yyyy');
     return `${formatDate(dateRange.start)} até ${formatDate(dateRange.end)}`;
   };
+
+  const getTotalByBranch = () => {
+    const matriz = allInvoices.filter(inv => inv.branch === 'matriz').length;
+    const filial = allInvoices.filter(inv => inv.branch === 'filial').length;
+    
+    return { matriz, filial, total: matriz + filial };
+  };
+
+  const branchStats = getTotalByBranch();
 
   return (
     <div className="space-y-6 p-4">
@@ -356,7 +445,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                   variant="outline" 
                   size="sm" 
                   className="mt-2" 
-                  onClick={() => setActiveCertificate(null)}
+                  onClick={handleRemoveCertificate}
                 >
                   Remover certificado
                 </Button>
@@ -447,6 +536,25 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                   maxLength={18}
                 />
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="branchSelect">
+                  Unidade
+                </Label>
+                <Select 
+                  value={selectedBranch} 
+                  onValueChange={(value) => handleBranchChange(value as 'matriz' | 'filial' | 'todas')}
+                >
+                  <SelectTrigger id="branchSelect">
+                    <SelectValue placeholder="Selecione a unidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as unidades</SelectItem>
+                    <SelectItem value="matriz">Matriz</SelectItem>
+                    <SelectItem value="filial">Filial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
             <CardFooter>
               <Button 
@@ -476,6 +584,12 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                 <CardDescription>
                   Filtrar notas fiscais emitidas contra seu CNPJ
                 </CardDescription>
+                
+                <div className="flex mt-2 gap-4 text-sm text-gray-500">
+                  <span>Total: {branchStats.total}</span>
+                  <span>Matriz: {branchStats.matriz}</span>
+                  <span>Filial: {branchStats.filial}</span>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Select value={periodFilter} onValueChange={handlePeriodChange}>
@@ -524,6 +638,20 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                     </PopoverContent>
                   </Popover>
                 )}
+                
+                <Select 
+                  value={selectedBranch} 
+                  onValueChange={(value) => handleBranchChange(value as 'matriz' | 'filial' | 'todas')}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Filial/Matriz" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    <SelectItem value="matriz">Matriz</SelectItem>
+                    <SelectItem value="filial">Filial</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardHeader>
             <CardContent>
@@ -548,7 +676,16 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                           <Clock className="h-5 w-5 text-gray-400" />
                         )}
                         <div>
-                          <p className="font-medium">NF-e: {invoice.number}</p>
+                          <div className="flex items-center">
+                            <p className="font-medium">NF-e: {invoice.number}</p>
+                            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                              invoice.branch === 'matriz' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-purple-100 text-purple-800'
+                            }`}>
+                              {invoice.branch === 'matriz' ? 'Matriz' : 'Filial'}
+                            </span>
+                          </div>
                           <p className="text-sm text-gray-500">{invoice.supplier} - {invoice.date}</p>
                         </div>
                       </div>
@@ -567,12 +704,14 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                   
                   <div className="text-sm text-gray-500 mt-2 text-center">
                     Mostrando {recentInvoices.length} notas fiscais {dateRange.start && dateRange.end ? `de ${format(dateRange.start, 'dd/MM/yyyy')} até ${format(dateRange.end, 'dd/MM/yyyy')}` : ''}
+                    {selectedBranch !== 'todas' && ` (${selectedBranch === 'matriz' ? 'Matriz' : 'Filial'})`}
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <p className="text-sm text-gray-500 italic">
-                    Nenhuma nota fiscal encontrada no período selecionado.
+                    Nenhuma nota fiscal encontrada no período selecionado
+                    {selectedBranch !== 'todas' && ` para ${selectedBranch === 'matriz' ? 'Matriz' : 'Filial'}`}.
                   </p>
                 </div>
               )}
