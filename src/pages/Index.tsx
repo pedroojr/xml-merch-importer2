@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import FileUpload from '../components/FileUpload';
 import { ProductPreview } from '../components/product-preview';
+import SefazIntegration from '../components/product-preview/SefazIntegration';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
-import { Info, FileSpreadsheet, Save, History, Edit2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Info, FileSpreadsheet, Save, History, Edit2, FileText, Download } from 'lucide-react';
 import { parseNFeXML } from '../utils/nfeParser';
 import { Product, SavedNFe } from '../types/nfe';
 import { 
@@ -315,13 +317,32 @@ const Index = () => {
               </div>
               <h1 className="text-3xl font-bold text-slate-900 mb-2">Importação de Produtos via XML</h1>
               <p className="text-slate-600 max-w-2xl mx-auto">
-                Faça upload do arquivo XML da NF-e para importar automaticamente os produtos para o seu catálogo no Odoo
+                Faça upload do arquivo XML da NF-e ou consulte diretamente via SEFAZ para importar produtos para o seu catálogo
               </p>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-              <div className="max-w-3xl mx-auto">
-                <FileUpload onFileSelect={handleFileSelect} />
+              <div className="max-w-6xl mx-auto">
+                <Tabs defaultValue="upload" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-8">
+                    <TabsTrigger value="upload" className="flex items-center gap-2">
+                      <FileText size={16} />
+                      Upload Manual
+                    </TabsTrigger>
+                    <TabsTrigger value="sefaz" className="flex items-center gap-2">
+                      <Download size={16} />
+                      Importação via SEFAZ
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="upload">
+                    <FileUpload onFileSelect={handleFileSelect} />
+                  </TabsContent>
+                  
+                  <TabsContent value="sefaz">
+                    <SefazIntegration onNfeLoaded={handleLoadProductsFromSefaz} />
+                  </TabsContent>
+                </Tabs>
                 
                 {savedNFes.length > 0 && (
                   <div className="mt-8 text-center">

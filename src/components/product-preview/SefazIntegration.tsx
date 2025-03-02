@@ -4,16 +4,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { FileSearch, Download } from "lucide-react";
+import { FileSearch, Download, Check, Clock } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Product } from '@/types/nfe';
+import { parseNFeXML } from '@/utils/nfeParser';
 
 interface SefazIntegrationProps {
-  onNfeLoaded: (xmlContent: string) => void;
+  onNfeLoaded: (products: Product[]) => void;
+}
+
+interface InvoiceItem {
+  id: string;
+  number: string;
+  date: string;
+  supplier: string;
+  status: 'processed' | 'pending';
 }
 
 const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   const [nfeKey, setNfeKey] = useState<string>('');
   const [cnpj, setCnpj] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [recentInvoices, setRecentInvoices] = useState<InvoiceItem[]>([
+    { id: '1', number: '12345678', date: '15/05/2023', supplier: 'Fornecedor ABC', status: 'processed' },
+    { id: '2', number: '87654321', date: '10/05/2023', supplier: 'Distribuidora XYZ', status: 'pending' },
+    { id: '3', number: '45678123', date: '05/05/2023', supplier: 'Indústria 123', status: 'pending' }
+  ]);
 
   const handleConsultNfe = async () => {
     if (!nfeKey || nfeKey.length !== 44) {
@@ -29,24 +45,122 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     setLoading(true);
     try {
       // Simulação - em produção, isso seria uma chamada de API real
-      // Normalmente, isso seria feito através de um backend devido a restrições de CORS
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Simulando erro de autorização para fins de demonstração
-      toast.error('Não foi possível obter a NF-e. Verifique suas credenciais e tente novamente.');
+      // Simulando uma resposta XML mock para fins de demonstração
+      const mockXmlResponse = `
+        <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+          <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+            <infNFe versao="4.00">
+              <ide>
+                <nNF>123456</nNF>
+              </ide>
+              <det nItem="1">
+                <prod>
+                  <cProd>001</cProd>
+                  <cEAN>7891234567890</cEAN>
+                  <xProd>PRODUTO TESTE SEFAZ AZUL</xProd>
+                  <NCM>12345678</NCM>
+                  <CFOP>5102</CFOP>
+                  <uCom>UN</uCom>
+                  <qCom>10</qCom>
+                  <vUnCom>50.00</vUnCom>
+                  <vProd>500.00</vProd>
+                </prod>
+              </det>
+              <det nItem="2">
+                <prod>
+                  <cProd>002</cProd>
+                  <cEAN>7891234567891</cEAN>
+                  <xProd>PRODUTO TESTE SEFAZ VERMELHO</xProd>
+                  <NCM>12345678</NCM>
+                  <CFOP>5102</CFOP>
+                  <uCom>UN</uCom>
+                  <qCom>5</qCom>
+                  <vUnCom>80.00</vUnCom>
+                  <vProd>400.00</vProd>
+                </prod>
+              </det>
+            </infNFe>
+          </NFe>
+        </nfeProc>
+      `;
       
-      // Em caso de sucesso, o código abaixo seria executado
-      // const response = await fetch(`/api/sefaz/consulta?chave=${nfeKey}&cnpj=${cnpj}`);
-      // if (!response.ok) throw new Error('Falha ao consultar NF-e');
-      // const data = await response.text();
-      // onNfeLoaded(data);
-      // toast.success('NF-e carregada com sucesso!');
+      const parsedProducts = parseNFeXML(mockXmlResponse);
+      
+      // Atualiza a lista de invoices recentes
+      const newInvoice: InvoiceItem = {
+        id: new Date().getTime().toString(),
+        number: '123456', // Em produção, extrair do XML
+        date: new Date().toLocaleDateString('pt-BR'),
+        supplier: 'Fornecedor via SEFAZ',
+        status: 'processed'
+      };
+      
+      setRecentInvoices([newInvoice, ...recentInvoices]);
+      
+      // Passa os produtos para o componente pai
+      onNfeLoaded(parsedProducts);
+      
+      toast.success('NF-e carregada com sucesso!');
     } catch (error) {
       console.error('Erro ao consultar NF-e:', error);
       toast.error('Ocorreu um erro ao consultar a NF-e.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLoadInvoice = (invoice: InvoiceItem) => {
+    if (invoice.status === 'processed') {
+      toast.info(`A nota ${invoice.number} já foi processada anteriormente.`);
+      return;
+    }
+    
+    setLoading(true);
+    
+    // Simulação de carregamento
+    setTimeout(() => {
+      // Simulação de uma consulta bem sucedida
+      const mockXmlResponse = `
+        <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+          <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+            <infNFe versao="4.00">
+              <ide>
+                <nNF>${invoice.number}</nNF>
+              </ide>
+              <det nItem="1">
+                <prod>
+                  <cProd>003</cProd>
+                  <cEAN>7891234567892</cEAN>
+                  <xProd>PRODUTO ${invoice.supplier} VERDE</xProd>
+                  <NCM>12345678</NCM>
+                  <CFOP>5102</CFOP>
+                  <uCom>UN</uCom>
+                  <qCom>8</qCom>
+                  <vUnCom>60.00</vUnCom>
+                  <vProd>480.00</vProd>
+                </prod>
+              </det>
+            </infNFe>
+          </NFe>
+        </nfeProc>
+      `;
+      
+      const parsedProducts = parseNFeXML(mockXmlResponse);
+      
+      // Atualiza o status da invoice
+      const updatedInvoices = recentInvoices.map(inv => 
+        inv.id === invoice.id ? { ...inv, status: 'processed' as const } : inv
+      );
+      setRecentInvoices(updatedInvoices);
+      
+      // Passa os produtos para o componente pai
+      onNfeLoaded(parsedProducts);
+      
+      toast.success(`Nota ${invoice.number} carregada com sucesso!`);
+      setLoading(false);
+    }, 1500);
   };
 
   // Formata o CNPJ enquanto o usuário digita
@@ -70,7 +184,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   };
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Consulta NF-e via SEFAZ</CardTitle>
@@ -80,9 +194,9 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="nfeKey" className="text-sm font-medium">
+            <Label htmlFor="nfeKey">
               Chave da NF-e (44 dígitos)
-            </label>
+            </Label>
             <Input
               id="nfeKey"
               placeholder="Digite a chave da NF-e"
@@ -93,9 +207,9 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
           </div>
           
           <div className="space-y-2">
-            <label htmlFor="cnpj" className="text-sm font-medium">
+            <Label htmlFor="cnpj">
               CNPJ da Empresa
-            </label>
+            </Label>
             <Input
               id="cnpj"
               placeholder="Digite o CNPJ"
@@ -128,26 +242,51 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       
       <Card>
         <CardHeader>
-          <CardTitle>Últimas Consultas</CardTitle>
+          <CardTitle>Notas Fiscais Disponíveis</CardTitle>
           <CardDescription>
-            Notas consultadas recentemente.
+            Notas fiscais emitidas contra seu CNPJ
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-500 italic">Nenhuma consulta recente.</p>
+          {recentInvoices.length > 0 ? (
+            <div className="space-y-3">
+              {recentInvoices.map((invoice) => (
+                <div 
+                  key={invoice.id}
+                  className={`flex items-center justify-between p-3 rounded-md border
+                    ${invoice.status === 'processed' 
+                      ? 'border-green-200 bg-green-50' 
+                      : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                >
+                  <div className="flex items-center space-x-3">
+                    {invoice.status === 'processed' ? (
+                      <Check className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <Clock className="h-5 w-5 text-gray-400" />
+                    )}
+                    <div>
+                      <p className="font-medium">NF-e: {invoice.number}</p>
+                      <p className="text-sm text-gray-500">{invoice.supplier} - {invoice.date}</p>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleLoadInvoice(invoice)}
+                    disabled={loading}
+                    className={invoice.status === 'processed' ? 'text-green-600' : ''}
+                  >
+                    {invoice.status === 'processed' ? 'Importada' : 'Importar'}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 italic">Nenhuma nota fiscal disponível.</p>
+          )}
         </CardContent>
       </Card>
-      
-      <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-md">
-        <h3 className="font-medium text-blue-800 flex items-center">
-          <Download className="h-4 w-4 mr-2" />
-          Saiba mais sobre a integração com SEFAZ
-        </h3>
-        <p className="mt-2 text-sm text-blue-700">
-          Para utilizar a integração completa com a SEFAZ, é necessário configurar o certificado digital
-          A1 da empresa e as credenciais de acesso no módulo Odoo. Entre em contato com o suporte para mais informações.
-        </p>
-      </div>
     </div>
   );
 };
