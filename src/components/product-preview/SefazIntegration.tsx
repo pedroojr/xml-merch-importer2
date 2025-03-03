@@ -4,15 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { FileSearch, Download, Check, Clock, Upload, Shield, Calendar, Building2 } from "lucide-react";
+import { FileSearch, Download, Check, Clock, Upload, Shield, Calendar, Building2, Search, Filter, X, FileSpreadsheet, ChevronDown } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, subDays } from "date-fns";
+import { format, subDays, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface SefazIntegrationProps {
   onNfeLoaded: (xmlContent: string) => void;
@@ -27,6 +29,13 @@ interface InvoiceItem {
   emissionDate: Date;
   branch: 'matriz' | 'filial';
   chaveAcesso?: string;
+  tipo?: string;
+  serie?: string;
+  cnpjEmitente?: string;
+  ieEmitente?: string;
+  uf?: string;
+  valor?: string;
+  selected?: boolean;
 }
 
 interface Certificate {
@@ -80,6 +89,13 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     return (localStorage.getItem(STORAGE_KEYS.SELECTED_BRANCH) as 'matriz' | 'filial' | 'todas') || 'todas';
   });
   const [activeTab, setActiveTab] = useState<string>("invoices");
+  const [formattedDateRange, setFormattedDateRange] = useState<string>("03/12/2024 a 03/03/2025");
+  const [searchType, setSearchType] = useState<string>("NFe");
+  const [searchUF, setSearchUF] = useState<string>("Todos");
+  const [searchBy, setSearchBy] = useState<string>("Chave");
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
+  const [recipientCompany, setRecipientCompany] = useState<string>("Todos os Destinatários");
+  const [invoiceFiltered, setInvoiceFiltered] = useState<InvoiceItem[]>([]);
 
   // Carregar certificado salvo e CNPJ ao iniciar
   useEffect(() => {
@@ -153,6 +169,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         }
         
         setRecentInvoices(filteredInvoices);
+        setInvoiceFiltered(filteredInvoices);
         setAllInvoices(mockInvoices);
         
         toast.success(`${filteredInvoices.length} notas fiscais encontradas`);
@@ -170,6 +187,10 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     const mockInvoices: InvoiceItem[] = [];
     const today = new Date();
     
+    const ufs = ['BA', 'RS', 'SP', 'SC', 'CE', 'GO'];
+    const tipos = ['Saída', 'Entrada'];
+    const series = ['001', '003', '004', '005', '006'];
+    
     // Gerar 50 notas fiscais aleatórias nos últimos 90 dias
     for (let i = 0; i < 50; i++) {
       const randomDaysAgo = Math.floor(Math.random() * 90);
@@ -180,6 +201,13 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       // Gerar chave de acesso simulada - 44 dígitos
       const chaveAcesso = generateRandomNFeKey();
       
+      const uf = ufs[Math.floor(Math.random() * ufs.length)];
+      const tipo = tipos[Math.floor(Math.random() * tipos.length)];
+      const serie = series[Math.floor(Math.random() * series.length)];
+      const valor = `R$ ${(Math.random() * 10000).toFixed(2)}`;
+      const cnpjEmitente = `${Math.floor(10000000 + Math.random() * 90000000)}/0001-${Math.floor(10 + Math.random() * 90)}`;
+      const ieEmitente = Math.floor(100000000 + Math.random() * 900000000).toString();
+      
       mockInvoices.push({
         id: `mock-${i}`,
         number: invoiceNumber,
@@ -188,7 +216,14 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         status: Math.random() > 0.3 ? 'pending' : 'processed',
         emissionDate,
         branch,
-        chaveAcesso
+        chaveAcesso,
+        tipo,
+        serie,
+        cnpjEmitente,
+        ieEmitente,
+        uf,
+        valor,
+        selected: false
       });
     }
     
@@ -244,6 +279,8 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       start,
       end: today
     });
+    
+    setFormattedDateRange(`${format(start, 'dd/MM/yyyy')} a ${format(today, 'dd/MM/yyyy')}`);
   };
 
   const handleConsultNfe = async () => {
@@ -513,11 +550,87 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     
     return { matriz, filial, total: matriz + filial };
   };
+  
+  const handleSearch = () => {
+    setLoadingInvoices(true);
+    
+    setTimeout(() => {
+      // Simulação de filtro (em produção seria uma chamada à API)
+      setInvoiceFiltered(recentInvoices);
+      setLoadingInvoices(false);
+      toast.success("Pesquisa realizada com sucesso");
+    }, 800);
+  };
+  
+  const handleClear = () => {
+    setSearchUF("Todos");
+    setSearchBy("Chave");
+    setRecipientCompany("Todos os Destinatários");
+    setInvoiceFiltered(recentInvoices);
+    toast.success("Filtros limpos");
+  };
+  
+  const handleDateRangeChange = (rangeStr: string) => {
+    setFormattedDateRange(rangeStr);
+    
+    try {
+      const [startStr, endStr] = rangeStr.split(' a ');
+      const start = parse(startStr, 'dd/MM/yyyy', new Date());
+      const end = parse(endStr, 'dd/MM/yyyy', new Date());
+      
+      setDateRange({
+        start,
+        end
+      });
+    } catch (error) {
+      console.error('Erro ao converter datas:', error);
+    }
+  };
+  
+  const handleSelectInvoice = (id: string) => {
+    const newSelected = new Set(selectedInvoices);
+    
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    
+    setSelectedInvoices(newSelected);
+  };
+  
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const allIds = invoiceFiltered.map(invoice => invoice.id);
+      setSelectedInvoices(new Set(allIds));
+    } else {
+      setSelectedInvoices(new Set());
+    }
+  };
+  
+  const handleExportSelected = () => {
+    if (selectedInvoices.size === 0) {
+      toast.error("Selecione pelo menos uma nota fiscal para exportar");
+      return;
+    }
+    
+    toast.success(`${selectedInvoices.size} notas fiscais exportadas`);
+  };
+  
+  const handleClearSelected = () => {
+    if (selectedInvoices.size === 0) {
+      toast.error("Não há notas fiscais selecionadas");
+      return;
+    }
+    
+    setSelectedInvoices(new Set());
+    toast.success("Seleção limpa");
+  };
 
   const branchStats = getTotalByBranch();
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-6">
       {!activeCertificate ? (
         <Card className="shadow-md">
           <CardHeader className="border-b bg-blue-50">
@@ -590,299 +703,225 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
           </CardContent>
         </Card>
       ) : (
-        <>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="bg-white border-b rounded-t-lg">
-              <TabsList className="w-full justify-start rounded-none">
-                <TabsTrigger value="certificate" className="data-[state=active]:bg-blue-50">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Certificado
-                </TabsTrigger>
-                <TabsTrigger value="search" className="data-[state=active]:bg-blue-50">
-                  <FileSearch className="h-4 w-4 mr-2" />
-                  Busca por Chave
-                </TabsTrigger>
-                <TabsTrigger value="invoices" className="data-[state=active]:bg-blue-50">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Notas por Período
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="certificate" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Certificado Digital A1</CardTitle>
-                  <CardDescription>
-                    Gerenciar seu certificado digital para autenticação junto à SEFAZ.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Alert className="bg-green-50 border-green-200">
-                    <Shield className="h-5 w-5 text-green-500" />
-                    <AlertTitle>Certificado ativo</AlertTitle>
-                    <AlertDescription className="space-y-1">
-                      <p><strong>Nome:</strong> {activeCertificate.name}</p>
-                      <p><strong>Validade:</strong> {activeCertificate.expiry}</p>
-                      <p><strong>CNPJ:</strong> {cnpj}</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2" 
-                        onClick={handleRemoveCertificate}
-                      >
-                        Remover certificado
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="search" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Consulta NF-e via SEFAZ</CardTitle>
-                  <CardDescription>
-                    Consulte e importe uma NF-e diretamente dos servidores da SEFAZ usando a chave de acesso.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nfeKey">
-                      Chave da NF-e (44 dígitos)
-                    </Label>
-                    <Input
-                      id="nfeKey"
-                      placeholder="Digite a chave da NF-e"
-                      value={nfeKey}
-                      onChange={(e) => setNfeKey(formatNfeKey(e.target.value))}
-                      maxLength={44}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="cnpj">
-                      CNPJ da Empresa
-                    </Label>
-                    <Input
-                      id="cnpj"
-                      placeholder="Digite o CNPJ"
-                      value={cnpj}
-                      onChange={(e) => setCnpj(formatCNPJ(e.target.value))}
-                      maxLength={18}
-                      disabled
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="branchSelect">
-                      Unidade
-                    </Label>
-                    <Select 
-                      value={selectedBranch} 
-                      onValueChange={(value) => handleBranchChange(value as 'matriz' | 'filial' | 'todas')}
-                    >
-                      <SelectTrigger id="branchSelect">
-                        <SelectValue placeholder="Selecione a unidade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todas">Todas as unidades</SelectItem>
-                        <SelectItem value="matriz">Matriz</SelectItem>
-                        <SelectItem value="filial">Filial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    onClick={handleConsultNfe} 
-                    disabled={loading || !nfeKey || !cnpj}
-                    className="w-full"
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="flex flex-col space-y-4 p-4">
+              {/* Linha 1: Destinatário e Tipos de Documento */}
+              <div className="flex justify-between items-center gap-4">
+                <div className="w-1/3">
+                  <Label htmlFor="empresaDestinataria" className="mb-1 block font-medium">
+                    Empresa Destinatária
+                  </Label>
+                  <Select value={recipientCompany} onValueChange={setRecipientCompany}>
+                    <SelectTrigger id="empresaDestinataria" className="w-full">
+                      <SelectValue placeholder="Selecione a empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Todos os Destinatários">Todos os Destinatários</SelectItem>
+                      <SelectItem value="Empresa 1">Empresa 1</SelectItem>
+                      <SelectItem value="Empresa 2">Empresa 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant={searchType === "NFe" ? "default" : "outline"}
+                    className={`px-4 ${searchType === "NFe" ? "bg-green-500 hover:bg-green-600" : ""}`}
+                    onClick={() => setSearchType("NFe")}
                   >
-                    {loading ? (
-                      <>
-                        <span className="animate-spin mr-2">⟳</span>
-                        Consultando...
-                      </>
-                    ) : (
-                      <>
-                        <FileSearch className="h-4 w-4 mr-2" />
-                        Consultar NF-e Real na SEFAZ
-                      </>
-                    )}
+                    NFe
                   </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="invoices" className="mt-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div>
-                    <CardTitle>Notas Fiscais Disponíveis na SEFAZ</CardTitle>
-                    <CardDescription>
-                      Notas fiscais emitidas contra seu CNPJ
-                    </CardDescription>
-                    
-                    <div className="flex mt-2 gap-4 text-sm text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
-                        Matriz: {branchStats.matriz}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-purple-500 inline-block"></span>
-                        Filial: {branchStats.filial}
-                      </span>
-                      <span>Total: {branchStats.total}</span>
+                  <Button
+                    variant={searchType === "CTe" ? "default" : "outline"}
+                    className={`px-4 ${searchType === "CTe" ? "bg-green-500 hover:bg-green-600" : ""}`}
+                    onClick={() => setSearchType("CTe")}
+                  >
+                    CTe
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="bg-green-500 hover:bg-green-600 text-white"
+                  >
+                    Selecionar várias chaves
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Linha 2: Período, UF e Busca */}
+              <div className="flex justify-between items-center gap-4">
+                <div className="w-1/3">
+                  <Label htmlFor="periodo" className="mb-1 block font-medium">
+                    Período
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500">
+                      <Calendar size={16} />
+                    </div>
+                    <Input
+                      id="periodo"
+                      value={formattedDateRange}
+                      onChange={(e) => handleDateRangeChange(e.target.value)}
+                      className="pl-8"
+                    />
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500">
+                      <ChevronDown size={16} />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Select value={periodFilter} onValueChange={handlePeriodChange}>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Selecione o período" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="7days">Últimos 7 dias</SelectItem>
-                        <SelectItem value="15days">Últimos 15 dias</SelectItem>
-                        <SelectItem value="30days">Últimos 30 dias</SelectItem>
-                        <SelectItem value="60days">Últimos 60 dias</SelectItem>
-                        <SelectItem value="90days">Últimos 90 dias</SelectItem>
-                        <SelectItem value="custom">Período personalizado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    {periodFilter === 'custom' && (
-                      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="ml-2">
-                            <Calendar className="h-4 w-4 mr-2" />
-                            {getFormattedPeriod()}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
-                          <div className="p-3 border-b">
-                            <h4 className="font-medium text-sm">Selecione o período</h4>
-                          </div>
-                          <CalendarComponent
-                            mode="range"
-                            selected={{
-                              from: dateRange.start,
-                              to: dateRange.end
-                            }}
-                            onSelect={(range) => {
-                              if (range?.from && range?.to) {
-                                setDateRange({
-                                  start: range.from,
-                                  end: range.to
-                                });
-                              }
-                            }}
-                            locale={ptBR}
-                            className="rounded-md border p-3"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    )}
-                    
-                    <Select 
-                      value={selectedBranch} 
-                      onValueChange={(value) => handleBranchChange(value as 'matriz' | 'filial' | 'todas')}
-                    >
-                      <SelectTrigger className="w-[140px]">
-                        <SelectValue placeholder="Filial/Matriz" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todas">Todas</SelectItem>
-                        <SelectItem value="matriz">Matriz</SelectItem>
-                        <SelectItem value="filial">Filial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Button 
-                      variant="outline" 
-                      onClick={() => fetchInvoicesByPeriod()}
-                      disabled={loadingInvoices}
-                    >
-                      {loadingInvoices ? 'Atualizando...' : 'Atualizar'}
+                </div>
+                
+                <div className="w-1/4">
+                  <Label htmlFor="uf" className="mb-1 block font-medium">
+                    UF
+                  </Label>
+                  <Select value={searchUF} onValueChange={setSearchUF}>
+                    <SelectTrigger id="uf">
+                      <SelectValue placeholder="Selecione a UF" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Todos">Todos</SelectItem>
+                      <SelectItem value="SP">SP</SelectItem>
+                      <SelectItem value="RJ">RJ</SelectItem>
+                      <SelectItem value="MG">MG</SelectItem>
+                      <SelectItem value="RS">RS</SelectItem>
+                      <SelectItem value="BA">BA</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="w-1/4">
+                  <div className="flex items-center justify-between mb-1">
+                    <Label htmlFor="buscarPor" className="font-medium">
+                      Buscar Por
+                    </Label>
+                  </div>
+                  <Select value={searchBy} onValueChange={setSearchBy}>
+                    <SelectTrigger id="buscarPor">
+                      <SelectValue placeholder="Buscar por" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Chave">Chave</SelectItem>
+                      <SelectItem value="CNPJ">CNPJ</SelectItem>
+                      <SelectItem value="Numero">Número</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-5">
+                  <div className="flex space-x-2">
+                    <Button onClick={handleSearch} className="bg-green-500 hover:bg-green-600">
+                      <Search size={16} className="mr-1" />
+                      <span className="uppercase">Filtrar</span>
+                    </Button>
+                    <Button onClick={handleClear} variant="outline" className="flex items-center">
+                      <X size={16} className="mr-1" />
+                      <span className="uppercase">clear</span>
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {loadingInvoices ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
-                    </div>
-                  ) : recentInvoices.length > 0 ? (
-                    <div className="space-y-3">
-                      {recentInvoices.map((invoice) => (
-                        <div 
-                          key={invoice.id}
-                          className={`flex items-center justify-between p-3 rounded-md border
-                            ${invoice.status === 'processed' 
-                              ? 'border-green-200 bg-green-50' 
-                              : 'border-gray-200 bg-white hover:bg-gray-50 cursor-pointer'}`}
-                          onClick={() => invoice.status !== 'processed' && handleLoadInvoice(invoice)}
-                        >
-                          <div className="flex items-center space-x-3">
-                            {invoice.status === 'processed' ? (
-                              <Check className="h-5 w-5 text-green-500" />
-                            ) : (
-                              <Clock className="h-5 w-5 text-gray-400" />
-                            )}
-                            <div>
-                              <div className="flex items-center">
-                                <p className="font-medium">NF-e: {invoice.number}</p>
-                                <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                                  invoice.branch === 'matriz' 
-                                    ? 'bg-blue-100 text-blue-800' 
-                                    : 'bg-purple-100 text-purple-800'
-                                }`}>
-                                  {invoice.branch === 'matriz' ? 'Matriz' : 'Filial'}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-500">{invoice.supplier} - {invoice.date}</p>
-                              {invoice.chaveAcesso && (
-                                <p className="text-xs text-gray-400 truncate max-w-md">
-                                  Chave: {invoice.chaveAcesso}
-                                </p>
-                              )}
-                            </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Tabela de resultados */}
+            <div className="p-4">
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm text-gray-500">
+                  Resultados: {invoiceFiltered.length} notas fiscais
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="bg-green-500 hover:bg-green-600 text-white"
+                    onClick={handleExportSelected}
+                  >
+                    <FileSpreadsheet size={18} className="mr-2" />
+                    Exportar Selecionadas
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    onClick={handleClearSelected}
+                  >
+                    Limpar Selecionadas
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader className="bg-gray-100">
+                    <TableRow>
+                      <TableHead className="w-[40px]">
+                        <Checkbox
+                          onCheckedChange={handleSelectAll}
+                          checked={selectedInvoices.size > 0 && selectedInvoices.size === invoiceFiltered.length}
+                        />
+                      </TableHead>
+                      <TableHead className="w-[200px]">CNPJ/CPF Destinatário</TableHead>
+                      <TableHead className="w-[120px]">Emissão</TableHead>
+                      <TableHead>Chave</TableHead>
+                      <TableHead className="w-[100px]">Tipo</TableHead>
+                      <TableHead className="w-[80px]">Série</TableHead>
+                      <TableHead className="w-[100px]">Número</TableHead>
+                      <TableHead className="w-[200px]">CNPJ Emitente</TableHead>
+                      <TableHead className="w-[120px]">IE Emitente</TableHead>
+                      <TableHead className="w-[250px]">Emitente</TableHead>
+                      <TableHead className="w-[60px]">UF</TableHead>
+                      <TableHead className="w-[120px]">Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loadingInvoices ? (
+                      <TableRow>
+                        <TableCell colSpan={12} className="text-center py-4">
+                          <div className="flex justify-center items-center space-x-2">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500"></div>
+                            <span>Carregando...</span>
                           </div>
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleLoadInvoice(invoice);
-                            }}
-                            disabled={loading || invoice.status === 'processed'}
-                            className={invoice.status === 'processed' ? 'text-green-600' : ''}
-                          >
-                            {invoice.status === 'processed' ? 'Importada' : 'Importar da SEFAZ'}
-                          </Button>
-                        </div>
-                      ))}
-                      
-                      <div className="text-sm text-gray-500 mt-2 text-center">
-                        Mostrando {recentInvoices.length} notas fiscais {dateRange.start && dateRange.end ? `de ${format(dateRange.start, 'dd/MM/yyyy')} até ${format(dateRange.end, 'dd/MM/yyyy')}` : ''}
-                        {selectedBranch !== 'todas' && ` (${selectedBranch === 'matriz' ? 'Matriz' : 'Filial'})`}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-gray-500 italic">
-                        Nenhuma nota fiscal encontrada no período selecionado
-                        {selectedBranch !== 'todas' && ` para ${selectedBranch === 'matriz' ? 'Matriz' : 'Filial'}`}.
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </>
+                        </TableCell>
+                      </TableRow>
+                    ) : invoiceFiltered.length > 0 ? (
+                      invoiceFiltered.map((invoice) => (
+                        <TableRow 
+                          key={invoice.id}
+                          className={`${invoice.status === 'processed' ? 'bg-green-50' : 'hover:bg-gray-50'} cursor-pointer`}
+                          onClick={() => handleLoadInvoice(invoice)}
+                        >
+                          <TableCell className="p-2">
+                            <Checkbox 
+                              checked={selectedInvoices.has(invoice.id)}
+                              onCheckedChange={() => handleSelectInvoice(invoice.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </TableCell>
+                          <TableCell className="p-2 text-sm">{cnpj}</TableCell>
+                          <TableCell className="p-2 text-sm">{invoice.date}</TableCell>
+                          <TableCell className="p-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]" title={invoice.chaveAcesso}>
+                            {invoice.chaveAcesso}
+                          </TableCell>
+                          <TableCell className="p-2 text-sm">{invoice.tipo || 'Saída'}</TableCell>
+                          <TableCell className="p-2 text-sm">{invoice.serie || '001'}</TableCell>
+                          <TableCell className="p-2 text-sm">{invoice.number}</TableCell>
+                          <TableCell className="p-2 text-sm">{invoice.cnpjEmitente || '00.000.000/0001-00'}</TableCell>
+                          <TableCell className="p-2 text-sm">{invoice.ieEmitente || '12345678'}</TableCell>
+                          <TableCell className="p-2 text-sm">{invoice.supplier}</TableCell>
+                          <TableCell className="p-2 text-sm">{invoice.uf || 'SP'}</TableCell>
+                          <TableCell className="p-2 text-sm">{invoice.valor || 'R$ 1.000,00'}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={12} className="text-center py-4 text-gray-500">
+                          Nenhuma nota fiscal encontrada
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
