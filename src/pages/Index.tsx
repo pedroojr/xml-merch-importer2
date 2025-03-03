@@ -32,7 +32,7 @@ const Index = () => {
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
   const [brandName, setBrandName] = useState<string>("");
   const [isEditingBrand, setIsEditingBrand] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<string>("sefaz"); // Definir "sefaz" como aba padrão
+  const [activeTab, setActiveTab] = useState<string>("sefaz");
 
   useEffect(() => {
     const savedNFesJson = localStorage.getItem(STORAGE_KEYS.SAVED_NFES);
@@ -289,7 +289,6 @@ const Index = () => {
     toast.success(`Nota fiscal ${nfe.name} carregada com sucesso`);
   };
 
-  // Corrigir esta função para processar o XML e extrair produtos
   const handleLoadProductsFromSefaz = (xmlContent: string) => {
     try {
       const parsedProducts = parseNFeXML(xmlContent);
@@ -471,7 +470,7 @@ const Index = () => {
                 onConfigurationUpdate={handleConfigurationUpdate}
                 hiddenItems={hiddenItems}
                 onToggleVisibility={handleToggleVisibility}
-                onNewFile={handleLoadProductsFromSefaz}
+                onNewFile={setProducts}
               />
             </div>
             <div className="flex justify-end gap-4 mt-6">
