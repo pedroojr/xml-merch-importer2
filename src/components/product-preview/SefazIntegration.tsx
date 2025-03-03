@@ -63,6 +63,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   const [recentInvoices, setRecentInvoices] = useState<InvoiceItem[]>([]);
   const [allInvoices, setAllInvoices] = useState<InvoiceItem[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<'matriz' | 'filial' | 'todas'>('todas');
+  const [activeTab, setActiveTab] = useState<string>("invoices"); // Tab padrão para notas fiscais
 
   // Carregar certificado salvo ao iniciar
   useEffect(() => {
@@ -394,6 +395,9 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
           
           toast.success('Certificado A1 instalado com sucesso!');
           setLoading(false);
+          
+          // Após instalar o certificado, mudar para a tab de consulta de notas
+          setActiveTab("invoices");
         }, 1500);
       }
     };
@@ -426,35 +430,18 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
 
   return (
     <div className="space-y-6 p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Certificado Digital A1</CardTitle>
-          <CardDescription>
-            Configure seu certificado digital A1 para autenticação junto à SEFAZ.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {activeCertificate ? (
-            <Alert className="bg-green-50 border-green-200">
-              <Shield className="h-5 w-5 text-green-500" />
-              <AlertTitle>Certificado ativo</AlertTitle>
-              <AlertDescription className="space-y-1">
-                <p><strong>Nome:</strong> {activeCertificate.name}</p>
-                <p><strong>Validade:</strong> {activeCertificate.expiry}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2" 
-                  onClick={handleRemoveCertificate}
-                >
-                  Remover certificado
-                </Button>
-              </AlertDescription>
-            </Alert>
-          ) : (
+      {!activeCertificate ? (
+        <Card className="shadow-md">
+          <CardHeader className="border-b bg-blue-50">
+            <CardTitle className="text-blue-700">Certificado Digital A1</CardTitle>
+            <CardDescription>
+              Configure seu certificado digital A1 para autenticação junto à SEFAZ e consultar suas notas fiscais.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="certificateFile">
+                <Label htmlFor="certificateFile" className="text-lg font-semibold">
                   Arquivo do Certificado (.pfx)
                 </Label>
                 <Input
@@ -467,7 +454,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="certificatePassword">
+                <Label htmlFor="certificatePassword" className="text-lg font-semibold">
                   Senha do Certificado
                 </Label>
                 <Input
@@ -482,7 +469,8 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
               <Button 
                 onClick={handleInstallCertificate} 
                 disabled={loading || !certificateFile || !certificatePassword}
-                className="w-full"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                size="lg"
               >
                 {loading ? (
                   <>
@@ -497,226 +485,286 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                 )}
               </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {activeCertificate && (
+          </CardContent>
+        </Card>
+      ) : (
         <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Consulta NF-e via SEFAZ</CardTitle>
-              <CardDescription>
-                Consulte e importe uma NF-e diretamente dos servidores da SEFAZ usando a chave de acesso.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="nfeKey">
-                  Chave da NF-e (44 dígitos)
-                </Label>
-                <Input
-                  id="nfeKey"
-                  placeholder="Digite a chave da NF-e"
-                  value={nfeKey}
-                  onChange={(e) => setNfeKey(formatNfeKey(e.target.value))}
-                  maxLength={44}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="cnpj">
-                  CNPJ da Empresa
-                </Label>
-                <Input
-                  id="cnpj"
-                  placeholder="Digite o CNPJ"
-                  value={cnpj}
-                  onChange={(e) => setCnpj(formatCNPJ(e.target.value))}
-                  maxLength={18}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="branchSelect">
-                  Unidade
-                </Label>
-                <Select 
-                  value={selectedBranch} 
-                  onValueChange={(value) => handleBranchChange(value as 'matriz' | 'filial' | 'todas')}
-                >
-                  <SelectTrigger id="branchSelect">
-                    <SelectValue placeholder="Selecione a unidade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todas as unidades</SelectItem>
-                    <SelectItem value="matriz">Matriz</SelectItem>
-                    <SelectItem value="filial">Filial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                onClick={handleConsultNfe} 
-                disabled={loading || !nfeKey || !cnpj}
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <span className="animate-spin mr-2">⟳</span>
-                    Consultando...
-                  </>
-                ) : (
-                  <>
-                    <FileSearch className="h-4 w-4 mr-2" />
-                    Consultar NF-e
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle>Notas Fiscais Disponíveis</CardTitle>
-                <CardDescription>
-                  Filtrar notas fiscais emitidas contra seu CNPJ
-                </CardDescription>
-                
-                <div className="flex mt-2 gap-4 text-sm text-gray-500">
-                  <span>Total: {branchStats.total}</span>
-                  <span>Matriz: {branchStats.matriz}</span>
-                  <span>Filial: {branchStats.filial}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Select value={periodFilter} onValueChange={handlePeriodChange}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Selecione o período" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7days">Últimos 7 dias</SelectItem>
-                    <SelectItem value="15days">Últimos 15 dias</SelectItem>
-                    <SelectItem value="30days">Últimos 30 dias</SelectItem>
-                    <SelectItem value="60days">Últimos 60 dias</SelectItem>
-                    <SelectItem value="90days">Últimos 90 dias</SelectItem>
-                    <SelectItem value="custom">Período personalizado</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {periodFilter === 'custom' && (
-                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="ml-2">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        {getFormattedPeriod()}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
-                      <div className="p-3 border-b">
-                        <h4 className="font-medium text-sm">Selecione o período</h4>
-                      </div>
-                      <CalendarComponent
-                        mode="range"
-                        selected={{
-                          from: dateRange.start,
-                          to: dateRange.end
-                        }}
-                        onSelect={(range) => {
-                          if (range?.from && range?.to) {
-                            setDateRange({
-                              start: range.from,
-                              end: range.to
-                            });
-                          }
-                        }}
-                        locale={ptBR}
-                        className="rounded-md border p-3"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                )}
-                
-                <Select 
-                  value={selectedBranch} 
-                  onValueChange={(value) => handleBranchChange(value as 'matriz' | 'filial' | 'todas')}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Filial/Matriz" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todas</SelectItem>
-                    <SelectItem value="matriz">Matriz</SelectItem>
-                    <SelectItem value="filial">Filial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loadingInvoices ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
-                </div>
-              ) : recentInvoices.length > 0 ? (
-                <div className="space-y-3">
-                  {recentInvoices.map((invoice) => (
-                    <div 
-                      key={invoice.id}
-                      className={`flex items-center justify-between p-3 rounded-md border
-                        ${invoice.status === 'processed' 
-                          ? 'border-green-200 bg-green-50' 
-                          : 'border-gray-200 bg-white hover:bg-gray-50'}`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        {invoice.status === 'processed' ? (
-                          <Check className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <Clock className="h-5 w-5 text-gray-400" />
-                        )}
-                        <div>
-                          <div className="flex items-center">
-                            <p className="font-medium">NF-e: {invoice.number}</p>
-                            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                              invoice.branch === 'matriz' 
-                                ? 'bg-blue-100 text-blue-800' 
-                                : 'bg-purple-100 text-purple-800'
-                            }`}>
-                              {invoice.branch === 'matriz' ? 'Matriz' : 'Filial'}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-500">{invoice.supplier} - {invoice.date}</p>
-                        </div>
-                      </div>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleLoadInvoice(invoice)}
-                        disabled={loading}
-                        className={invoice.status === 'processed' ? 'text-green-600' : ''}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="bg-white border-b rounded-t-lg">
+              <TabsList className="w-full justify-start rounded-none">
+                <TabsTrigger value="certificate" className="data-[state=active]:bg-blue-50">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Certificado
+                </TabsTrigger>
+                <TabsTrigger value="search" className="data-[state=active]:bg-blue-50">
+                  <FileSearch className="h-4 w-4 mr-2" />
+                  Busca por Chave
+                </TabsTrigger>
+                <TabsTrigger value="invoices" className="data-[state=active]:bg-blue-50">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Notas por Período
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="certificate" className="mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Certificado Digital A1</CardTitle>
+                  <CardDescription>
+                    Gerenciar seu certificado digital para autenticação junto à SEFAZ.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Alert className="bg-green-50 border-green-200">
+                    <Shield className="h-5 w-5 text-green-500" />
+                    <AlertTitle>Certificado ativo</AlertTitle>
+                    <AlertDescription className="space-y-1">
+                      <p><strong>Nome:</strong> {activeCertificate.name}</p>
+                      <p><strong>Validade:</strong> {activeCertificate.expiry}</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2" 
+                        onClick={handleRemoveCertificate}
                       >
-                        {invoice.status === 'processed' ? 'Importada' : 'Importar'}
+                        Remover certificado
                       </Button>
-                    </div>
-                  ))}
-                  
-                  <div className="text-sm text-gray-500 mt-2 text-center">
-                    Mostrando {recentInvoices.length} notas fiscais {dateRange.start && dateRange.end ? `de ${format(dateRange.start, 'dd/MM/yyyy')} até ${format(dateRange.end, 'dd/MM/yyyy')}` : ''}
-                    {selectedBranch !== 'todas' && ` (${selectedBranch === 'matriz' ? 'Matriz' : 'Filial'})`}
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="search" className="mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Consulta NF-e via SEFAZ</CardTitle>
+                  <CardDescription>
+                    Consulte e importe uma NF-e diretamente dos servidores da SEFAZ usando a chave de acesso.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="nfeKey">
+                      Chave da NF-e (44 dígitos)
+                    </Label>
+                    <Input
+                      id="nfeKey"
+                      placeholder="Digite a chave da NF-e"
+                      value={nfeKey}
+                      onChange={(e) => setNfeKey(formatNfeKey(e.target.value))}
+                      maxLength={44}
+                    />
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-sm text-gray-500 italic">
-                    Nenhuma nota fiscal encontrada no período selecionado
-                    {selectedBranch !== 'todas' && ` para ${selectedBranch === 'matriz' ? 'Matriz' : 'Filial'}`}.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj">
+                      CNPJ da Empresa
+                    </Label>
+                    <Input
+                      id="cnpj"
+                      placeholder="Digite o CNPJ"
+                      value={cnpj}
+                      onChange={(e) => setCnpj(formatCNPJ(e.target.value))}
+                      maxLength={18}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="branchSelect">
+                      Unidade
+                    </Label>
+                    <Select 
+                      value={selectedBranch} 
+                      onValueChange={(value) => handleBranchChange(value as 'matriz' | 'filial' | 'todas')}
+                    >
+                      <SelectTrigger id="branchSelect">
+                        <SelectValue placeholder="Selecione a unidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todas">Todas as unidades</SelectItem>
+                        <SelectItem value="matriz">Matriz</SelectItem>
+                        <SelectItem value="filial">Filial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    onClick={handleConsultNfe} 
+                    disabled={loading || !nfeKey || !cnpj}
+                    className="w-full"
+                  >
+                    {loading ? (
+                      <>
+                        <span className="animate-spin mr-2">⟳</span>
+                        Consultando...
+                      </>
+                    ) : (
+                      <>
+                        <FileSearch className="h-4 w-4 mr-2" />
+                        Consultar NF-e
+                      </>
+                    )}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="invoices" className="mt-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <div>
+                    <CardTitle>Notas Fiscais Disponíveis</CardTitle>
+                    <CardDescription>
+                      Notas fiscais emitidas contra seu CNPJ
+                    </CardDescription>
+                    
+                    <div className="flex mt-2 gap-4 text-sm text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
+                        Matriz: {branchStats.matriz}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-full bg-purple-500 inline-block"></span>
+                        Filial: {branchStats.filial}
+                      </span>
+                      <span>Total: {branchStats.total}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Select value={periodFilter} onValueChange={handlePeriodChange}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Selecione o período" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7days">Últimos 7 dias</SelectItem>
+                        <SelectItem value="15days">Últimos 15 dias</SelectItem>
+                        <SelectItem value="30days">Últimos 30 dias</SelectItem>
+                        <SelectItem value="60days">Últimos 60 dias</SelectItem>
+                        <SelectItem value="90days">Últimos 90 dias</SelectItem>
+                        <SelectItem value="custom">Período personalizado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    {periodFilter === 'custom' && (
+                      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="ml-2">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            {getFormattedPeriod()}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                          <div className="p-3 border-b">
+                            <h4 className="font-medium text-sm">Selecione o período</h4>
+                          </div>
+                          <CalendarComponent
+                            mode="range"
+                            selected={{
+                              from: dateRange.start,
+                              to: dateRange.end
+                            }}
+                            onSelect={(range) => {
+                              if (range?.from && range?.to) {
+                                setDateRange({
+                                  start: range.from,
+                                  end: range.to
+                                });
+                              }
+                            }}
+                            locale={ptBR}
+                            className="rounded-md border p-3"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                    
+                    <Select 
+                      value={selectedBranch} 
+                      onValueChange={(value) => handleBranchChange(value as 'matriz' | 'filial' | 'todas')}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Filial/Matriz" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todas">Todas</SelectItem>
+                        <SelectItem value="matriz">Matriz</SelectItem>
+                        <SelectItem value="filial">Filial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {loadingInvoices ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+                    </div>
+                  ) : recentInvoices.length > 0 ? (
+                    <div className="space-y-3">
+                      {recentInvoices.map((invoice) => (
+                        <div 
+                          key={invoice.id}
+                          className={`flex items-center justify-between p-3 rounded-md border
+                            ${invoice.status === 'processed' 
+                              ? 'border-green-200 bg-green-50' 
+                              : 'border-gray-200 bg-white hover:bg-gray-50 cursor-pointer'}`}
+                          onClick={() => invoice.status !== 'processed' && handleLoadInvoice(invoice)}
+                        >
+                          <div className="flex items-center space-x-3">
+                            {invoice.status === 'processed' ? (
+                              <Check className="h-5 w-5 text-green-500" />
+                            ) : (
+                              <Clock className="h-5 w-5 text-gray-400" />
+                            )}
+                            <div>
+                              <div className="flex items-center">
+                                <p className="font-medium">NF-e: {invoice.number}</p>
+                                <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                                  invoice.branch === 'matriz' 
+                                    ? 'bg-blue-100 text-blue-800' 
+                                    : 'bg-purple-100 text-purple-800'
+                                }`}>
+                                  {invoice.branch === 'matriz' ? 'Matriz' : 'Filial'}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500">{invoice.supplier} - {invoice.date}</p>
+                            </div>
+                          </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLoadInvoice(invoice);
+                            }}
+                            disabled={loading || invoice.status === 'processed'}
+                            className={invoice.status === 'processed' ? 'text-green-600' : ''}
+                          >
+                            {invoice.status === 'processed' ? 'Importada' : 'Importar'}
+                          </Button>
+                        </div>
+                      ))}
+                      
+                      <div className="text-sm text-gray-500 mt-2 text-center">
+                        Mostrando {recentInvoices.length} notas fiscais {dateRange.start && dateRange.end ? `de ${format(dateRange.start, 'dd/MM/yyyy')} até ${format(dateRange.end, 'dd/MM/yyyy')}` : ''}
+                        {selectedBranch !== 'todas' && ` (${selectedBranch === 'matriz' ? 'Matriz' : 'Filial'})`}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-gray-500 italic">
+                        Nenhuma nota fiscal encontrada no período selecionado
+                        {selectedBranch !== 'todas' && ` para ${selectedBranch === 'matriz' ? 'Matriz' : 'Filial'}`}.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </>
       )}
     </div>

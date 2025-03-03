@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Product } from '../../types/nfe';
 import { calculateSalePrice, roundPrice, RoundingType } from './productCalculations';
@@ -154,8 +155,8 @@ export const ProductPreview: React.FC<ProductPreviewProps> = ({
     try {
       const parsedProducts = parseNFeXML(xmlContent);
       
-      if (parsedProducts.length > 0) {
-        onNewFile?.(parsedProducts);
+      if (parsedProducts.length > 0 && onNewFile) {
+        onNewFile(parsedProducts);
         toast.success(`NF-e carregada com sucesso! ${parsedProducts.length} produtos encontrados.`);
       } else {
         toast.error('Não foi possível extrair produtos da NF-e.');
@@ -169,7 +170,7 @@ export const ProductPreview: React.FC<ProductPreviewProps> = ({
   return (
     <div className="w-full max-w-full flex-1">
       <div className="rounded-lg border bg-white shadow-sm">
-        <Tabs defaultValue="unified" className="w-full">
+        <Tabs defaultValue="sefaz" className="w-full">
           <div className="sticky top-0 z-10 bg-white border-b">
             <TabsList className="w-full justify-start rounded-none border-0">
               <TabsTrigger value="unified">Visão Unificada</TabsTrigger>

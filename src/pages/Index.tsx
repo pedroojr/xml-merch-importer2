@@ -32,6 +32,7 @@ const Index = () => {
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
   const [brandName, setBrandName] = useState<string>("");
   const [isEditingBrand, setIsEditingBrand] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>("sefaz"); // Definir "sefaz" como aba padrão
 
   useEffect(() => {
     const savedNFesJson = localStorage.getItem(STORAGE_KEYS.SAVED_NFES);
@@ -288,6 +289,7 @@ const Index = () => {
     toast.success(`Nota fiscal ${nfe.name} carregada com sucesso`);
   };
 
+  // Corrigir esta função para processar o XML e extrair produtos
   const handleLoadProductsFromSefaz = (xmlContent: string) => {
     try {
       const parsedProducts = parseNFeXML(xmlContent);
@@ -322,15 +324,15 @@ const Index = () => {
                 <Info size={16} />
                 <span>Importador de NF-e</span>
               </div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">Importação de Produtos via XML</h1>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Consulta de Notas Fiscais via SEFAZ</h1>
               <p className="text-slate-600 max-w-2xl mx-auto">
-                Faça upload do arquivo XML da NF-e ou consulte diretamente via SEFAZ para importar produtos para o seu catálogo
+                Consulte diretamente as notas fiscais emitidas para seu CNPJ e importe produtos para o seu catálogo
               </p>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
               <div className="max-w-6xl mx-auto">
-                <Tabs defaultValue="upload" className="w-full">
+                <Tabs defaultValue="sefaz" className="w-full" value={activeTab} onValueChange={setActiveTab}>
                   <TabsList className="grid w-full grid-cols-2 mb-8">
                     <TabsTrigger value="upload" className="flex items-center gap-2">
                       <FileText size={16} />
@@ -338,7 +340,7 @@ const Index = () => {
                     </TabsTrigger>
                     <TabsTrigger value="sefaz" className="flex items-center gap-2">
                       <Download size={16} />
-                      Importação via SEFAZ
+                      Consulta via SEFAZ
                     </TabsTrigger>
                   </TabsList>
                   
