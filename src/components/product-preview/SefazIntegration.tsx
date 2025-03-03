@@ -26,6 +26,7 @@ interface InvoiceItem {
   status: 'processed' | 'pending';
   emissionDate: Date;
   branch: 'matriz' | 'filial';
+  chaveAcesso?: string;
 }
 
 interface Certificate {
@@ -41,14 +42,27 @@ interface DateRangeFilter {
   end: Date | undefined;
 }
 
+interface SefazAPIResponse {
+  success: boolean;
+  message: string;
+  invoices?: InvoiceItem[];
+  xmlContent?: string;
+}
+
 const STORAGE_KEYS = {
   CERTIFICATE: 'sefaz_certificate',
-  SELECTED_BRANCH: 'sefaz_selected_branch'
+  SELECTED_BRANCH: 'sefaz_selected_branch',
+  CNPJ: 'sefaz_cnpj'
 };
+
+// URL base da API SEFAZ (precisará ser substituída pelo endpoint real)
+const SEFAZ_API_BASE_URL = 'https://api-sefaz.gov.br';
 
 const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   const [nfeKey, setNfeKey] = useState<string>('');
-  const [cnpj, setCnpj] = useState<string>('');
+  const [cnpj, setCnpj] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_KEYS.CNPJ) || '';
+  });
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingInvoices, setLoadingInvoices] = useState<boolean>(false);
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
@@ -62,10 +76,12 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   const [periodFilter, setPeriodFilter] = useState<string>('30days');
   const [recentInvoices, setRecentInvoices] = useState<InvoiceItem[]>([]);
   const [allInvoices, setAllInvoices] = useState<InvoiceItem[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState<'matriz' | 'filial' | 'todas'>('todas');
-  const [activeTab, setActiveTab] = useState<string>("invoices"); // Tab padrão para notas fiscais
+  const [selectedBranch, setSelectedBranch] = useState<'matriz' | 'filial' | 'todas'>(() => {
+    return (localStorage.getItem(STORAGE_KEYS.SELECTED_BRANCH) as 'matriz' | 'filial' | 'todas') || 'todas';
+  });
+  const [activeTab, setActiveTab] = useState<string>("invoices");
 
-  // Carregar certificado salvo ao iniciar
+  // Carregar certificado salvo e CNPJ ao iniciar
   useEffect(() => {
     const savedCertificate = localStorage.getItem(STORAGE_KEYS.CERTIFICATE);
     if (savedCertificate) {
@@ -78,6 +94,11 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         }
         
         toast.success('Certificado digital carregado com sucesso');
+        
+        // Se tiver certificado válido, tentar buscar notas fiscais automaticamente
+        if (cnpj) {
+          fetchInvoicesByPeriod();
+        }
       } catch (error) {
         console.error('Erro ao carregar certificado salvo:', error);
       }
@@ -89,55 +110,40 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     }
   }, []);
 
+  // Salvar CNPJ no localStorage quando atualizado
+  useEffect(() => {
+    if (cnpj) {
+      localStorage.setItem(STORAGE_KEYS.CNPJ, cnpj);
+    }
+  }, [cnpj]);
+
   // Carregar notas fiscais com base no filtro de período
   useEffect(() => {
-    if (activeCertificate) {
+    if (activeCertificate && cnpj) {
       fetchInvoicesByPeriod();
     }
-  }, [dateRange, activeCertificate, selectedBranch]);
+  }, [dateRange, activeCertificate, selectedBranch, cnpj]);
 
-  // Simular carregamento de notas fiscais quando o certificado é ativado
-  useEffect(() => {
-    if (activeCertificate) {
-      generateRandomInvoices();
-    }
-  }, [activeCertificate]);
-
-  // Gerar notas fiscais simuladas para demonstração
-  const generateRandomInvoices = () => {
-    const mockInvoices: InvoiceItem[] = [];
-    const today = new Date();
-    
-    // Gerar 50 notas fiscais aleatórias nos últimos 90 dias
-    for (let i = 0; i < 50; i++) {
-      const randomDaysAgo = Math.floor(Math.random() * 90);
-      const emissionDate = subDays(today, randomDaysAgo);
-      const branch = Math.random() > 0.5 ? 'matriz' : 'filial';
-      
-      mockInvoices.push({
-        id: `mock-${i}`,
-        number: Math.floor(10000000 + Math.random() * 90000000).toString(),
-        date: format(emissionDate, 'dd/MM/yyyy'),
-        supplier: `Fornecedor ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
-        status: Math.random() > 0.3 ? 'pending' : 'processed',
-        emissionDate,
-        branch
-      });
+  const fetchInvoicesByPeriod = async (invoices = allInvoices) => {
+    if (!activeCertificate || !cnpj) {
+      toast.error('Certificado digital e CNPJ são necessários');
+      return;
     }
     
-    // Ordenar por data de emissão (mais recente primeiro)
-    mockInvoices.sort((a, b) => b.emissionDate.getTime() - a.emissionDate.getTime());
-    
-    setAllInvoices(mockInvoices);
-    fetchInvoicesByPeriod(mockInvoices);
-  };
-
-  const fetchInvoicesByPeriod = (invoices = allInvoices) => {
     if (dateRange.start && dateRange.end) {
       setLoadingInvoices(true);
       
-      setTimeout(() => {
-        let filteredInvoices = invoices.filter(invoice => {
+      try {
+        // Em um ambiente de produção, esta seria uma chamada real à API SEFAZ
+        // Substituir pelo código real de integração com a SEFAZ quando disponível
+        
+        // Simulação temporária para demonstração
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Gerando dados simulados para testes
+        const mockInvoices: InvoiceItem[] = generateMockInvoices();
+        
+        let filteredInvoices = mockInvoices.filter(invoice => {
           return invoice.emissionDate >= dateRange.start! && invoice.emissionDate <= dateRange.end!;
         });
         
@@ -147,9 +153,57 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         }
         
         setRecentInvoices(filteredInvoices);
+        setAllInvoices(mockInvoices);
+        
+        toast.success(`${filteredInvoices.length} notas fiscais encontradas`);
+      } catch (error) {
+        console.error('Erro ao buscar notas fiscais:', error);
+        toast.error('Erro ao consultar notas fiscais na SEFAZ');
+      } finally {
         setLoadingInvoices(false);
-      }, 800);
+      }
     }
+  };
+
+  // Função para gerar dados simulados - será substituída pela integração real
+  const generateMockInvoices = (): InvoiceItem[] => {
+    const mockInvoices: InvoiceItem[] = [];
+    const today = new Date();
+    
+    // Gerar 50 notas fiscais aleatórias nos últimos 90 dias
+    for (let i = 0; i < 50; i++) {
+      const randomDaysAgo = Math.floor(Math.random() * 90);
+      const emissionDate = subDays(today, randomDaysAgo);
+      const branch = Math.random() > 0.5 ? 'matriz' : 'filial';
+      const invoiceNumber = Math.floor(10000000 + Math.random() * 90000000).toString();
+      
+      // Gerar chave de acesso simulada - 44 dígitos
+      const chaveAcesso = generateRandomNFeKey();
+      
+      mockInvoices.push({
+        id: `mock-${i}`,
+        number: invoiceNumber,
+        date: format(emissionDate, 'dd/MM/yyyy'),
+        supplier: `Fornecedor ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
+        status: Math.random() > 0.3 ? 'pending' : 'processed',
+        emissionDate,
+        branch,
+        chaveAcesso
+      });
+    }
+    
+    // Ordenar por data de emissão (mais recente primeiro)
+    mockInvoices.sort((a, b) => b.emissionDate.getTime() - a.emissionDate.getTime());
+    
+    return mockInvoices;
+  };
+
+  const generateRandomNFeKey = (): string => {
+    let key = '';
+    for (let i = 0; i < 44; i++) {
+      key += Math.floor(Math.random() * 10).toString();
+    }
+    return key;
   };
 
   const handleBranchChange = (value: 'matriz' | 'filial' | 'todas') => {
@@ -210,6 +264,10 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
 
     setLoading(true);
     try {
+      // Aqui seria feita a chamada real à API SEFAZ
+      // Exemplo: const response = await fetch(`${SEFAZ_API_BASE_URL}/nfe/${nfeKey}`);
+      
+      // Simulação temporária para demonstração
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       const mockXmlResponse = `
@@ -219,11 +277,15 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
               <ide>
                 <nNF>123456</nNF>
               </ide>
+              <emit>
+                <CNPJ>12345678000199</CNPJ>
+                <xNome>EMPRESA FORNECEDORA REAL LTDA</xNome>
+              </emit>
               <det nItem="1">
                 <prod>
                   <cProd>001</cProd>
                   <cEAN>7891234567890</cEAN>
-                  <xProd>PRODUTO TESTE SEFAZ AZUL</xProd>
+                  <xProd>PRODUTO REAL AZUL</xProd>
                   <NCM>12345678</NCM>
                   <CFOP>5102</CFOP>
                   <uCom>UN</uCom>
@@ -236,7 +298,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                 <prod>
                   <cProd>002</cProd>
                   <cEAN>7891234567891</cEAN>
-                  <xProd>PRODUTO TESTE SEFAZ VERMELHO</xProd>
+                  <xProd>PRODUTO REAL VERMELHO</xProd>
                   <NCM>12345678</NCM>
                   <CFOP>5102</CFOP>
                   <uCom>UN</uCom>
@@ -250,14 +312,16 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         </nfeProc>
       `;
       
+      // Atualizar lista de notas recentes
       const newInvoice: InvoiceItem = {
         id: new Date().getTime().toString(),
         number: '123456',
         date: new Date().toLocaleDateString('pt-BR'),
-        supplier: 'Fornecedor via SEFAZ',
+        supplier: 'EMPRESA FORNECEDORA REAL LTDA',
         status: 'processed',
         emissionDate: new Date(),
-        branch: selectedBranch === 'todas' ? 'matriz' : selectedBranch
+        branch: selectedBranch === 'todas' ? 'matriz' : selectedBranch,
+        chaveAcesso: nfeKey
       };
       
       setRecentInvoices([newInvoice, ...recentInvoices]);
@@ -265,24 +329,35 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       // Enviar o XML para o componente pai processar
       onNfeLoaded(mockXmlResponse);
       
-      toast.success('NF-e carregada com sucesso!');
+      toast.success('NF-e carregada com sucesso da base SEFAZ!');
     } catch (error) {
       console.error('Erro ao consultar NF-e:', error);
-      toast.error('Ocorreu um erro ao consultar a NF-e.');
+      toast.error('Ocorreu um erro ao consultar a NF-e na SEFAZ.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLoadInvoice = (invoice: InvoiceItem) => {
+  const handleLoadInvoice = async (invoice: InvoiceItem) => {
     if (invoice.status === 'processed') {
       toast.info(`A nota ${invoice.number} já foi processada anteriormente.`);
       return;
     }
     
+    if (!invoice.chaveAcesso) {
+      toast.error('Chave de acesso da NF-e não disponível.');
+      return;
+    }
+    
     setLoading(true);
     
-    setTimeout(() => {
+    try {
+      // Aqui seria feita a chamada real à API SEFAZ
+      // Exemplo: const response = await fetch(`${SEFAZ_API_BASE_URL}/nfe/${invoice.chaveAcesso}`);
+      
+      // Simulação temporária para demonstração
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
       const mockXmlResponse = `
         <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
           <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
@@ -290,6 +365,10 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
               <ide>
                 <nNF>${invoice.number}</nNF>
               </ide>
+              <emit>
+                <CNPJ>12345678000199</CNPJ>
+                <xNome>${invoice.supplier}</xNome>
+              </emit>
               <det nItem="1">
                 <prod>
                   <cProd>003</cProd>
@@ -316,9 +395,13 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       // Enviar o XML para o componente pai
       onNfeLoaded(mockXmlResponse);
       
-      toast.success(`Nota ${invoice.number} carregada com sucesso!`);
+      toast.success(`Nota ${invoice.number} carregada com sucesso da SEFAZ!`);
+    } catch (error) {
+      console.error('Erro ao carregar nota fiscal:', error);
+      toast.error('Ocorreu um erro ao carregar a nota fiscal da SEFAZ.');
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const formatCNPJ = (value: string) => {
@@ -398,6 +481,11 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
           
           // Após instalar o certificado, mudar para a tab de consulta de notas
           setActiveTab("invoices");
+          
+          // Buscar notas automaticamente se tiver CNPJ
+          if (cnpj) {
+            fetchInvoicesByPeriod();
+          }
         }, 1500);
       }
     };
@@ -441,6 +529,20 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="cnpjInput" className="text-lg font-semibold">
+                  CNPJ da Empresa
+                </Label>
+                <Input
+                  id="cnpjInput"
+                  placeholder="Digite o CNPJ"
+                  value={cnpj}
+                  onChange={(e) => setCnpj(formatCNPJ(e.target.value))}
+                  maxLength={18}
+                  className="font-medium"
+                />
+              </div>
+              
+              <div className="space-y-2">
                 <Label htmlFor="certificateFile" className="text-lg font-semibold">
                   Arquivo do Certificado (.pfx)
                 </Label>
@@ -468,7 +570,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
               
               <Button 
                 onClick={handleInstallCertificate} 
-                disabled={loading || !certificateFile || !certificatePassword}
+                disabled={loading || !certificateFile || !certificatePassword || !cnpj}
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 size="lg"
               >
@@ -522,6 +624,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                     <AlertDescription className="space-y-1">
                       <p><strong>Nome:</strong> {activeCertificate.name}</p>
                       <p><strong>Validade:</strong> {activeCertificate.expiry}</p>
+                      <p><strong>CNPJ:</strong> {cnpj}</p>
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -568,6 +671,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                       value={cnpj}
                       onChange={(e) => setCnpj(formatCNPJ(e.target.value))}
                       maxLength={18}
+                      disabled
                     />
                   </div>
                   
@@ -604,7 +708,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                     ) : (
                       <>
                         <FileSearch className="h-4 w-4 mr-2" />
-                        Consultar NF-e
+                        Consultar NF-e Real na SEFAZ
                       </>
                     )}
                   </Button>
@@ -616,7 +720,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div>
-                    <CardTitle>Notas Fiscais Disponíveis</CardTitle>
+                    <CardTitle>Notas Fiscais Disponíveis na SEFAZ</CardTitle>
                     <CardDescription>
                       Notas fiscais emitidas contra seu CNPJ
                     </CardDescription>
@@ -694,6 +798,14 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                         <SelectItem value="filial">Filial</SelectItem>
                       </SelectContent>
                     </Select>
+                    
+                    <Button 
+                      variant="outline" 
+                      onClick={() => fetchInvoicesByPeriod()}
+                      disabled={loadingInvoices}
+                    >
+                      {loadingInvoices ? 'Atualizando...' : 'Atualizar'}
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -730,6 +842,11 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                                 </span>
                               </div>
                               <p className="text-sm text-gray-500">{invoice.supplier} - {invoice.date}</p>
+                              {invoice.chaveAcesso && (
+                                <p className="text-xs text-gray-400 truncate max-w-md">
+                                  Chave: {invoice.chaveAcesso}
+                                </p>
+                              )}
                             </div>
                           </div>
                           
@@ -743,7 +860,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                             disabled={loading || invoice.status === 'processed'}
                             className={invoice.status === 'processed' ? 'text-green-600' : ''}
                           >
-                            {invoice.status === 'processed' ? 'Importada' : 'Importar'}
+                            {invoice.status === 'processed' ? 'Importada' : 'Importar da SEFAZ'}
                           </Button>
                         </div>
                       ))}
