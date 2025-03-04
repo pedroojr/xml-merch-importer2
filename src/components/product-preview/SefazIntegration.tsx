@@ -15,6 +15,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CheckedState } from "@radix-ui/react-checkbox";
 
 interface SefazIntegrationProps {
   onNfeLoaded: (xmlContent: string) => void;
@@ -44,6 +45,13 @@ interface Certificate {
   isActive: boolean;
   password?: string;
   fileData?: string;
+  companies?: Company[];
+}
+
+interface Company {
+  cnpj: string;
+  name: string;
+  type: 'matriz' | 'filial';
 }
 
 interface DateRangeFilter {
@@ -96,6 +104,8 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
   const [recipientCompany, setRecipientCompany] = useState<string>("Todos os Destinatários");
   const [invoiceFiltered, setInvoiceFiltered] = useState<InvoiceItem[]>([]);
+  const [companyList, setCompanyList] = useState<Company[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<string>("all");
 
   // Carregar certificado salvo e CNPJ ao iniciar
   useEffect(() => {
@@ -107,6 +117,23 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         
         if (parsedCertificate.password) {
           setCertificatePassword(parsedCertificate.password);
+        }
+        
+        // Carregar lista de empresas do certificado
+        if (parsedCertificate.companies && parsedCertificate.companies.length > 0) {
+          setCompanyList(parsedCertificate.companies);
+        } else {
+          // Se não houver empresas cadastradas, gerar empresas simuladas
+          const mockCompanies = generateMockCompanies();
+          setCompanyList(mockCompanies);
+          
+          // Atualizar o certificado para incluir as empresas
+          const updatedCertificate = {
+            ...parsedCertificate,
+            companies: mockCompanies
+          };
+          setActiveCertificate(updatedCertificate);
+          localStorage.setItem(STORAGE_KEYS.CERTIFICATE, JSON.stringify(updatedCertificate));
         }
         
         toast.success('Certificado digital carregado com sucesso');
@@ -135,14 +162,50 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
 
   // Carregar notas fiscais com base no filtro de período
   useEffect(() => {
-    if (activeCertificate && cnpj) {
+    if (activeCertificate && (cnpj || selectedCompany !== "all")) {
       fetchInvoicesByPeriod();
     }
-  }, [dateRange, activeCertificate, selectedBranch, cnpj]);
+  }, [dateRange, activeCertificate, selectedBranch, cnpj, selectedCompany]);
+
+  // Função para gerar empresas simuladas (matriz e filiais)
+  const generateMockCompanies = (): Company[] => {
+    return [
+      {
+        cnpj: "12.345.678/0001-99",
+        name: "Empresa Matriz LTDA",
+        type: "matriz"
+      },
+      {
+        cnpj: "12.345.678/0002-70",
+        name: "Filial São Paulo",
+        type: "filial"
+      },
+      {
+        cnpj: "12.345.678/0003-51",
+        name: "Filial Rio de Janeiro",
+        type: "filial"
+      },
+      {
+        cnpj: "12.345.678/0004-32",
+        name: "Filial Belo Horizonte",
+        type: "filial"
+      }
+    ];
+  };
 
   const fetchInvoicesByPeriod = async (invoices = allInvoices) => {
-    if (!activeCertificate || !cnpj) {
-      toast.error('Certificado digital e CNPJ são necessários');
+    if (!activeCertificate) {
+      toast.error('Certificado digital é necessário');
+      return;
+    }
+    
+    // Verificar se temos um CNPJ selecionado
+    const targetCnpj = selectedCompany !== "all" ? 
+                      companyList.find(c => c.cnpj === selectedCompany)?.cnpj : 
+                      cnpj;
+    
+    if (!targetCnpj) {
+      toast.error('Selecione uma empresa ou digite um CNPJ');
       return;
     }
     
@@ -166,6 +229,18 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
         // Filtrar por matriz/filial se necessário
         if (selectedBranch !== 'todas') {
           filteredInvoices = filteredInvoices.filter(invoice => invoice.branch === selectedBranch);
+        }
+        
+        // Se estiver filtrando por um CNPJ específico de empresa do certificado
+        if (selectedCompany !== "all") {
+          const company = companyList.find(c => c.cnpj === selectedCompany);
+          if (company) {
+            // Aqui filtramos para mostrar somente notas da empresa selecionada
+            filteredInvoices = filteredInvoices.filter(invoice => 
+              (company.type === 'matriz' && invoice.branch === 'matriz') ||
+              (company.type === 'filial' && invoice.branch === 'filial')
+            );
+          }
         }
         
         setRecentInvoices(filteredInvoices);
@@ -286,11 +361,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   const handleConsultNfe = async () => {
     if (!nfeKey || nfeKey.length !== 44) {
       toast.error('Chave da NF-e inválida. Deve conter 44 dígitos.');
-      return;
-    }
-
-    if (!cnpj || cnpj.length < 14) {
-      toast.error('CNPJ inválido.');
       return;
     }
 
@@ -498,19 +568,23 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       if (event.target && event.target.result) {
         setTimeout(() => {
           const fileData = event.target.result?.toString();
+          // Gerar empresas simuladas para o certificado
+          const companies = generateMockCompanies();
           
           const newCertificate: Certificate = {
             name: certificateFile.name,
             expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR'),
             isActive: true,
             password: certificatePassword,
-            fileData: fileData
+            fileData: fileData,
+            companies: companies
           };
           
           // Salvar no localStorage
           localStorage.setItem(STORAGE_KEYS.CERTIFICATE, JSON.stringify(newCertificate));
           
           setActiveCertificate(newCertificate);
+          setCompanyList(companies);
           setCertificateFile(null);
           
           toast.success('Certificado A1 instalado com sucesso!');
@@ -531,6 +605,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
 
   const handleRemoveCertificate = () => {
     setActiveCertificate(null);
+    setCompanyList([]);
     localStorage.removeItem(STORAGE_KEYS.CERTIFICATE);
     toast.success('Certificado removido com sucesso.');
   };
@@ -599,8 +674,8 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     setSelectedInvoices(newSelected);
   };
   
-  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
+  const handleSelectAll = (checked: CheckedState) => {
+    if (checked === true) {
       const allIds = invoiceFiltered.map(invoice => invoice.id);
       setSelectedInvoices(new Set(allIds));
     } else {
@@ -712,14 +787,17 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                   <Label htmlFor="empresaDestinataria" className="mb-1 block font-medium">
                     Empresa Destinatária
                   </Label>
-                  <Select value={recipientCompany} onValueChange={setRecipientCompany}>
+                  <Select value={selectedCompany} onValueChange={setSelectedCompany}>
                     <SelectTrigger id="empresaDestinataria" className="w-full">
                       <SelectValue placeholder="Selecione a empresa" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Todos os Destinatários">Todos os Destinatários</SelectItem>
-                      <SelectItem value="Empresa 1">Empresa 1</SelectItem>
-                      <SelectItem value="Empresa 2">Empresa 2</SelectItem>
+                      <SelectItem value="all">Todas as Empresas</SelectItem>
+                      {companyList.map((company) => (
+                        <SelectItem key={company.cnpj} value={company.cnpj}>
+                          {company.name} ({company.type === 'matriz' ? 'Matriz' : 'Filial'}) - {company.cnpj}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -894,7 +972,11 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                               onClick={(e) => e.stopPropagation()}
                             />
                           </TableCell>
-                          <TableCell className="p-2 text-sm">{cnpj}</TableCell>
+                          <TableCell className="p-2 text-sm">{
+                            selectedCompany !== "all" ? 
+                            companyList.find(c => c.cnpj === selectedCompany)?.cnpj : 
+                            cnpj
+                          }</TableCell>
                           <TableCell className="p-2 text-sm">{invoice.date}</TableCell>
                           <TableCell className="p-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]" title={invoice.chaveAcesso}>
                             {invoice.chaveAcesso}
