@@ -1,600 +1,646 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { Search, X, FileSpreadsheet, Calendar, ChevronDown } from "lucide-react";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, subDays, parse } from "date-fns";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckedState } from "@radix-ui/react-checkbox";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import FileUpload from '../FileUpload';
+import { FileUploadIcon, RefreshCw, Search, FileText, Download } from 'lucide-react';
 
 interface SefazIntegrationProps {
   onNfeLoaded: (xmlContent: string) => void;
 }
 
-interface InvoiceItem {
-  id: string;
-  number: string;
-  date: string;
-  emissionDate: Date;
-  chaveAcesso: string;
-  tipo: string;
-  serie: string;
-  cnpjEmitente: string;
-  ieEmitente: string;
-  emitente: string;
-  uf: string;
-  valor: string;
-  selected?: boolean;
-}
-
-interface Company {
-  cnpj: string;
-  name: string;
-  type: 'matriz' | 'filial';
-}
-
-interface DateRangeFilter {
-  start: Date | undefined;
-  end: Date | undefined;
-}
-
-// Lista de empresas pré-configuradas
-const COMPANIES: Company[] = [
-  {
-    cnpj: "12.345.678/0001-99",
-    name: "Empresa Matriz LTDA",
-    type: "matriz"
-  },
-  {
-    cnpj: "12.345.678/0002-70",
-    name: "Filial São Paulo",
-    type: "filial"
-  },
-  {
-    cnpj: "12.345.678/0003-51",
-    name: "Filial Rio de Janeiro",
-    type: "filial"
-  },
-  {
-    cnpj: "12.345.678/0004-32",
-    name: "Filial Belo Horizonte",
-    type: "filial"
-  }
-];
-
-// Dados de exemplo para demonstração
-const EXAMPLE_INVOICES: InvoiceItem[] = [
-  {
-    id: "inv1",
-    number: "11684170",
-    date: "03/03/2023",
-    emissionDate: new Date(2023, 2, 3),
-    chaveAcesso: "37552375651710037019336598741256987451254",
-    tipo: "Saída",
-    serie: "001",
-    cnpjEmitente: "32019424/0001-83",
-    ieEmitente: "217286220",
-    emitente: "Fornecedor B",
-    uf: "BA",
-    valor: "R$ 544.16"
-  },
-  {
-    id: "inv2",
-    number: "94663562",
-    date: "02/03/2023",
-    emissionDate: new Date(2023, 2, 2),
-    chaveAcesso: "70635933187451360015879651236547896541245",
-    tipo: "Saída",
-    serie: "001",
-    cnpjEmitente: "80194494/0001-62",
-    ieEmitente: "706475137",
-    emitente: "Fornecedor H",
-    uf: "SP",
-    valor: "R$ 8696.19"
-  },
-  {
-    id: "inv3",
-    number: "60763282",
-    date: "23/02/2023",
-    emissionDate: new Date(2023, 1, 23),
-    chaveAcesso: "82391362598531723396589745612358974512369",
-    tipo: "Entrada",
-    serie: "001",
-    cnpjEmitente: "50726434/0001-43",
-    ieEmitente: "944169268",
-    emitente: "Fornecedor B",
-    uf: "GO",
-    valor: "R$ 6596.05"
-  },
-  {
-    id: "inv4",
-    number: "85334407",
-    date: "20/02/2023",
-    emissionDate: new Date(2023, 1, 20),
-    chaveAcesso: "02958301940339751613254789654128569687452",
-    tipo: "Saída",
-    serie: "006",
-    cnpjEmitente: "66095880/0001-43",
-    ieEmitente: "896485841",
-    emitente: "Fornecedor O",
-    uf: "RS",
-    valor: "R$ 4870.77"
-  },
-  {
-    id: "inv5",
-    number: "44334940",
-    date: "18/02/2023",
-    emissionDate: new Date(2023, 1, 18),
-    chaveAcesso: "04590777576044966712658974563214598741256",
-    tipo: "Entrada",
-    serie: "006",
-    cnpjEmitente: "28090907/0001-98",
-    ieEmitente: "890714054",
-    emitente: "Fornecedor U",
-    uf: "BA",
-    valor: "R$ 2191.63"
-  },
-  {
-    id: "inv6",
-    number: "98631890",
-    date: "13/02/2023",
-    emissionDate: new Date(2023, 1, 13),
-    chaveAcesso: "50823002097349198904698741256987456321459",
-    tipo: "Entrada",
-    serie: "006",
-    cnpjEmitente: "46950871/0001-84",
-    ieEmitente: "108029112",
-    emitente: "Fornecedor Y",
-    uf: "BA",
-    valor: "R$ 3927.95"
-  },
-  {
-    id: "inv7",
-    number: "43648369",
-    date: "07/02/2023",
-    emissionDate: new Date(2023, 1, 7),
-    chaveAcesso: "73979238580201779465987563214598745632145",
-    tipo: "Entrada",
-    serie: "004",
-    cnpjEmitente: "16795534/0001-25",
-    ieEmitente: "793763766",
-    emitente: "Fornecedor K",
-    uf: "GO",
-    valor: "R$ 2324.12"
-  }
-];
-
 const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
-  const [loadingInvoices, setLoadingInvoices] = useState<boolean>(false);
-  const [selectedCompany, setSelectedCompany] = useState<string>("all");
-  const [searchType, setSearchType] = useState<string>("NFe");
-  const [searchBy, setSearchBy] = useState<string>("Chave");
-  const [searchUF, setSearchUF] = useState<string>("Todos");
-  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
-  const [formattedDateRange, setFormattedDateRange] = useState<string>(() => {
-    const today = new Date();
-    const start = subDays(today, 30);
-    return `${format(start, 'dd/MM/yyyy')} a ${format(today, 'dd/MM/yyyy')}`;
-  });
-  const [dateRange, setDateRange] = useState<DateRangeFilter>({
-    start: subDays(new Date(), 30),
-    end: new Date()
-  });
-  const [invoices, setInvoices] = useState<InvoiceItem[]>(EXAMPLE_INVOICES);
-  const [filteredInvoices, setFilteredInvoices] = useState<InvoiceItem[]>(EXAMPLE_INVOICES);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  // Simular carregamento de dados ao iniciar
-  useEffect(() => {
-    fetchInvoices();
-  }, []);
-
-  // Simular atualização quando a empresa selecionada muda
-  useEffect(() => {
-    fetchInvoices();
-  }, [selectedCompany, dateRange]);
-
-  const fetchInvoices = () => {
-    setLoadingInvoices(true);
-    
-    // Simulação de busca no backend (seria substituído por chamada real API)
-    setTimeout(() => {
-      // Filtrar por empresa se não for "todas"
-      let filtered = [...EXAMPLE_INVOICES];
-      
-      if (selectedCompany !== "all") {
-        const company = COMPANIES.find(c => c.cnpj === selectedCompany);
-        if (company) {
-          // Simulando filtragem por empresa
-          filtered = filtered.filter((_, index) => 
-            company.type === 'matriz' ? index % 3 === 0 : index % 3 !== 0
-          );
-        }
-      }
-      
-      // Filtrar por período
-      if (dateRange.start && dateRange.end) {
-        filtered = filtered.filter(invoice => 
-          invoice.emissionDate >= dateRange.start! && 
-          invoice.emissionDate <= dateRange.end!
-        );
-      }
-      
-      setInvoices(filtered);
-      setFilteredInvoices(filtered);
-      setLoadingInvoices(false);
-    }, 1000);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState("busca");
+  const [certificate, setCertificate] = useState<File | null>(null);
+  const [certificatePassword, setCertificatePassword] = useState("");
+  const [hasCertificate, setHasCertificate] = useState(false);
+  
+  // Estados para filtros
+  const [periodoInicio, setPeriodoInicio] = useState("");
+  const [periodoFim, setPeriodoFim] = useState("");
+  const [uf, setUf] = useState("AC");
+  const [tipoDocumento, setTipoDocumento] = useState("compra");
+  
+  // Função para lidar com o upload do certificado
+  const handleCertificateUpload = (file: File) => {
+    setCertificate(file);
+    toast.success(`Certificado "${file.name}" carregado com sucesso`);
   };
 
+  // Função para salvar o certificado
+  const handleSaveCertificate = () => {
+    if (!certificate) {
+      toast.error("Por favor, selecione um certificado digital");
+      return;
+    }
+
+    if (!certificatePassword) {
+      toast.error("Por favor, informe a senha do certificado");
+      return;
+    }
+
+    // Simulação do salvamento do certificado
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      setHasCertificate(true);
+      toast.success("Certificado digital configurado com sucesso!");
+    }, 1500);
+  };
+
+  // Função para buscar notas fiscais
   const handleSearch = () => {
-    setLoadingInvoices(true);
+    if (!hasCertificate) {
+      toast.error("Configure seu certificado digital antes de realizar a busca");
+      return;
+    }
+
+    setIsLoading(true);
     
-    // Simulação de filtro adicional
+    // Simulação de busca
     setTimeout(() => {
-      // Aqui pode-se implementar lógicas adicionais de filtragem baseadas nos outros critérios
-      // Por enquanto, apenas simula o sucesso da operação
-      setLoadingInvoices(false);
-      toast.success("Pesquisa realizada com sucesso");
-    }, 800);
-  };
-  
-  const handleClear = () => {
-    setSearchUF("Todos");
-    setSearchBy("Chave");
-    setFilteredInvoices(invoices);
-    toast.success("Filtros limpos");
+      // Gerar dados de exemplo que parecem reais
+      const results = generateSampleInvoices(tipoDocumento);
+      setSearchResults(results);
+      setIsLoading(false);
+      toast.success(`${results.length} notas fiscais encontradas`);
+    }, 2000);
   };
 
-  const handleDateRangeChange = (rangeStr: string) => {
-    setFormattedDateRange(rangeStr);
+  // Gerar dados de amostra que parecem reais
+  const generateSampleInvoices = (tipo: string) => {
+    const results = [];
+    const date = new Date();
+    const currentYear = date.getFullYear();
+    const currentMonth = date.getMonth();
     
-    try {
-      const [startStr, endStr] = rangeStr.split(' a ');
-      const start = parse(startStr, 'dd/MM/yyyy', new Date());
-      const end = parse(endStr, 'dd/MM/yyyy', new Date());
+    // Definir emitentes comuns para compras
+    const emitentes = [
+      { nome: "Distribuidora ABC LTDA", cnpj: "12.345.678/0001-90" },
+      { nome: "Atacadão Produtos EIRELI", cnpj: "98.765.432/0001-21" },
+      { nome: "Importadora Nacional S/A", cnpj: "45.678.901/0001-56" },
+      { nome: "Indústria de Confecções Ltda", cnpj: "78.901.234/0001-67" },
+      { nome: "Fornecedora de Calçados ME", cnpj: "23.456.789/0001-10" }
+    ];
+    
+    // Gerar entre 5 e 15 notas
+    const count = tipo === 'compra' ? 12 : 8;
+    
+    for (let i = 0; i < count; i++) {
+      const randomDay = Math.floor(Math.random() * 28) + 1;
+      const randomMonth = Math.floor(Math.random() * 3);
+      const emissaoDate = new Date(currentYear, currentMonth - randomMonth, randomDay);
       
-      setDateRange({
-        start,
-        end
+      const emitenteIndex = Math.floor(Math.random() * emitentes.length);
+      const emitente = tipo === 'compra' ? emitentes[emitenteIndex] : { nome: "Sua Empresa", cnpj: "11.222.333/0001-44" };
+      const destinatario = tipo === 'compra' ? { nome: "Sua Empresa", cnpj: "11.222.333/0001-44" } : emitentes[emitenteIndex];
+      
+      // Valores aleatórios realistas
+      const valorTotal = (Math.random() * 10000 + 1000).toFixed(2);
+      const numeroNF = Math.floor(Math.random() * 900000) + 100000;
+      const chaveAcesso = generateRandomChaveAcesso();
+      const quantidadeItens = Math.floor(Math.random() * 20) + 1;
+      
+      results.push({
+        chave: chaveAcesso,
+        numero: numeroNF.toString(),
+        emissao: emissaoDate.toLocaleDateString('pt-BR'),
+        emitente: tipo === 'compra' ? emitente.nome : destinatario.nome,
+        cnpjEmitente: tipo === 'compra' ? emitente.cnpj : destinatario.cnpj,
+        valor: `R$ ${valorTotal}`,
+        status: "Autorizada",
+        tipo: tipo === 'compra' ? 'Entrada' : 'Saída',
+        quantidadeItens: quantidadeItens
       });
-    } catch (error) {
-      console.error('Erro ao converter datas:', error);
+    }
+    
+    // Ordenar por data de emissão (mais recente primeiro)
+    return results.sort((a, b) => {
+      const dateA = new Date(a.emissao.split('/').reverse().join('-'));
+      const dateB = new Date(b.emissao.split('/').reverse().join('-'));
+      return dateB.getTime() - dateA.getTime();
+    });
+  };
+  
+  // Gerar uma chave de acesso aleatória no formato válido
+  const generateRandomChaveAcesso = () => {
+    let chave = '';
+    for (let i = 0; i < 44; i++) {
+      chave += Math.floor(Math.random() * 10);
+    }
+    return chave;
+  };
+
+  // Função para formatar a chave de acesso
+  const formatChaveAcesso = (chave: string) => {
+    if (chave.length !== 44) return chave;
+    return `${chave.slice(0, 4)} ${chave.slice(4, 8)} ${chave.slice(8, 12)} ${chave.slice(12, 16)} ${chave.slice(16, 20)} ${chave.slice(20, 24)} ${chave.slice(24, 28)} ${chave.slice(28, 32)} ${chave.slice(32, 36)} ${chave.slice(36, 40)} ${chave.slice(40, 44)}`;
+  };
+
+  // Toggle seleção de nota
+  const toggleNoteSelection = (chave: string) => {
+    const newSelection = new Set(selectedNotes);
+    if (newSelection.has(chave)) {
+      newSelection.delete(chave);
+    } else {
+      newSelection.add(chave);
+    }
+    setSelectedNotes(newSelection);
+  };
+
+  // Selecionar todas as notas
+  const selectAllNotes = () => {
+    if (selectedNotes.size === searchResults.length) {
+      setSelectedNotes(new Set());
+    } else {
+      const allChaves = searchResults.map(note => note.chave);
+      setSelectedNotes(new Set(allChaves));
     }
   };
 
-  const handleSelectInvoice = (id: string) => {
-    const newSelected = new Set(selectedInvoices);
-    
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    
-    setSelectedInvoices(newSelected);
-  };
-  
-  const handleSelectAll = (checked: CheckedState) => {
-    if (checked === true) {
-      const allIds = filteredInvoices.map(invoice => invoice.id);
-      setSelectedInvoices(new Set(allIds));
-    } else {
-      setSelectedInvoices(new Set());
-    }
-  };
-  
-  const handleExportSelected = () => {
-    if (selectedInvoices.size === 0) {
-      toast.error("Selecione pelo menos uma nota fiscal para exportar");
+  // Baixar notas selecionadas
+  const downloadSelectedNotes = () => {
+    if (selectedNotes.size === 0) {
+      toast.error("Selecione pelo menos uma nota para baixar");
       return;
     }
-    
-    toast.success(`${selectedInvoices.size} notas fiscais exportadas`);
-  };
-  
-  const handleClearSelected = () => {
-    if (selectedInvoices.size === 0) {
-      toast.error("Não há notas fiscais selecionadas");
-      return;
-    }
-    
-    setSelectedInvoices(new Set());
-    toast.success("Seleção limpa");
-  };
 
-  const handleLoadInvoice = async (invoice: InvoiceItem) => {
-    setLoading(true);
+    setIsLoading(true);
     
-    try {
-      // Simulação temporária para demonstração
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    // Simulação de download
+    setTimeout(() => {
+      setIsLoading(false);
+
+      // Gerar um XML de amostra para a primeira nota selecionada
+      const sampleXml = `<?xml version="1.0" encoding="UTF-8"?>
+      <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+        <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+          <infNFe Id="NFe${Array.from(selectedNotes)[0]}" versao="4.00">
+            <ide>
+              <cUF>12</cUF>
+              <cNF>12345678</cNF>
+              <natOp>VENDA</natOp>
+              <mod>55</mod>
+              <serie>1</serie>
+              <nNF>123456</nNF>
+              <dhEmi>2023-05-15T14:30:00-03:00</dhEmi>
+              <tpNF>1</tpNF>
+              <idDest>1</idDest>
+              <cMunFG>1200401</cMunFG>
+              <tpImp>1</tpImp>
+              <tpEmis>1</tpEmis>
+              <cDV>1</cDV>
+              <tpAmb>2</tpAmb>
+              <finNFe>1</finNFe>
+              <indFinal>0</indFinal>
+              <indPres>9</indPres>
+              <procEmi>0</procEmi>
+              <verProc>1.0</verProc>
+            </ide>
+            <emit>
+              <CNPJ>12345678901234</CNPJ>
+              <xNome>EMPRESA TESTE LTDA</xNome>
+              <enderEmit>
+                <xLgr>RUA TESTE</xLgr>
+                <nro>123</nro>
+                <xBairro>CENTRO</xBairro>
+                <cMun>1200401</cMun>
+                <xMun>RIO BRANCO</xMun>
+                <UF>AC</UF>
+                <CEP>69900000</CEP>
+              </enderEmit>
+              <IE>1234567890</IE>
+              <CRT>3</CRT>
+            </emit>
+            <det nItem="1">
+              <prod>
+                <cProd>001</cProd>
+                <cEAN>7891234567890</cEAN>
+                <xProd>CALCA JEANS MASCULINA AZUL</xProd>
+                <NCM>62034200</NCM>
+                <CFOP>5102</CFOP>
+                <uCom>UN</uCom>
+                <qCom>10.0000</qCom>
+                <vUnCom>59.9000</vUnCom>
+                <vProd>599.00</vProd>
+              </prod>
+              <imposto>
+                <ICMS>
+                  <ICMS00>
+                    <orig>0</orig>
+                    <CST>00</CST>
+                    <modBC>0</modBC>
+                    <vBC>599.00</vBC>
+                    <pICMS>17.00</pICMS>
+                    <vICMS>101.83</vICMS>
+                  </ICMS00>
+                </ICMS>
+              </imposto>
+            </det>
+            <det nItem="2">
+              <prod>
+                <cProd>002</cProd>
+                <cEAN>7891234567891</cEAN>
+                <xProd>CAMISA SOCIAL BRANCA</xProd>
+                <NCM>62052000</NCM>
+                <CFOP>5102</CFOP>
+                <uCom>UN</uCom>
+                <qCom>5.0000</qCom>
+                <vUnCom>79.9000</vUnCom>
+                <vProd>399.50</vProd>
+              </prod>
+              <imposto>
+                <ICMS>
+                  <ICMS00>
+                    <orig>0</orig>
+                    <CST>00</CST>
+                    <modBC>0</modBC>
+                    <vBC>399.50</vBC>
+                    <pICMS>17.00</pICMS>
+                    <vICMS>67.92</vICMS>
+                  </ICMS00>
+                </ICMS>
+              </imposto>
+            </det>
+            <total>
+              <ICMSTot>
+                <vBC>998.50</vBC>
+                <vICMS>169.75</vICMS>
+                <vProd>998.50</vProd>
+                <vNF>998.50</vNF>
+              </ICMSTot>
+            </total>
+          </infNFe>
+        </NFe>
+      </nfeProc>`;
       
-      const mockXmlResponse = `
-        <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
-          <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
-            <infNFe versao="4.00">
-              <ide>
-                <nNF>${invoice.number}</nNF>
-              </ide>
-              <emit>
-                <CNPJ>${invoice.cnpjEmitente.replace(/\D/g, '')}</CNPJ>
-                <xNome>${invoice.emitente}</xNome>
-              </emit>
-              <det nItem="1">
-                <prod>
-                  <cProd>001</cProd>
-                  <cEAN>7891234567892</cEAN>
-                  <xProd>PRODUTO ${invoice.emitente} VERMELHO</xProd>
-                  <NCM>12345678</NCM>
-                  <CFOP>5102</CFOP>
-                  <uCom>UN</uCom>
-                  <qCom>8</qCom>
-                  <vUnCom>60.00</vUnCom>
-                  <vProd>480.00</vProd>
-                </prod>
-              </det>
-              <det nItem="2">
-                <prod>
-                  <cProd>002</cProd>
-                  <cEAN>7891234567893</cEAN>
-                  <xProd>PRODUTO ${invoice.emitente} AZUL</xProd>
-                  <NCM>12345678</NCM>
-                  <CFOP>5102</CFOP>
-                  <uCom>UN</uCom>
-                  <qCom>5</qCom>
-                  <vUnCom>75.00</vUnCom>
-                  <vProd>375.00</vProd>
-                </prod>
-              </det>
-            </infNFe>
-          </NFe>
-        </nfeProc>
-      `;
+      // Passar o XML para a função onNfeLoaded
+      onNfeLoaded(sampleXml);
       
-      // Enviar o XML para o componente pai
-      onNfeLoaded(mockXmlResponse);
-      
-      toast.success(`Nota ${invoice.number} carregada com sucesso!`);
-    } catch (error) {
-      console.error('Erro ao carregar nota fiscal:', error);
-      toast.error('Ocorreu um erro ao carregar a nota fiscal.');
-    } finally {
-      setLoading(false);
-    }
+      toast.success(`${selectedNotes.size} nota(s) baixada(s) com sucesso!`);
+    }, 2000);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="flex flex-col space-y-4 p-4">
-          {/* Linha 1: Destinatário e Tipos de Documento */}
-          <div className="flex justify-between items-center gap-4">
-            <div className="w-1/3">
-              <Label htmlFor="empresaDestinataria" className="mb-1 block font-medium">
-                Empresa Destinatária
-              </Label>
-              <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-                <SelectTrigger id="empresaDestinataria" className="w-full">
-                  <SelectValue placeholder="Todas as Empresas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Empresas</SelectItem>
-                  {COMPANIES.map((company) => (
-                    <SelectItem key={company.cnpj} value={company.cnpj}>
-                      {company.name} ({company.type === 'matriz' ? 'Matriz' : 'Filial'}) - {company.cnpj}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button
-                variant={searchType === "NFe" ? "default" : "outline"}
-                className={`px-4 ${searchType === "NFe" ? "bg-green-500 hover:bg-green-600" : ""}`}
-                onClick={() => setSearchType("NFe")}
-              >
-                NFe
-              </Button>
-              <Button
-                variant={searchType === "CTe" ? "default" : "outline"}
-                className={`px-4 ${searchType === "CTe" ? "bg-green-500 hover:bg-green-600" : ""}`}
-                onClick={() => setSearchType("CTe")}
-              >
-                CTe
-              </Button>
-              <Button
-                variant="outline"
-                className="bg-green-500 hover:bg-green-600 text-white"
-              >
-                Selecionar várias chaves
-              </Button>
-            </div>
-          </div>
-          
-          {/* Linha 2: Período, UF e Busca */}
-          <div className="flex justify-between items-center gap-4">
-            <div className="w-1/3">
-              <Label htmlFor="periodo" className="mb-1 block font-medium">
-                Período
-              </Label>
-              <div className="relative">
-                <div className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500">
-                  <Calendar size={16} />
-                </div>
-                <Input
-                  id="periodo"
-                  value={formattedDateRange}
-                  onChange={(e) => handleDateRangeChange(e.target.value)}
-                  className="pl-8"
-                />
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500">
-                  <ChevronDown size={16} />
-                </div>
-              </div>
-            </div>
-            
-            <div className="w-1/4">
-              <Label htmlFor="uf" className="mb-1 block font-medium">
-                UF
-              </Label>
-              <Select value={searchUF} onValueChange={setSearchUF}>
-                <SelectTrigger id="uf">
-                  <SelectValue placeholder="Selecione a UF" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Todos">Todos</SelectItem>
-                  <SelectItem value="SP">SP</SelectItem>
-                  <SelectItem value="RJ">RJ</SelectItem>
-                  <SelectItem value="MG">MG</SelectItem>
-                  <SelectItem value="RS">RS</SelectItem>
-                  <SelectItem value="BA">BA</SelectItem>
-                  <SelectItem value="GO">GO</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="w-1/4">
-              <div className="flex items-center justify-between mb-1">
-                <Label htmlFor="buscarPor" className="font-medium">
-                  Buscar Por
-                </Label>
-              </div>
-              <Select value={searchBy} onValueChange={setSearchBy}>
-                <SelectTrigger id="buscarPor">
-                  <SelectValue placeholder="Buscar por" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Chave">Chave</SelectItem>
-                  <SelectItem value="CNPJ">CNPJ</SelectItem>
-                  <SelectItem value="Numero">Número</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-5">
-              <div className="flex space-x-2">
-                <Button onClick={handleSearch} className="bg-green-500 hover:bg-green-600">
-                  <Search size={16} className="mr-1" />
-                  <span className="uppercase">Filtrar</span>
-                </Button>
-                <Button onClick={handleClear} variant="outline" className="flex items-center">
-                  <X size={16} className="mr-1" />
-                  <span className="uppercase">Clear</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="p-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-2 mb-6">
+          <TabsTrigger value="certificado" className="flex items-center gap-2">
+            <FileUploadIcon size={16} />
+            Certificado Digital
+          </TabsTrigger>
+          <TabsTrigger value="busca" className="flex items-center gap-2">
+            <Search size={16} />
+            Busca de Notas
+          </TabsTrigger>
+        </TabsList>
         
-        {/* Tabela de resultados */}
-        <div className="p-4">
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-sm text-gray-500">
-              Resultados: {filteredInvoices.length} notas fiscais
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                className="bg-green-500 hover:bg-green-600 text-white"
-                onClick={handleExportSelected}
-              >
-                <FileSpreadsheet size={18} className="mr-2" />
-                Exportar Selecionadas
-              </Button>
-              <Button 
-                variant="outline"
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-                onClick={handleClearSelected}
-              >
-                Limpar Selecionadas
-              </Button>
-            </div>
-          </div>
-          
-          <div className="border rounded-md">
-            <table className="w-full">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="w-[40px] p-2">
-                    <Checkbox
-                      onCheckedChange={handleSelectAll}
-                      checked={selectedInvoices.size > 0 && selectedInvoices.size === filteredInvoices.length}
+        <TabsContent value="certificado" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Configuração de Certificado Digital</CardTitle>
+              <CardDescription>
+                Configure seu certificado digital A1 para consulta de notas fiscais diretamente na SEFAZ
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {!hasCertificate ? (
+                <>
+                  <div className="space-y-4">
+                    <Label htmlFor="certificate">Arquivo do Certificado Digital (.pfx)</Label>
+                    <div className="h-[120px]">
+                      <FileUpload onFileSelect={handleCertificateUpload} />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Senha do Certificado</Label>
+                    <Input 
+                      id="password" 
+                      type="password" 
+                      value={certificatePassword}
+                      onChange={(e) => setCertificatePassword(e.target.value)}
+                      placeholder="Digite a senha do seu certificado"
                     />
-                  </th>
-                  <th className="text-left p-2 text-xs font-medium">CNPJ/CPF Destinatário</th>
-                  <th className="text-left p-2 text-xs font-medium">Emissão</th>
-                  <th className="text-left p-2 text-xs font-medium">Chave</th>
-                  <th className="text-left p-2 text-xs font-medium">Tipo</th>
-                  <th className="text-left p-2 text-xs font-medium">Série</th>
-                  <th className="text-left p-2 text-xs font-medium">Número</th>
-                  <th className="text-left p-2 text-xs font-medium">CNPJ Emitente</th>
-                  <th className="text-left p-2 text-xs font-medium">IE Emitente</th>
-                  <th className="text-left p-2 text-xs font-medium">Emitente</th>
-                  <th className="text-left p-2 text-xs font-medium">UF</th>
-                  <th className="text-left p-2 text-xs font-medium">Valor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loadingInvoices ? (
-                  <tr>
-                    <td colSpan={12} className="text-center py-4">
-                      <div className="flex justify-center items-center space-x-2">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500"></div>
-                        <span>Carregando...</span>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleSaveCertificate} 
+                    disabled={isLoading || !certificate}
+                    className="w-full"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Configurando...
+                      </>
+                    ) : (
+                      "Salvar Certificado"
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="rounded-md bg-green-50 p-4 border border-green-200">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
                       </div>
-                    </td>
-                  </tr>
-                ) : filteredInvoices.length > 0 ? (
-                  filteredInvoices.map((invoice) => (
-                    <tr 
-                      key={invoice.id}
-                      className="hover:bg-gray-50 cursor-pointer border-t border-gray-200"
-                      onClick={() => handleLoadInvoice(invoice)}
-                    >
-                      <td className="p-2">
-                        <Checkbox 
-                          checked={selectedInvoices.has(invoice.id)}
-                          onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </td>
-                      <td className="p-2 text-sm">
-                        {selectedCompany !== "all" ? 
-                          COMPANIES.find(c => c.cnpj === selectedCompany)?.cnpj : 
-                          "12.345.678/0001-99"
-                        }
-                      </td>
-                      <td className="p-2 text-sm">{invoice.date}</td>
-                      <td className="p-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]" 
-                          title={invoice.chaveAcesso}>
-                        {invoice.chaveAcesso}
-                      </td>
-                      <td className="p-2 text-sm">{invoice.tipo}</td>
-                      <td className="p-2 text-sm">{invoice.serie}</td>
-                      <td className="p-2 text-sm">{invoice.number}</td>
-                      <td className="p-2 text-sm">{invoice.cnpjEmitente}</td>
-                      <td className="p-2 text-sm">{invoice.ieEmitente}</td>
-                      <td className="p-2 text-sm">{invoice.emitente}</td>
-                      <td className="p-2 text-sm">{invoice.uf}</td>
-                      <td className="p-2 text-sm">{invoice.valor}</td>
-                    </tr>
-                  ))
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-green-800">
+                          Certificado configurado com sucesso
+                        </p>
+                        <p className="mt-2 text-sm text-green-700">
+                          {certificate?.name}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setCertificate(null);
+                      setCertificatePassword("");
+                      setHasCertificate(false);
+                    }}
+                    className="w-full"
+                  >
+                    Alterar Certificado
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Empresas Vinculadas ao Certificado</CardTitle>
+              <CardDescription>
+                CNPJs de matriz e filiais associados a este certificado
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="rounded-md bg-gray-50 p-4 border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-800">Matriz - Rio Branco</p>
+                      <p className="text-sm text-gray-600">11.222.333/0001-44</p>
+                    </div>
+                    <div className="bg-green-100 text-green-800 text-xs font-medium py-1 px-2 rounded">
+                      Principal
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="rounded-md bg-gray-50 p-4 border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-800">Filial - Epitaciolândia</p>
+                      <p className="text-sm text-gray-600">11.222.333/0002-25</p>
+                    </div>
+                    <div className="bg-blue-100 text-blue-800 text-xs font-medium py-1 px-2 rounded">
+                      Filial
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="busca" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Busca de Notas Fiscais</CardTitle>
+              <CardDescription>
+                Consulte notas fiscais emitidas contra seu CNPJ ou emitidas por você
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div className="space-y-2">
+                  <Label htmlFor="tipo_documento">Tipo de Documento</Label>
+                  <Select value={tipoDocumento} onValueChange={setTipoDocumento}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="compra">Notas de Compra (Entrada)</SelectItem>
+                      <SelectItem value="venda">Notas de Venda (Saída)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="periodo_inicio">Data Inicial</Label>
+                  <Input 
+                    id="periodo_inicio" 
+                    type="date" 
+                    value={periodoInicio}
+                    onChange={(e) => setPeriodoInicio(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="periodo_fim">Data Final</Label>
+                  <Input 
+                    id="periodo_fim" 
+                    type="date" 
+                    value={periodoFim}
+                    onChange={(e) => setPeriodoFim(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="uf">UF</Label>
+                  <Select value={uf} onValueChange={setUf}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a UF" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AC">Acre</SelectItem>
+                      <SelectItem value="AL">Alagoas</SelectItem>
+                      <SelectItem value="AP">Amapá</SelectItem>
+                      <SelectItem value="AM">Amazonas</SelectItem>
+                      <SelectItem value="BA">Bahia</SelectItem>
+                      <SelectItem value="CE">Ceará</SelectItem>
+                      <SelectItem value="DF">Distrito Federal</SelectItem>
+                      <SelectItem value="ES">Espírito Santo</SelectItem>
+                      <SelectItem value="GO">Goiás</SelectItem>
+                      <SelectItem value="MA">Maranhão</SelectItem>
+                      <SelectItem value="MT">Mato Grosso</SelectItem>
+                      <SelectItem value="MS">Mato Grosso do Sul</SelectItem>
+                      <SelectItem value="MG">Minas Gerais</SelectItem>
+                      <SelectItem value="PA">Pará</SelectItem>
+                      <SelectItem value="PB">Paraíba</SelectItem>
+                      <SelectItem value="PR">Paraná</SelectItem>
+                      <SelectItem value="PE">Pernambuco</SelectItem>
+                      <SelectItem value="PI">Piauí</SelectItem>
+                      <SelectItem value="RJ">Rio de Janeiro</SelectItem>
+                      <SelectItem value="RN">Rio Grande do Norte</SelectItem>
+                      <SelectItem value="RS">Rio Grande do Sul</SelectItem>
+                      <SelectItem value="RO">Rondônia</SelectItem>
+                      <SelectItem value="RR">Roraima</SelectItem>
+                      <SelectItem value="SC">Santa Catarina</SelectItem>
+                      <SelectItem value="SP">São Paulo</SelectItem>
+                      <SelectItem value="SE">Sergipe</SelectItem>
+                      <SelectItem value="TO">Tocantins</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Empresa</Label>
+                  <Select defaultValue="todas">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas</SelectItem>
+                      <SelectItem value="matriz">Matriz - Rio Branco</SelectItem>
+                      <SelectItem value="filial">Filial - Epitaciolândia</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={handleSearch} 
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Consultando...
+                  </>
                 ) : (
-                  <tr>
-                    <td colSpan={12} className="text-center py-4 text-gray-500">
-                      Nenhuma nota fiscal encontrada
-                    </td>
-                  </tr>
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    Consultar Notas Fiscais
+                  </>
                 )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {searchResults.length > 0 && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle>Resultados da Busca</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={selectAllNotes}
+                  >
+                    {selectedNotes.size === searchResults.length ? "Desmarcar Todos" : "Selecionar Todos"}
+                  </Button>
+                  
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={downloadSelectedNotes}
+                    disabled={selectedNotes.size === 0 || isLoading}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {isLoading ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Download className="mr-2 h-4 w-4" />
+                        Importar Selecionadas
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="p-2">
+                          <span className="sr-only">Selecionar</span>
+                        </th>
+                        <th className="p-2">Número</th>
+                        <th className="p-2">Emissão</th>
+                        <th className="p-2">{tipoDocumento === "compra" ? "Fornecedor" : "Destinatário"}</th>
+                        <th className="p-2">Valor</th>
+                        <th className="p-2">Status</th>
+                        <th className="p-2">Itens</th>
+                        <th className="p-2">Tipo</th>
+                        <th className="p-2">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {searchResults.map((note) => (
+                        <tr key={note.chave} className="hover:bg-gray-50">
+                          <td className="p-2">
+                            <Checkbox
+                              checked={selectedNotes.has(note.chave)}
+                              onCheckedChange={() => toggleNoteSelection(note.chave)}
+                            />
+                          </td>
+                          <td className="p-2 font-medium">{note.numero}</td>
+                          <td className="p-2">{note.emissao}</td>
+                          <td className="p-2">
+                            <div>
+                              <div className="font-medium">{note.emitente}</div>
+                              <div className="text-sm text-gray-500">{note.cnpjEmitente}</div>
+                            </div>
+                          </td>
+                          <td className="p-2 font-medium">{note.valor}</td>
+                          <td className="p-2">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {note.status}
+                            </span>
+                          </td>
+                          <td className="p-2 text-center">{note.quantidadeItens}</td>
+                          <td className="p-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              note.tipo === 'Entrada' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-purple-100 text-purple-800'
+                            }`}>
+                              {note.tipo}
+                            </span>
+                          </td>
+                          <td className="p-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                // Detalhes da nota
+                                toast.info(`Detalhes da Nota ${note.numero}`);
+                              }}
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
