@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -297,7 +298,15 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                   <div className="space-y-4">
                     <Label htmlFor="certificate">Arquivo do Certificado Digital (.pfx)</Label>
                     <div className="h-[120px]">
-                      <FileUpload onFileSelect={handleCertificateUpload} />
+                      <FileUpload 
+                        onFileSelect={handleCertificateUpload} 
+                        acceptedFileTypes={{
+                          'application/x-pkcs12': ['.pfx', '.p12'],
+                          'application/octet-stream': ['.pfx', '.p12']
+                        }}
+                        fileTypeDescription="Suporta apenas arquivos de certificado digital (.pfx, .p12)"
+                        icon={<Upload className="h-12 w-12 text-gray-400 mx-auto" />}
+                      />
                     </div>
                   </div>
                   
