@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import FileUpload from '../FileUpload';
-import { FileUploadIcon, RefreshCw, Search, FileText, Download } from 'lucide-react';
+import { Upload, RefreshCw, Search, FileText, Download } from 'lucide-react';
 
 interface SefazIntegrationProps {
   onNfeLoaded: (xmlContent: string) => void;
@@ -24,19 +23,16 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
   const [certificatePassword, setCertificatePassword] = useState("");
   const [hasCertificate, setHasCertificate] = useState(false);
   
-  // Estados para filtros
   const [periodoInicio, setPeriodoInicio] = useState("");
   const [periodoFim, setPeriodoFim] = useState("");
   const [uf, setUf] = useState("AC");
   const [tipoDocumento, setTipoDocumento] = useState("compra");
   
-  // Função para lidar com o upload do certificado
   const handleCertificateUpload = (file: File) => {
     setCertificate(file);
     toast.success(`Certificado "${file.name}" carregado com sucesso`);
   };
 
-  // Função para salvar o certificado
   const handleSaveCertificate = () => {
     if (!certificate) {
       toast.error("Por favor, selecione um certificado digital");
@@ -48,7 +44,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       return;
     }
 
-    // Simulação do salvamento do certificado
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
@@ -57,7 +52,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     }, 1500);
   };
 
-  // Função para buscar notas fiscais
   const handleSearch = () => {
     if (!hasCertificate) {
       toast.error("Configure seu certificado digital antes de realizar a busca");
@@ -66,9 +60,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
 
     setIsLoading(true);
     
-    // Simulação de busca
     setTimeout(() => {
-      // Gerar dados de exemplo que parecem reais
       const results = generateSampleInvoices(tipoDocumento);
       setSearchResults(results);
       setIsLoading(false);
@@ -76,14 +68,12 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     }, 2000);
   };
 
-  // Gerar dados de amostra que parecem reais
   const generateSampleInvoices = (tipo: string) => {
     const results = [];
     const date = new Date();
     const currentYear = date.getFullYear();
     const currentMonth = date.getMonth();
     
-    // Definir emitentes comuns para compras
     const emitentes = [
       { nome: "Distribuidora ABC LTDA", cnpj: "12.345.678/0001-90" },
       { nome: "Atacadão Produtos EIRELI", cnpj: "98.765.432/0001-21" },
@@ -92,7 +82,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       { nome: "Fornecedora de Calçados ME", cnpj: "23.456.789/0001-10" }
     ];
     
-    // Gerar entre 5 e 15 notas
     const count = tipo === 'compra' ? 12 : 8;
     
     for (let i = 0; i < count; i++) {
@@ -104,7 +93,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       const emitente = tipo === 'compra' ? emitentes[emitenteIndex] : { nome: "Sua Empresa", cnpj: "11.222.333/0001-44" };
       const destinatario = tipo === 'compra' ? { nome: "Sua Empresa", cnpj: "11.222.333/0001-44" } : emitentes[emitenteIndex];
       
-      // Valores aleatórios realistas
       const valorTotal = (Math.random() * 10000 + 1000).toFixed(2);
       const numeroNF = Math.floor(Math.random() * 900000) + 100000;
       const chaveAcesso = generateRandomChaveAcesso();
@@ -123,15 +111,13 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       });
     }
     
-    // Ordenar por data de emissão (mais recente primeiro)
     return results.sort((a, b) => {
       const dateA = new Date(a.emissao.split('/').reverse().join('-'));
       const dateB = new Date(b.emissao.split('/').reverse().join('-'));
       return dateB.getTime() - dateA.getTime();
     });
   };
-  
-  // Gerar uma chave de acesso aleatória no formato válido
+
   const generateRandomChaveAcesso = () => {
     let chave = '';
     for (let i = 0; i < 44; i++) {
@@ -140,13 +126,11 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     return chave;
   };
 
-  // Função para formatar a chave de acesso
   const formatChaveAcesso = (chave: string) => {
     if (chave.length !== 44) return chave;
     return `${chave.slice(0, 4)} ${chave.slice(4, 8)} ${chave.slice(8, 12)} ${chave.slice(12, 16)} ${chave.slice(16, 20)} ${chave.slice(20, 24)} ${chave.slice(24, 28)} ${chave.slice(28, 32)} ${chave.slice(32, 36)} ${chave.slice(36, 40)} ${chave.slice(40, 44)}`;
   };
 
-  // Toggle seleção de nota
   const toggleNoteSelection = (chave: string) => {
     const newSelection = new Set(selectedNotes);
     if (newSelection.has(chave)) {
@@ -157,7 +141,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     setSelectedNotes(newSelection);
   };
 
-  // Selecionar todas as notas
   const selectAllNotes = () => {
     if (selectedNotes.size === searchResults.length) {
       setSelectedNotes(new Set());
@@ -167,7 +150,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
     }
   };
 
-  // Baixar notas selecionadas
   const downloadSelectedNotes = () => {
     if (selectedNotes.size === 0) {
       toast.error("Selecione pelo menos uma nota para baixar");
@@ -176,11 +158,9 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
 
     setIsLoading(true);
     
-    // Simulação de download
     setTimeout(() => {
       setIsLoading(false);
 
-      // Gerar um XML de amostra para a primeira nota selecionada
       const sampleXml = `<?xml version="1.0" encoding="UTF-8"?>
       <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
         <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
@@ -282,8 +262,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
           </infNFe>
         </NFe>
       </nfeProc>`;
-      
-      // Passar o XML para a função onNfeLoaded
+
       onNfeLoaded(sampleXml);
       
       toast.success(`${selectedNotes.size} nota(s) baixada(s) com sucesso!`);
@@ -295,7 +274,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-2 mb-6">
           <TabsTrigger value="certificado" className="flex items-center gap-2">
-            <FileUploadIcon size={16} />
+            <Upload size={16} />
             Certificado Digital
           </TabsTrigger>
           <TabsTrigger value="busca" className="flex items-center gap-2">
@@ -624,7 +603,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onNfeLoaded }) => {
                               variant="ghost" 
                               size="sm"
                               onClick={() => {
-                                // Detalhes da nota
                                 toast.info(`Detalhes da Nota ${note.numero}`);
                               }}
                             >
