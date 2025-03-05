@@ -6,43 +6,26 @@ import { toast } from 'sonner';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
-  acceptedFileTypes?: {
-    [key: string]: string[];
-  };
-  fileTypeDescription?: string;
-  icon?: React.ReactNode;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ 
-  onFileSelect, 
-  acceptedFileTypes = { 'text/xml': ['.xml'] },
-  fileTypeDescription = 'Suporta apenas arquivos XML de NF-e',
-  icon = <FileText className="h-12 w-12 text-gray-400 mx-auto" />
-}) => {
+const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect }) => {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
-      // Check if the file type is in the accepted list
-      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-      const acceptedExtensions = Object.values(acceptedFileTypes).flat();
-      
-      // Check if the file's MIME type is in the accepted list or if the file extension is in the accepted list
-      const isAccepted = Object.keys(acceptedFileTypes).includes(file.type) || 
-                         acceptedExtensions.includes(fileExtension);
-      
-      if (!isAccepted) {
-        toast.error(`Por favor, selecione um arquivo válido (${acceptedExtensions.join(', ')})`);
+      if (file.type !== 'text/xml' && !file.name.endsWith('.xml')) {
+        toast.error('Por favor, selecione um arquivo XML válido');
         return;
       }
-      
       onFileSelect(file);
       toast.success(`Arquivo "${file.name}" selecionado com sucesso`);
     }
-  }, [onFileSelect, acceptedFileTypes]);
+  }, [onFileSelect]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: acceptedFileTypes,
+    accept: {
+      'text/xml': ['.xml'],
+    },
     multiple: false,
   });
 
@@ -66,13 +49,13 @@ const FileUpload: React.FC<FileUploadProps> = ({
           </>
         ) : (
           <>
-            {icon}
+            <FileText className="h-12 w-12 text-gray-400 mx-auto" />
             <div>
               <p className="text-lg text-gray-700 mb-2">
-                Arraste o arquivo aqui ou clique para selecionar
+                Arraste o arquivo XML aqui ou clique para selecionar
               </p>
               <p className="text-sm text-gray-500">
-                {fileTypeDescription}
+                Suporta apenas arquivos XML de NF-e
               </p>
             </div>
           </>

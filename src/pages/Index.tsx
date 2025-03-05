@@ -1,12 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import FileUpload from '../components/FileUpload';
 import { ProductPreview } from '../components/product-preview';
-import SefazIntegration from '../components/product-preview/SefazIntegration';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Info, FileSpreadsheet, Save, History, Edit2, FileText, Download } from 'lucide-react';
+import { Info, FileSpreadsheet, Save, History, Edit2 } from 'lucide-react';
 import { parseNFeXML } from '../utils/nfeParser';
 import { Product, SavedNFe } from '../types/nfe';
 import { 
@@ -32,13 +31,14 @@ const Index = () => {
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
   const [brandName, setBrandName] = useState<string>("");
   const [isEditingBrand, setIsEditingBrand] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<string>("sefaz");
 
+  // Carregar as notas salvas ao iniciar
   useEffect(() => {
     const savedNFesJson = localStorage.getItem(STORAGE_KEYS.SAVED_NFES);
     if (savedNFesJson) {
       try {
         const parsedNFes = JSON.parse(savedNFesJson);
+        // Converte os hiddenItems de volta para Set
         const processedNFes = parsedNFes.map((nfe: any) => ({
           ...nfe,
           hiddenItems: nfe.hiddenItems ? new Set(nfe.hiddenItems) : new Set()
@@ -91,13 +91,16 @@ const Index = () => {
       const parsedProducts = parseNFeXML(text);
       setProducts(parsedProducts);
       
+      // Extrair número da nota e outras informações do XML
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(text, "text/xml");
       const nfNumber = extractInvoiceNumber(xmlDoc);
       
+      // Definir valores iniciais
       setInvoiceNumber(nfNumber || "");
       setBrandName("Fornecedor");
       
+      // Limpar o estado ao carregar nova nota
       setHiddenItems(new Set());
       setCurrentNFeId(null);
       setIsEditingBrand(false);
@@ -175,6 +178,7 @@ const Index = () => {
     localStorage.setItem(STORAGE_KEYS.EPITA_MARKUP, epitaMarkup.toString());
     localStorage.setItem(STORAGE_KEYS.ROUNDING_TYPE, roundingType);
     
+    // Se estiver visualizando uma NF salva, atualizar suas configurações
     if (currentNFeId) {
       const updatedNFes = savedNFes.map(nfe => {
         if (nfe.id === currentNFeId) {
@@ -208,6 +212,7 @@ const Index = () => {
     }
     setHiddenItems(newHiddenItems);
     
+    // Se estiver visualizando uma NF salva, atualizar seus itens ocultos
     if (currentNFeId) {
       const updatedNFes = savedNFes.map(nfe => {
         if (nfe.id === currentNFeId) {
@@ -225,6 +230,7 @@ const Index = () => {
   };
 
   const saveNFesToLocalStorage = (nfes: SavedNFe[]) => {
+    // Converter os Sets para arrays antes de salvar no localStorage
     const serializableNFes = nfes.map(nfe => ({
       ...nfe,
       hiddenItems: nfe.hiddenItems ? Array.from(nfe.hiddenItems) : []
@@ -243,6 +249,7 @@ const Index = () => {
       return;
     }
     
+    // Criar uma nova entrada para a NF atual
     const now = new Date();
     const newNFe: SavedNFe = {
       id: now.getTime().toString(),
@@ -257,6 +264,7 @@ const Index = () => {
       roundingType: localStorage.getItem(STORAGE_KEYS.ROUNDING_TYPE) || '90'
     };
     
+    // Manter apenas as 3 últimas NFs (incluindo a atual)
     const updatedNFes = [newNFe, ...savedNFes.filter(nfe => nfe.id !== currentNFeId)].slice(0, 3);
     
     setSavedNFes(updatedNFes);
@@ -274,6 +282,7 @@ const Index = () => {
     setBrandName(nfe.brandName || "Fornecedor");
     setIsEditingBrand(false);
     
+    // Restaurar as configurações desta NF
     if (nfe.xapuriMarkup) {
       localStorage.setItem(STORAGE_KEYS.XAPURI_MARKUP, nfe.xapuriMarkup.toString());
     }
@@ -289,30 +298,6 @@ const Index = () => {
     toast.success(`Nota fiscal ${nfe.name} carregada com sucesso`);
   };
 
-  const handleLoadProductsFromSefaz = (xmlContent: string) => {
-    try {
-      const parsedProducts = parseNFeXML(xmlContent);
-      
-      if (parsedProducts.length === 0) {
-        toast.error('Não há produtos para carregar');
-        return;
-      }
-      
-      setProducts(parsedProducts);
-      
-      setHiddenItems(new Set());
-      setCurrentNFeId(null);
-      setInvoiceNumber("Nota SEFAZ");
-      setBrandName("Sefaz Import");
-      setIsEditingBrand(false);
-      
-      toast.success(`${parsedProducts.length} produtos importados via SEFAZ`);
-    } catch (error) {
-      console.error('Erro ao processar XML da NF-e:', error);
-      toast.error('Erro ao processar o arquivo XML da NF-e.');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
       <div className="mx-auto max-w-[2000px] w-full px-4 py-8">
@@ -323,34 +308,15 @@ const Index = () => {
                 <Info size={16} />
                 <span>Importador de NF-e</span>
               </div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">Consulta de Notas Fiscais via SEFAZ</h1>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Importação de Produtos via XML</h1>
               <p className="text-slate-600 max-w-2xl mx-auto">
-                Consulte diretamente as notas fiscais emitidas para seu CNPJ e importe produtos para o seu catálogo
+                Faça upload do arquivo XML da NF-e para importar automaticamente os produtos para o seu catálogo no Odoo
               </p>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-              <div className="max-w-6xl mx-auto">
-                <Tabs defaultValue="sefaz" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-2 mb-8">
-                    <TabsTrigger value="upload" className="flex items-center gap-2">
-                      <FileText size={16} />
-                      Upload Manual
-                    </TabsTrigger>
-                    <TabsTrigger value="sefaz" className="flex items-center gap-2">
-                      <Download size={16} />
-                      Consulta via SEFAZ
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="upload">
-                    <FileUpload onFileSelect={handleFileSelect} />
-                  </TabsContent>
-                  
-                  <TabsContent value="sefaz">
-                    <SefazIntegration onNfeLoaded={handleLoadProductsFromSefaz} />
-                  </TabsContent>
-                </Tabs>
+              <div className="max-w-3xl mx-auto">
+                <FileUpload onFileSelect={handleFileSelect} />
                 
                 {savedNFes.length > 0 && (
                   <div className="mt-8 text-center">
@@ -470,7 +436,6 @@ const Index = () => {
                 onConfigurationUpdate={handleConfigurationUpdate}
                 hiddenItems={hiddenItems}
                 onToggleVisibility={handleToggleVisibility}
-                onNewFile={setProducts}
               />
             </div>
             <div className="flex justify-end gap-4 mt-6">

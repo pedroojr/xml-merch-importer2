@@ -8,8 +8,6 @@ import { ProductToolbar } from './ProductToolbar';
 import { ProductTable } from './ProductTable';
 import { getDefaultColumns, compactColumns } from './types/column';
 import { ProductAnalysisTabs } from './ProductAnalysisTabs';
-import SefazIntegration from './SefazIntegration';
-import { parseNFeXML } from '../../utils/nfeParser';
 
 interface ProductPreviewProps {
   products: Product[];
@@ -21,7 +19,7 @@ interface ProductPreviewProps {
   onToggleVisibility?: (index: number) => void;
 }
 
-export const ProductPreview: React.FC<ProductPreviewProps> = ({ 
+const ProductPreview: React.FC<ProductPreviewProps> = ({ 
   products, 
   onProductUpdate, 
   editable = false,
@@ -150,31 +148,14 @@ export const ProductPreview: React.FC<ProductPreviewProps> = ({
 
   const effectiveHiddenItems = onToggleVisibility ? hiddenItems : localHiddenItems;
 
-  const handleNfeLoaded = (xmlContent: string) => {
-    try {
-      const parsedProducts = parseNFeXML(xmlContent);
-      
-      if (parsedProducts.length > 0 && onNewFile) {
-        onNewFile(parsedProducts);
-        toast.success(`NF-e carregada com sucesso! ${parsedProducts.length} produtos encontrados.`);
-      } else {
-        toast.error('Não foi possível extrair produtos da NF-e.');
-      }
-    } catch (error) {
-      console.error('Erro ao processar XML da NF-e:', error);
-      toast.error('Erro ao processar o arquivo XML da NF-e.');
-    }
-  };
-
   return (
     <div className="w-full max-w-full flex-1">
       <div className="rounded-lg border bg-white shadow-sm">
-        <Tabs defaultValue="sefaz" className="w-full">
+        <Tabs defaultValue="unified" className="w-full">
           <div className="sticky top-0 z-10 bg-white border-b">
             <TabsList className="w-full justify-start rounded-none border-0">
               <TabsTrigger value="unified">Visão Unificada</TabsTrigger>
               <TabsTrigger value="insights">Insights e Análises</TabsTrigger>
-              <TabsTrigger value="sefaz">Integração SEFAZ</TabsTrigger>
             </TabsList>
           </div>
 
@@ -183,7 +164,7 @@ export const ProductPreview: React.FC<ProductPreviewProps> = ({
               xapuriMarkup={xapuriMarkup}
               epitaMarkup={epitaMarkup}
               roundingType={roundingType}
-              onXapuriMarkupChange={(value) => handleMarkupChange(xapuriMarkup, value, roundingType)}
+              onXapuriMarkupChange={(value) => handleMarkupChange(value, epitaMarkup, roundingType)}
               onEpitaMarkupChange={(value) => handleMarkupChange(xapuriMarkup, value, roundingType)}
               onRoundingChange={(value) => handleMarkupChange(xapuriMarkup, epitaMarkup, value)}
               compactMode={compactMode}
@@ -218,10 +199,6 @@ export const ProductPreview: React.FC<ProductPreviewProps> = ({
               />
               <ProductAnalysis products={products} />
             </div>
-          </TabsContent>
-          
-          <TabsContent value="sefaz" className="p-0 w-full">
-            <SefazIntegration onNfeLoaded={handleNfeLoaded} />
           </TabsContent>
         </Tabs>
       </div>
