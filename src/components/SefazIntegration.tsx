@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +47,14 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
   
   const checkApiAvailability = async () => {
     try {
-      await axios.head('/api/health-check');
+      // Use um timeout para não ficar esperando muito tempo
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      await axios.head('/api/health-check', {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
       setApiStatus('available');
     } catch (error) {
       console.error('API não disponível:', error);
@@ -98,10 +106,12 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
         throw new Error('O serviço de validação de certificados não está disponível no momento.');
       }
 
+      // Adicione um timeout maior para a validação do certificado
       const response = await axios.post('/api/validate-certificate', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 30000 // 30 segundos
       });
 
       if (response.data.valid) {
@@ -142,8 +152,13 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
           technicalDetails = `Status: ${error.response.status}, Detalhes: ${JSON.stringify(error.response.data || {})}`;
         }
       } else if (error.request) {
-        errorMsg = 'Servidor não respondeu à solicitação.';
-        technicalDetails = 'Verifique sua conexão de internet ou se o servidor backend está ativo.';
+        if (error.code === 'ECONNABORTED') {
+          errorMsg = 'Tempo limite de conexão excedido.';
+          technicalDetails = 'O servidor demorou muito para responder. Isso pode acontecer se o certificado for muito grande ou se o servidor estiver sobrecarregado.';
+        } else {
+          errorMsg = 'Servidor não respondeu à solicitação.';
+          technicalDetails = 'Verifique sua conexão de internet ou se o servidor backend está ativo.';
+        }
         setApiStatus('unavailable');
       } else {
         errorMsg = error.message || 'Erro ao configurar a requisição.';
@@ -155,7 +170,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
         errorMessage: errorMsg
       });
       
-      setErrorDetails(`${errorMsg}\n\nDetalhes técnicos: ${technicalDetails}`);
+      setErrorDetails(`${errorMsg}\n\nDetalhes técnicos: ${technicalDetails}\n\nOs seguintes problemas podem estar ocorrendo:\n1. O backend pode não estar processando corretamente o certificado.\n2. O formato do certificado pode não ser suportado (verifique se é um PFX/P12 válido).\n3. A conexão com o backend pode estar instável.`);
       toast.error(errorMsg);
       return false;
     } finally {
@@ -400,10 +415,10 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
                 Se estiver enfrentando problemas com a conexão à SEFAZ:
               </p>
               <ul className="text-xs mt-1 text-gray-800 list-disc pl-5">
-                <li>Verifique se o certificado está válido</li>
-                <li>Confira se a URL do endpoint da SEFAZ está correta</li>
-                <li>Certifique-se de que o CNPJ do certificado tem permissão para consultar a nota</li>
-                <li>Verifique se o ambiente (produção/homologação) está configurado corretamente</li>
+                <li>Verifique se o certificado está no formato correto (PFX/P12)</li>
+                <li>Certifique-se de que a senha está correta (sem caracteres especiais não suportados)</li>
+                <li>O tamanho do certificado pode estar afetando o processamento</li>
+                <li>Verifique se o backend está configurado para lidar com arquivos de certificado</li>
               </ul>
             </AlertDescription>
           </Alert>
