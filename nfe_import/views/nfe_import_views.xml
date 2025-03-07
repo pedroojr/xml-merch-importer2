@@ -15,7 +15,17 @@
                     <sheet>
                         <group>
                             <field name="name"/>
+                            <field name="access_key" placeholder="Digite a chave de acesso da NF-e (44 dígitos)"/>
+                        </group>
+                        <group string="Certificado Digital">
+                            <field name="certificate_file" filename="certificate_filename"/>
+                            <field name="certificate_password" password="True"/>
+                        </group>
+                        <group string="Arquivo XML">
                             <field name="xml_file"/>
+                            <div class="alert alert-info" role="alert">
+                                <p>Você pode importar o XML diretamente ou buscar na SEFAZ usando a chave de acesso e seu certificado digital.</p>
+                            </div>
                         </group>
                         <notebook>
                             <page string="Produtos">
@@ -34,6 +44,7 @@
             <field name="arch" type="xml">
                 <tree string="Importações NF-e">
                     <field name="name"/>
+                    <field name="access_key"/>
                     <field name="state"/>
                 </tree>
             </field>

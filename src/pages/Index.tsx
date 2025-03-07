@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import FileUpload from '../components/FileUpload';
 import { ProductPreview } from '../components/product-preview';
@@ -14,6 +13,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SefazIntegration from '../components/SefazIntegration';
 
 const STORAGE_KEYS = {
   XAPURI_MARKUP: 'nfe_import_xapuri_markup',
@@ -32,13 +33,11 @@ const Index = () => {
   const [brandName, setBrandName] = useState<string>("");
   const [isEditingBrand, setIsEditingBrand] = useState<boolean>(false);
 
-  // Carregar as notas salvas ao iniciar
   useEffect(() => {
     const savedNFesJson = localStorage.getItem(STORAGE_KEYS.SAVED_NFES);
     if (savedNFesJson) {
       try {
         const parsedNFes = JSON.parse(savedNFesJson);
-        // Converte os hiddenItems de volta para Set
         const processedNFes = parsedNFes.map((nfe: any) => ({
           ...nfe,
           hiddenItems: nfe.hiddenItems ? new Set(nfe.hiddenItems) : new Set()
@@ -91,16 +90,13 @@ const Index = () => {
       const parsedProducts = parseNFeXML(text);
       setProducts(parsedProducts);
       
-      // Extrair número da nota e outras informações do XML
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(text, "text/xml");
       const nfNumber = extractInvoiceNumber(xmlDoc);
       
-      // Definir valores iniciais
       setInvoiceNumber(nfNumber || "");
       setBrandName("Fornecedor");
       
-      // Limpar o estado ao carregar nova nota
       setHiddenItems(new Set());
       setCurrentNFeId(null);
       setIsEditingBrand(false);
@@ -111,6 +107,29 @@ const Index = () => {
       console.error('Error:', error);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleXmlFromSefaz = (xmlContent: string) => {
+    try {
+      const parsedProducts = parseNFeXML(xmlContent);
+      setProducts(parsedProducts);
+      
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
+      const nfNumber = extractInvoiceNumber(xmlDoc);
+      
+      setInvoiceNumber(nfNumber || "");
+      setBrandName("Fornecedor");
+      
+      setHiddenItems(new Set());
+      setCurrentNFeId(null);
+      setIsEditingBrand(false);
+      
+      toast.success('NF-e obtida da SEFAZ e processada com sucesso');
+    } catch (error) {
+      toast.error('Erro ao processar o arquivo XML da SEFAZ');
+      console.error('Error:', error);
     }
   };
 
@@ -178,7 +197,6 @@ const Index = () => {
     localStorage.setItem(STORAGE_KEYS.EPITA_MARKUP, epitaMarkup.toString());
     localStorage.setItem(STORAGE_KEYS.ROUNDING_TYPE, roundingType);
     
-    // Se estiver visualizando uma NF salva, atualizar suas configurações
     if (currentNFeId) {
       const updatedNFes = savedNFes.map(nfe => {
         if (nfe.id === currentNFeId) {
@@ -212,7 +230,6 @@ const Index = () => {
     }
     setHiddenItems(newHiddenItems);
     
-    // Se estiver visualizando uma NF salva, atualizar seus itens ocultos
     if (currentNFeId) {
       const updatedNFes = savedNFes.map(nfe => {
         if (nfe.id === currentNFeId) {
@@ -230,7 +247,6 @@ const Index = () => {
   };
 
   const saveNFesToLocalStorage = (nfes: SavedNFe[]) => {
-    // Converter os Sets para arrays antes de salvar no localStorage
     const serializableNFes = nfes.map(nfe => ({
       ...nfe,
       hiddenItems: nfe.hiddenItems ? Array.from(nfe.hiddenItems) : []
@@ -249,7 +265,6 @@ const Index = () => {
       return;
     }
     
-    // Criar uma nova entrada para a NF atual
     const now = new Date();
     const newNFe: SavedNFe = {
       id: now.getTime().toString(),
@@ -264,7 +279,6 @@ const Index = () => {
       roundingType: localStorage.getItem(STORAGE_KEYS.ROUNDING_TYPE) || '90'
     };
     
-    // Manter apenas as 3 últimas NFs (incluindo a atual)
     const updatedNFes = [newNFe, ...savedNFes.filter(nfe => nfe.id !== currentNFeId)].slice(0, 3);
     
     setSavedNFes(updatedNFes);
@@ -282,7 +296,6 @@ const Index = () => {
     setBrandName(nfe.brandName || "Fornecedor");
     setIsEditingBrand(false);
     
-    // Restaurar as configurações desta NF
     if (nfe.xapuriMarkup) {
       localStorage.setItem(STORAGE_KEYS.XAPURI_MARKUP, nfe.xapuriMarkup.toString());
     }
@@ -310,13 +323,26 @@ const Index = () => {
               </div>
               <h1 className="text-3xl font-bold text-slate-900 mb-2">Importação de Produtos via XML</h1>
               <p className="text-slate-600 max-w-2xl mx-auto">
-                Faça upload do arquivo XML da NF-e para importar automaticamente os produtos para o seu catálogo no Odoo
+                Faça upload do arquivo XML da NF-e ou consulte diretamente na SEFAZ para importar automaticamente os produtos
               </p>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
               <div className="max-w-3xl mx-auto">
-                <FileUpload onFileSelect={handleFileSelect} />
+                <Tabs defaultValue="upload" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger value="upload">Upload de XML</TabsTrigger>
+                    <TabsTrigger value="sefaz">Consulta SEFAZ</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="upload">
+                    <FileUpload onFileSelect={handleFileSelect} />
+                  </TabsContent>
+                  
+                  <TabsContent value="sefaz">
+                    <SefazIntegration onXmlReceived={handleXmlFromSefaz} />
+                  </TabsContent>
+                </Tabs>
                 
                 {savedNFes.length > 0 && (
                   <div className="mt-8 text-center">

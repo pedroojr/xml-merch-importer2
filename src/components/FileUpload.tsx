@@ -6,26 +6,37 @@ import { toast } from 'sonner';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
+  accept?: Record<string, string[]>;
+  acceptedFileTypes?: string[];
+  fileTypeDescription?: string;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ 
+  onFileSelect, 
+  accept = { 'text/xml': ['.xml'] },
+  acceptedFileTypes = ['.xml'],
+  fileTypeDescription = 'Suporta apenas arquivos XML de NF-e'
+}) => {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
-      if (file.type !== 'text/xml' && !file.name.endsWith('.xml')) {
-        toast.error('Por favor, selecione um arquivo XML válido');
+      // Verificar se a extensão do arquivo está na lista de extensões aceitas
+      const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
+      const isAcceptedExtension = acceptedFileTypes.includes(fileExtension);
+      
+      if (!isAcceptedExtension) {
+        toast.error(`Por favor, selecione um arquivo válido: ${acceptedFileTypes.join(', ')}`);
         return;
       }
+      
       onFileSelect(file);
       toast.success(`Arquivo "${file.name}" selecionado com sucesso`);
     }
-  }, [onFileSelect]);
+  }, [onFileSelect, acceptedFileTypes]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'text/xml': ['.xml'],
-    },
+    accept,
     multiple: false,
   });
 
@@ -52,10 +63,10 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect }) => {
             <FileText className="h-12 w-12 text-gray-400 mx-auto" />
             <div>
               <p className="text-lg text-gray-700 mb-2">
-                Arraste o arquivo XML aqui ou clique para selecionar
+                Arraste o arquivo aqui ou clique para selecionar
               </p>
               <p className="text-sm text-gray-500">
-                Suporta apenas arquivos XML de NF-e
+                {fileTypeDescription}
               </p>
             </div>
           </>
