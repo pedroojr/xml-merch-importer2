@@ -1,14 +1,13 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Upload, FileText, Search, AlertCircle, CheckCircle, Calendar, Shield, Loader2, XCircle, RefreshCw } from "lucide-react";
+import { Upload, FileText, Search, AlertCircle, CheckCircle, Calendar, Shield, Loader2, XCircle, RefreshCw, AlertTriangle } from "lucide-react";
 import { toast } from 'sonner';
 import FileUpload from './FileUpload';
 import axios from 'axios';
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SefazIntegrationProps {
   onXmlReceived: (xmlContent: string) => void;
@@ -30,8 +29,8 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
   const [certificateInfo, setCertificateInfo] = useState<CertificateInfo | null>(null);
   const [errorDetails, setErrorDetails] = useState<string>('');
   const [fetchingNfe, setFetchingNfe] = useState<boolean>(false);
+  const [apiStatus, setApiStatus] = useState<'available' | 'unavailable' | 'unknown'>('unknown');
   
-  // Load saved certificate from localStorage on component mount
   React.useEffect(() => {
     const savedCertificateInfo = localStorage.getItem('certificateInfo');
     if (savedCertificateInfo) {
@@ -41,11 +40,23 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
         console.error('Erro ao carregar informações do certificado salvo:', e);
       }
     }
+    
+    checkApiAvailability();
   }, []);
+  
+  const checkApiAvailability = async () => {
+    try {
+      await axios.head('/api/health-check');
+      setApiStatus('available');
+    } catch (error) {
+      console.error('API não disponível:', error);
+      setApiStatus('unavailable');
+    }
+  };
 
   const handleAccessKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, ''); // Remove tudo que não for dígito
-    if (value.length <= 44) { // Limita a 44 dígitos
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 44) {
       setAccessKey(value);
     }
   };
@@ -57,7 +68,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
   };
 
   const validateAccessKey = () => {
-    // Validação básica da chave - 44 dígitos
     if (accessKey.length !== 44) {
       toast.error('A chave de acesso deve ter 44 dígitos');
       return false;
@@ -80,12 +90,14 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
     setErrorDetails('');
     
     try {
-      // Criando FormData para enviar o arquivo
       const formData = new FormData();
       formData.append('certificate', certificate);
       formData.append('password', certificatePassword);
 
-      // Fazendo a requisição para validar o certificado
+      if (apiStatus === 'unavailable') {
+        throw new Error('O serviço de validação de certificados não está disponível no momento.');
+      }
+
       const response = await axios.post('/api/validate-certificate', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -101,7 +113,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
         
         setCertificateInfo(certificateData);
         
-        // Salvar as informações do certificado no localStorage
         localStorage.setItem('certificateInfo', JSON.stringify(certificateData));
         
         toast.success(`Certificado digital válido até ${response.data.expirationDate || 'data não disponível'}!`);
@@ -117,17 +128,35 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
       }
     } catch (error: any) {
       console.error('Erro ao validar certificado:', error);
-      const errorMsg = error.response?.data?.message || 
-                      error.message || 
-                      'Erro ao validar o certificado. Verifique as credenciais e tente novamente.';
+      
+      let errorMsg = 'Erro ao validar o certificado. Verifique as credenciais e tente novamente.';
+      let technicalDetails = '';
+      
+      if (error.response) {
+        if (error.response.status === 404) {
+          errorMsg = 'Serviço de validação de certificado não encontrado (404).';
+          technicalDetails = 'O endpoint da API para validação de certificados não está disponível. Verifique se o serviço backend está configurado corretamente.';
+          setApiStatus('unavailable');
+        } else {
+          errorMsg = error.response.data?.message || 'Erro do servidor ao validar o certificado.';
+          technicalDetails = `Status: ${error.response.status}, Detalhes: ${JSON.stringify(error.response.data || {})}`;
+        }
+      } else if (error.request) {
+        errorMsg = 'Servidor não respondeu à solicitação.';
+        technicalDetails = 'Verifique sua conexão de internet ou se o servidor backend está ativo.';
+        setApiStatus('unavailable');
+      } else {
+        errorMsg = error.message || 'Erro ao configurar a requisição.';
+        technicalDetails = 'Problema na configuração da solicitação.';
+      }
       
       setCertificateInfo({
         valid: false,
         errorMessage: errorMsg
       });
       
-      setErrorDetails(`Erro técnico: ${errorMsg}`);
-      toast.error('Falha na validação do certificado');
+      setErrorDetails(`${errorMsg}\n\nDetalhes técnicos: ${technicalDetails}`);
+      toast.error(errorMsg);
       return false;
     } finally {
       setValidationLoading(false);
@@ -137,26 +166,28 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
   const fetchInvoiceFromSefaz = async () => {
     if (!validateAccessKey()) return;
     
-    // Se o certificado já foi validado anteriormente, não precisamos validar novamente
     if (!certificateInfo?.valid && !await validateCertificate()) return;
+
+    if (apiStatus === 'unavailable') {
+      toast.error('O serviço de consulta SEFAZ não está disponível no momento.');
+      setErrorDetails('O endpoint da API para consulta à SEFAZ não está disponível. Verifique se o serviço backend está configurado corretamente.');
+      return;
+    }
 
     setFetchingNfe(true);
     setIsLoading(true);
     setErrorDetails('');
     
     try {
-      // Criando FormData para enviar os dados
       const formData = new FormData();
       if (certificate) formData.append('certificate', certificate);
       formData.append('password', certificatePassword);
       formData.append('accessKey', accessKey);
 
-      // Feedback visual para o usuário
       toast.loading('Consultando NF-e na SEFAZ...', {
         id: 'sefaz-query',
       });
 
-      // Fazendo a requisição para consultar a NF-e
       const response = await axios.post('/api/consultar-notas', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -168,7 +199,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
           id: 'sefaz-query',
         });
         
-        // Se a consulta for bem-sucedida, baixar o XML
         const downloadResponse = await axios.post('/api/download-notas', {
           accessKey: accessKey
         }, {
@@ -194,11 +224,32 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
       }
     } catch (error: any) {
       console.error('Erro ao consultar NF-e:', error);
-      const errorMsg = error.response?.data?.message || error.message;
-      toast.error(`Erro ao consultar a NF-e: ${errorMsg}`, {
+      
+      let errorMsg = 'Erro ao consultar a NF-e.';
+      let technicalDetails = '';
+      
+      if (error.response) {
+        if (error.response.status === 404) {
+          errorMsg = 'Serviço de consulta SEFAZ não encontrado (404).';
+          technicalDetails = 'O endpoint da API para consulta SEFAZ não está disponível. Verifique se o serviço backend está configurado corretamente.';
+          setApiStatus('unavailable');
+        } else {
+          errorMsg = error.response.data?.message || 'Erro do servidor ao consultar a NF-e.';
+          technicalDetails = `Status: ${error.response.status}, Detalhes: ${JSON.stringify(error.response.data || {})}`;
+        }
+      } else if (error.request) {
+        errorMsg = 'Servidor não respondeu à solicitação.';
+        technicalDetails = 'Verifique sua conexão de internet ou se o servidor backend está ativo.';
+        setApiStatus('unavailable');
+      } else {
+        errorMsg = error.message || 'Erro ao configurar a requisição.';
+        technicalDetails = 'Problema na configuração da solicitação.';
+      }
+      
+      toast.error(errorMsg, {
         id: 'sefaz-query',
       });
-      setErrorDetails(`Erro técnico: ${errorMsg}`);
+      setErrorDetails(`${errorMsg}\n\nDetalhes técnicos: ${technicalDetails}`);
     } finally {
       setIsLoading(false);
       setFetchingNfe(false);
@@ -221,6 +272,16 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
         <CardDescription>
           Insira a chave de acesso e o certificado digital A1 para buscar a NF-e diretamente da SEFAZ
         </CardDescription>
+        {apiStatus === 'unavailable' && (
+          <Alert variant="destructive" className="mt-2">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Serviço indisponível</AlertTitle>
+            <AlertDescription>
+              O serviço de integração com a SEFAZ não está disponível no momento. 
+              Verifique se o backend está configurado corretamente.
+            </AlertDescription>
+          </Alert>
+        )}
         {certificateInfo?.valid && (
           <div className="mt-2 flex items-center gap-2 text-sm bg-green-50 text-green-700 p-2 rounded-md border border-green-200">
             <Shield size={16} className="text-green-600" />
@@ -292,7 +353,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
           <div className="flex flex-col gap-3">
             <Button
               onClick={fetchInvoiceFromSefaz}
-              disabled={!accessKey || fetchingNfe}
+              disabled={!accessKey || fetchingNfe || apiStatus === 'unavailable'}
               className="w-full flex items-center gap-2"
             >
               {fetchingNfe ? (
@@ -308,7 +369,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
             <Button
               onClick={validateCertificate}
               variant="outline"
-              disabled={!certificate || !certificatePassword || validationLoading}
+              disabled={!certificate || !certificatePassword || validationLoading || apiStatus === 'unavailable'}
               className="flex-1 flex items-center gap-2"
             >
               {validationLoading ? (
@@ -318,6 +379,14 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
               )}
               {validationLoading ? 'Validando...' : 'Validar Certificado'}
             </Button>
+            <Button
+              onClick={checkApiAvailability}
+              variant="outline"
+              className="flex items-center gap-2"
+              size="icon"
+            >
+              <RefreshCw size={16} />
+            </Button>
           </div>
         )}
 
@@ -326,11 +395,16 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="mt-2">
               <p className="font-semibold">Detalhes do erro:</p>
-              <p className="text-sm mt-1">{errorDetails}</p>
+              <p className="text-sm mt-1 whitespace-pre-line">{errorDetails}</p>
               <p className="text-xs mt-2 text-gray-800">
-                Verifique se a senha do certificado está correta e se o certificado é válido.
-                Em caso de problemas, consulte os logs do sistema para mais informações.
+                Se estiver enfrentando problemas com a conexão à SEFAZ:
               </p>
+              <ul className="text-xs mt-1 text-gray-800 list-disc pl-5">
+                <li>Verifique se o certificado está válido</li>
+                <li>Confira se a URL do endpoint da SEFAZ está correta</li>
+                <li>Certifique-se de que o CNPJ do certificado tem permissão para consultar a nota</li>
+                <li>Verifique se o ambiente (produção/homologação) está configurado corretamente</li>
+              </ul>
             </AlertDescription>
           </Alert>
         )}
