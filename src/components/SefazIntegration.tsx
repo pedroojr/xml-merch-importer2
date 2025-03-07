@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Upload, FileText, Search, AlertCircle, CheckCircle, Calendar, Shield, Loader2, XCircle, RefreshCw, AlertTriangle } from "lucide-react";
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import FileUpload from './FileUpload';
 import axios from 'axios';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -77,7 +77,11 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
 
   const validateAccessKey = () => {
     if (accessKey.length !== 44) {
-      toast.error('A chave de acesso deve ter 44 dígitos');
+      toast({
+        title: "Erro na chave de acesso",
+        description: "A chave de acesso deve ter 44 dígitos",
+        variant: "destructive"
+      });
       return false;
     }
     return true;
@@ -85,12 +89,20 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
 
   const validateCertificate = async () => {
     if (!certificate) {
-      toast.error('Por favor, selecione um certificado digital A1');
+      toast({
+        title: "Certificado não selecionado",
+        description: "Por favor, selecione um certificado digital A1",
+        variant: "destructive"
+      });
       return false;
     }
 
     if (!certificatePassword) {
-      toast.error('Por favor, insira a senha do certificado');
+      toast({
+        title: "Senha não informada",
+        description: "Por favor, insira a senha do certificado",
+        variant: "destructive"
+      });
       return false;
     }
 
@@ -111,7 +123,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
         headers: {
           'Content-Type': 'multipart/form-data'
         },
-        timeout: 30000 // 30 segundos
+        timeout: 45000 // 45 segundos (aumentado para certificados maiores)
       });
 
       if (response.data.valid) {
@@ -125,7 +137,11 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
         
         localStorage.setItem('certificateInfo', JSON.stringify(certificateData));
         
-        toast.success(`Certificado digital válido até ${response.data.expirationDate || 'data não disponível'}!`);
+        toast({
+          title: "Certificado válido",
+          description: `Certificado digital válido até ${response.data.expirationDate || 'data não disponível'}!`,
+          variant: "default"
+        });
         return true;
       } else {
         setCertificateInfo({
@@ -133,7 +149,11 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
           errorMessage: response.data.message || 'Certificado inválido ou senha incorreta'
         });
         setErrorDetails(response.data.message || 'Certificado inválido ou senha incorreta');
-        toast.error(response.data.message || 'Certificado inválido ou senha incorreta');
+        toast({
+          title: "Erro no certificado",
+          description: response.data.message || 'Certificado inválido ou senha incorreta',
+          variant: "destructive"
+        });
         return false;
       }
     } catch (error: any) {
@@ -154,7 +174,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
       } else if (error.request) {
         if (error.code === 'ECONNABORTED') {
           errorMsg = 'Tempo limite de conexão excedido.';
-          technicalDetails = 'O servidor demorou muito para responder. Isso pode acontecer se o certificado for muito grande ou se o servidor estiver sobrecarregado.';
+          technicalDetails = 'O servidor demorou muito para responder. Isso pode acontecer se o certificado for muito grande ou se o servidor estiver sobrecarregado. Tente novamente ou use um certificado menor.';
         } else {
           errorMsg = 'Servidor não respondeu à solicitação.';
           technicalDetails = 'Verifique sua conexão de internet ou se o servidor backend está ativo.';
@@ -170,8 +190,13 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
         errorMessage: errorMsg
       });
       
-      setErrorDetails(`${errorMsg}\n\nDetalhes técnicos: ${technicalDetails}\n\nOs seguintes problemas podem estar ocorrendo:\n1. O backend pode não estar processando corretamente o certificado.\n2. O formato do certificado pode não ser suportado (verifique se é um PFX/P12 válido).\n3. A conexão com o backend pode estar instável.`);
-      toast.error(errorMsg);
+      setErrorDetails(`${errorMsg}\n\nDetalhes técnicos: ${technicalDetails}\n\nOs seguintes problemas podem estar ocorrendo:\n1. O backend pode não estar processando corretamente o certificado.\n2. O formato do certificado pode não ser suportado (verifique se é um PFX/P12 válido).\n3. A senha do certificado pode conter caracteres especiais não suportados.\n4. A conexão com o backend pode estar instável.`);
+      
+      toast({
+        title: "Falha na validação",
+        description: errorMsg,
+        variant: "destructive"
+      });
       return false;
     } finally {
       setValidationLoading(false);
@@ -184,7 +209,11 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
     if (!certificateInfo?.valid && !await validateCertificate()) return;
 
     if (apiStatus === 'unavailable') {
-      toast.error('O serviço de consulta SEFAZ não está disponível no momento.');
+      toast({
+        title: "Serviço indisponível",
+        description: "O serviço de consulta SEFAZ não está disponível no momento.",
+        variant: "destructive"
+      });
       setErrorDetails('O endpoint da API para consulta à SEFAZ não está disponível. Verifique se o serviço backend está configurado corretamente.');
       return;
     }
@@ -199,41 +228,50 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
       formData.append('password', certificatePassword);
       formData.append('accessKey', accessKey);
 
-      toast.loading('Consultando NF-e na SEFAZ...', {
-        id: 'sefaz-query',
+      toast({
+        title: "Consultando SEFAZ",
+        description: "Consultando NF-e na SEFAZ...",
       });
 
       const response = await axios.post('/api/consultar-notas', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 60000 // 60 segundos para a consulta SEFAZ
       });
 
       if (response.data.success) {
-        toast.success('NF-e encontrada! Baixando XML...', {
-          id: 'sefaz-query',
+        toast({
+          title: "NF-e encontrada",
+          description: "NF-e encontrada! Baixando XML...",
         });
         
         const downloadResponse = await axios.post('/api/download-notas', {
           accessKey: accessKey
         }, {
-          responseType: 'text'
+          responseType: 'text',
+          timeout: 30000
         });
 
         if (downloadResponse.data) {
-          toast.success('NF-e encontrada e baixada com sucesso!', {
-            id: 'sefaz-query',
+          toast({
+            title: "Sucesso!",
+            description: "NF-e encontrada e baixada com sucesso!",
           });
           onXmlReceived(downloadResponse.data);
         } else {
-          toast.error('Erro ao baixar o XML da NF-e', {
-            id: 'sefaz-query',
+          toast({
+            title: "Erro no download",
+            description: "Erro ao baixar o XML da NF-e",
+            variant: "destructive"
           });
           setErrorDetails('O servidor retornou uma resposta vazia ao tentar baixar o XML da NF-e');
         }
       } else {
-        toast.error(response.data.message || 'Erro ao consultar a NF-e', {
-          id: 'sefaz-query',
+        toast({
+          title: "Erro na consulta",
+          description: response.data.message || 'Erro ao consultar a NF-e',
+          variant: "destructive"
         });
         setErrorDetails(response.data.technicalDetails || response.data.message || 'Erro desconhecido ao consultar a NF-e');
       }
@@ -253,16 +291,23 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
           technicalDetails = `Status: ${error.response.status}, Detalhes: ${JSON.stringify(error.response.data || {})}`;
         }
       } else if (error.request) {
-        errorMsg = 'Servidor não respondeu à solicitação.';
-        technicalDetails = 'Verifique sua conexão de internet ou se o servidor backend está ativo.';
+        if (error.code === 'ECONNABORTED') {
+          errorMsg = 'Tempo limite de conexão excedido ao consultar a SEFAZ.';
+          technicalDetails = 'A consulta SEFAZ demorou muito tempo para responder. Isso pode ocorrer por sobrecarga no servidor SEFAZ ou problemas na conexão.';
+        } else {
+          errorMsg = 'Servidor não respondeu à solicitação.';
+          technicalDetails = 'Verifique sua conexão de internet ou se o servidor backend está ativo.';
+        }
         setApiStatus('unavailable');
       } else {
         errorMsg = error.message || 'Erro ao configurar a requisição.';
         technicalDetails = 'Problema na configuração da solicitação.';
       }
       
-      toast.error(errorMsg, {
-        id: 'sefaz-query',
+      toast({
+        title: "Erro na consulta",
+        description: errorMsg,
+        variant: "destructive"
       });
       setErrorDetails(`${errorMsg}\n\nDetalhes técnicos: ${technicalDetails}`);
     } finally {
@@ -277,7 +322,9 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
     setCertificatePassword('');
     localStorage.removeItem('certificateInfo');
     setErrorDetails('');
-    toast.success('Informações do certificado removidas');
+    toast({
+      description: 'Informações do certificado removidas',
+    });
   };
 
   return (
