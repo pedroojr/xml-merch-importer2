@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,11 @@ const DataSystemIntegration: React.FC<DataSystemIntegrationProps> = ({ xmlConten
           title: "Autenticação realizada",
           description: "Token obtido com sucesso!",
         });
+
+        // Automatically trigger product analysis if XML is available
+        if (xmlContent) {
+          await analyzeProducts();
+        }
       }
     } catch (error: any) {
       console.error('Erro na autenticação:', error);
@@ -181,10 +187,10 @@ const DataSystemIntegration: React.FC<DataSystemIntegrationProps> = ({ xmlConten
   };
 
   useEffect(() => {
-    if (xmlContent && token) {
-      analyzeProducts();
+    if (xmlContent && !token) {
+      handleAuthentication();
     }
-  }, [xmlContent, token]);
+  }, [xmlContent]);
 
   return (
     <Card>

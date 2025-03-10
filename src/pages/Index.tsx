@@ -106,7 +106,7 @@ const Index = () => {
       setXmlContentForDataSystem(text);
       setCurrentTab("datasystem");
       
-      toast.success('Arquivo XML processado com sucesso');
+      toast.success('Arquivo XML processado com sucesso. Analisando produtos no DataSystem...');
     } catch (error) {
       toast.error('Erro ao processar o arquivo XML');
       console.error('Error:', error);
@@ -133,7 +133,7 @@ const Index = () => {
       setXmlContentForDataSystem(xmlContent);
       setCurrentTab("datasystem");
       
-      toast.success('NF-e obtida da SEFAZ e processada com sucesso');
+      toast.success('NF-e obtida da SEFAZ e processada com sucesso. Analisando produtos no DataSystem...');
     } catch (error) {
       toast.error('Erro ao processar o arquivo XML da SEFAZ');
       console.error('Error:', error);
