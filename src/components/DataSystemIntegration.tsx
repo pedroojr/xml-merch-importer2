@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import axios from 'axios';
 
 interface DataSystemIntegrationProps {
-  xmlContent?: string;
+  xmlContent?: string | null;
 }
 
 interface ProductVerification {
@@ -72,7 +71,6 @@ const DataSystemIntegration: React.FC<DataSystemIntegrationProps> = ({ xmlConten
     setErrorDetails('');
     
     try {
-      // Parse XML to get products
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
       const ns = "http://www.portalfiscal.inf.br/nfe";
@@ -86,7 +84,6 @@ const DataSystemIntegration: React.FC<DataSystemIntegrationProps> = ({ xmlConten
         const descricao = prod.getElementsByTagNameNS(ns, "xProd")[0]?.textContent || "";
         
         try {
-          // Verificar existência do produto no DataSystem
           const response = await axios.get(
             `https://integracaodshomologacao.useserver.com.br/api/v1/produtos/${codigo}`,
             {
@@ -182,6 +179,12 @@ const DataSystemIntegration: React.FC<DataSystemIntegrationProps> = ({ xmlConten
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (xmlContent && token) {
+      analyzeProducts();
+    }
+  }, [xmlContent, token]);
 
   return (
     <Card>

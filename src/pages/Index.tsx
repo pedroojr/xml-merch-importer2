@@ -33,6 +33,8 @@ const Index = () => {
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
   const [brandName, setBrandName] = useState<string>("");
   const [isEditingBrand, setIsEditingBrand] = useState<boolean>(false);
+  const [currentTab, setCurrentTab] = useState("upload");
+  const [xmlContentForDataSystem, setXmlContentForDataSystem] = useState<string | null>(null);
 
   useEffect(() => {
     const savedNFesJson = localStorage.getItem(STORAGE_KEYS.SAVED_NFES);
@@ -97,10 +99,12 @@ const Index = () => {
       
       setInvoiceNumber(nfNumber || "");
       setBrandName("Fornecedor");
-      
       setHiddenItems(new Set());
       setCurrentNFeId(null);
       setIsEditingBrand(false);
+      
+      setXmlContentForDataSystem(text);
+      setCurrentTab("datasystem");
       
       toast.success('Arquivo XML processado com sucesso');
     } catch (error) {
@@ -122,10 +126,12 @@ const Index = () => {
       
       setInvoiceNumber(nfNumber || "");
       setBrandName("Fornecedor");
-      
       setHiddenItems(new Set());
       setCurrentNFeId(null);
       setIsEditingBrand(false);
+      
+      setXmlContentForDataSystem(xmlContent);
+      setCurrentTab("datasystem");
       
       toast.success('NF-e obtida da SEFAZ e processada com sucesso');
     } catch (error) {
@@ -330,7 +336,7 @@ const Index = () => {
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
               <div className="max-w-3xl mx-auto">
-                <Tabs defaultValue="upload" className="w-full">
+                <Tabs defaultValue="upload" value={currentTab} onValueChange={setCurrentTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-3 mb-6">
                     <TabsTrigger value="upload">Upload de XML</TabsTrigger>
                     <TabsTrigger value="sefaz">Consulta SEFAZ</TabsTrigger>
@@ -346,7 +352,7 @@ const Index = () => {
                   </TabsContent>
                   
                   <TabsContent value="datasystem">
-                    <DataSystemIntegration />
+                    <DataSystemIntegration xmlContent={xmlContentForDataSystem} />
                   </TabsContent>
                 </Tabs>
                 
