@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Send, AlertCircle, Loader2 } from "lucide-react";
+import { Send, AlertCircle, Loader2, Search } from "lucide-react";
 import { toast } from '@/hooks/use-toast';
 import axios from 'axios';
 
@@ -13,10 +13,18 @@ interface DataSystemIntegrationProps {
   xmlContent?: string;
 }
 
+interface ProductVerification {
+  codigo: string;
+  descricao: string;
+  exists: boolean;
+}
+
 const DataSystemIntegration: React.FC<DataSystemIntegrationProps> = ({ xmlContent }) => {
   const [token, setToken] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string>('');
+  const [verifiedProducts, setVerifiedProducts] = useState<ProductVerification[]>([]);
 
   const handleAuthentication = async () => {
     setIsLoading(true);
@@ -47,6 +55,77 @@ const DataSystemIntegration: React.FC<DataSystemIntegrationProps> = ({ xmlConten
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const analyzeProducts = async () => {
+    if (!xmlContent || !token) {
+      toast({
+        title: "Erro",
+        description: "XML ou token não disponível",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setErrorDetails('');
+    
+    try {
+      // Parse XML to get products
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
+      const ns = "http://www.portalfiscal.inf.br/nfe";
+      const items = xmlDoc.getElementsByTagNameNS(ns, "det");
+      
+      const productsToVerify: ProductVerification[] = [];
+      
+      for (let i = 0; i < items.length; i++) {
+        const prod = items[i].getElementsByTagNameNS(ns, "prod")[0];
+        const codigo = prod.getElementsByTagNameNS(ns, "cProd")[0]?.textContent || "";
+        const descricao = prod.getElementsByTagNameNS(ns, "xProd")[0]?.textContent || "";
+        
+        try {
+          // Verificar existência do produto no DataSystem
+          const response = await axios.get(
+            `https://integracaodshomologacao.useserver.com.br/api/v1/produtos/${codigo}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
+          
+          productsToVerify.push({
+            codigo,
+            descricao,
+            exists: response.status === 200
+          });
+        } catch (error) {
+          productsToVerify.push({
+            codigo,
+            descricao,
+            exists: false
+          });
+        }
+      }
+      
+      setVerifiedProducts(productsToVerify);
+      toast({
+        title: "Análise concluída",
+        description: `${productsToVerify.length} produtos analisados`,
+      });
+    } catch (error: any) {
+      console.error('Erro ao analisar produtos:', error);
+      const errorMsg = error.response?.data?.message || 'Erro ao analisar produtos no DataSystem';
+      setErrorDetails(errorMsg);
+      toast({
+        title: "Erro na análise",
+        description: errorMsg,
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -117,7 +196,7 @@ const DataSystemIntegration: React.FC<DataSystemIntegrationProps> = ({ xmlConten
           <div className="flex gap-4">
             <Button
               onClick={handleAuthentication}
-              disabled={isLoading}
+              disabled={isLoading || isAnalyzing}
               variant="outline"
               className="flex-1"
             >
@@ -128,8 +207,22 @@ const DataSystemIntegration: React.FC<DataSystemIntegrationProps> = ({ xmlConten
             </Button>
             
             <Button
+              onClick={analyzeProducts}
+              disabled={!token || isLoading || isAnalyzing || !xmlContent}
+              variant="outline"
+              className="flex-1"
+            >
+              {isAnalyzing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="mr-2 h-4 w-4" />
+              )}
+              Analisar Produtos
+            </Button>
+            
+            <Button
               onClick={handleSendToDataSystem}
-              disabled={!token || isLoading || !xmlContent}
+              disabled={!token || isLoading || isAnalyzing || !xmlContent}
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
               {isLoading ? (
@@ -147,6 +240,38 @@ const DataSystemIntegration: React.FC<DataSystemIntegrationProps> = ({ xmlConten
             </div>
           )}
         </div>
+
+        {verifiedProducts.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <h3 className="text-sm font-medium mb-2">Resultado da Análise:</h3>
+            <div className="max-h-60 overflow-y-auto border rounded-md">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Código</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Descrição</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {verifiedProducts.map((product, index) => (
+                    <tr key={index}>
+                      <td className="px-4 py-2 text-sm text-gray-900">{product.codigo}</td>
+                      <td className="px-4 py-2 text-sm text-gray-900">{product.descricao}</td>
+                      <td className="px-4 py-2 text-sm">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          product.exists ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {product.exists ? 'Existente' : 'Novo'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {errorDetails && (
           <Alert variant="destructive">
