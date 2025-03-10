@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SefazIntegration from '../components/SefazIntegration';
+import DataSystemIntegration from '../components/DataSystemIntegration';
 
 const STORAGE_KEYS = {
   XAPURI_MARKUP: 'nfe_import_xapuri_markup',
@@ -330,9 +331,10 @@ const Index = () => {
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
               <div className="max-w-3xl mx-auto">
                 <Tabs defaultValue="upload" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsList className="grid w-full grid-cols-3 mb-6">
                     <TabsTrigger value="upload">Upload de XML</TabsTrigger>
                     <TabsTrigger value="sefaz">Consulta SEFAZ</TabsTrigger>
+                    <TabsTrigger value="datasystem">DataSystem</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="upload">
@@ -341,6 +343,10 @@ const Index = () => {
                   
                   <TabsContent value="sefaz">
                     <SefazIntegration onXmlReceived={handleXmlFromSefaz} />
+                  </TabsContent>
+                  
+                  <TabsContent value="datasystem">
+                    <DataSystemIntegration />
                   </TabsContent>
                 </Tabs>
                 
