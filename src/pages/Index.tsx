@@ -161,7 +161,40 @@ const Index = () => {
   };
 
   const handleGoogleSheetsExport = () => {
-    const headers = ['Código', 'EAN', 'Nome', 'NCM', 'CFOP', 'UOM', 'Quantidade', 'Preço Unit.', 'Total', 'Desconto', 'Líquido', 'Cor', 'Preço Venda'];
+    const formatValue = (value: any): string => {
+      if (typeof value === 'number') {
+        // Format currency values with 2 decimal places and proper thousands separator
+        if (value > 999) {
+          return value.toLocaleString('pt-BR', { 
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+        }
+        // Format quantities with up to 4 decimal places if needed
+        return value.toLocaleString('pt-BR', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 4,
+        });
+      }
+      return value?.toString() || '';
+    };
+
+    const headers = [
+      'Código',
+      'EAN',
+      'Nome',
+      'NCM',
+      'CFOP',
+      'UOM',
+      'Quantidade',
+      'Preço Unit.',
+      'Total',
+      'Desconto',
+      'Líquido',
+      'Cor',
+      'Preço Venda'
+    ];
+
     const rows = products.map(p => [
       p.code,
       p.ean,
@@ -169,33 +202,33 @@ const Index = () => {
       p.ncm,
       p.cfop,
       p.uom,
-      p.quantity,
-      p.unitPrice,
-      p.totalPrice,
-      p.discount,
-      p.netPrice,
+      formatValue(p.quantity),
+      formatValue(p.unitPrice),
+      formatValue(p.totalPrice),
+      formatValue(p.discount),
+      formatValue(p.netPrice),
       p.color,
-      p.salePrice
+      formatValue(p.salePrice)
     ]);
 
     const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
+      headers.join(';'),
+      ...rows.map(row => row.join(';'))
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', 'produtos_para_google_sheets.csv');
+    link.setAttribute('download', `produtos_${invoiceNumber || 'sem_numero'}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
     toast.success('Produtos exportados para Google Planilhas com sucesso!');
     
-    toast.info('Para importar: Abra o Google Planilhas, clique em Arquivo > Importar > Upload > Selecione o arquivo CSV baixado', {
-      duration: 6000,
+    toast.info('Para importar: Abra o Google Planilhas, clique em Arquivo > Importar > Upload > Selecione o arquivo CSV baixado. Na janela de importação, selecione ";" como separador.', {
+      duration: 8000,
     });
   };
 
@@ -504,4 +537,3 @@ const Index = () => {
 };
 
 export default Index;
-
