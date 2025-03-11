@@ -5,16 +5,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import MainNav from "./components/MainNav";
-import HomePage from "./pages/HomePage";
-import ImportPage from "./pages/ImportPage";
+import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000,
+      staleTime: 60 * 1000, // 1 minute
       refetchOnWindowFocus: false,
     },
   },
@@ -28,16 +26,11 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <div className="min-h-screen bg-slate-50">
-              <MainNav />
-              <main className="py-6">
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/importacao" element={<ImportPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </main>
-            </div>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
