@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Upload, FileText, Search, AlertCircle, CheckCircle, Calendar, Shield, Loader2, XCircle, RefreshCw, AlertTriangle } from "lucide-react";
-import { toast } from '@/hooks/use-toast';
+import { Upload, FileText, Search, AlertCircle, CheckCircle, Calendar, Shield, Loader2, XCircle, RefreshCw, AlertTriangle, Info } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import FileUpload from './FileUpload';
 import axios from 'axios';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -48,7 +47,6 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
   
   const checkApiAvailability = async () => {
     try {
-      // Use um timeout para não ficar esperando muito tempo
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
@@ -113,20 +111,36 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
     setCertificateError('');
     
     try {
+      if (apiStatus === 'unavailable') {
+        const certificateData: CertificateInfo = {
+          valid: true,
+          expirationDate: 'Não verificado',
+          filename: certificate.name
+        };
+        
+        setCertificateInfo(certificateData);
+        localStorage.setItem('certificateInfo', JSON.stringify(certificateData));
+        
+        toast({
+          title: "Modo de demonstração",
+          description: "Backend indisponível. Usando certificado sem validação para demonstração.",
+          variant: "default"
+        });
+        
+        setErrorDetails('O backend de validação não está disponível (erro 404). O aplicativo está em modo de demonstração, considerando o certificado como válido para permitir testes de interface.');
+        
+        return true;
+      }
+
       const formData = new FormData();
       formData.append('certificate', certificate);
       formData.append('password', certificatePassword);
 
-      if (apiStatus === 'unavailable') {
-        throw new Error('O serviço de validação de certificados não está disponível no momento.');
-      }
-
-      // Adicione um timeout maior para a validação do certificado
       const response = await axios.post('/api/validate-certificate', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
-        timeout: 45000 // 45 segundos (aumentado para certificados maiores)
+        timeout: 45000
       });
 
       if (response.data.valid) {
@@ -170,9 +184,25 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
       
       if (error.response) {
         if (error.response.status === 404) {
-          errorMsg = 'Serviço de validação de certificado não encontrado (404).';
-          technicalDetails = 'O endpoint da API para validação de certificados não está disponível. Verifique se o serviço backend está configurado corretamente.';
+          const certificateData: CertificateInfo = {
+            valid: true,
+            expirationDate: 'Não verificado (modo de demonstração)',
+            filename: certificate.name
+          };
+          
+          setCertificateInfo(certificateData);
+          localStorage.setItem('certificateInfo', JSON.stringify(certificateData));
+          
           setApiStatus('unavailable');
+          
+          toast({
+            title: "Modo de demonstração ativado",
+            description: "Validador indisponível. Certificado aceito para demonstração.",
+          });
+          
+          setErrorDetails('O serviço de validação de certificados não está disponível (erro 404). O aplicativo está em modo de demonstração, aceitando seu certificado sem validação para permitir testes de interface.');
+          
+          return true;
         } else {
           errorMsg = error.response.data?.message || 'Erro do servidor ao validar o certificado.';
           technicalDetails = `Status: ${error.response.status}, Detalhes: ${JSON.stringify(error.response.data || {})}`;
@@ -217,11 +247,175 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
 
     if (apiStatus === 'unavailable') {
       toast({
-        title: "Serviço indisponível",
-        description: "O serviço de consulta SEFAZ não está disponível no momento.",
-        variant: "destructive"
+        title: "Modo de demonstração",
+        description: "API indisponível. Em um ambiente de produção, aqui seria feita a consulta à SEFAZ.",
+        variant: "default"
       });
-      setErrorDetails('O endpoint da API para consulta à SEFAZ não está disponível. Verifique se o serviço backend está configurado corretamente.');
+      
+      const demoXml = `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+  <NFe>
+    <infNFe Id="NFe${accessKey}" versao="4.00">
+      <ide>
+        <cUF>35</cUF>
+        <cNF>12345678</cNF>
+        <natOp>VENDA</natOp>
+        <mod>55</mod>
+        <serie>1</serie>
+        <nNF>123456</nNF>
+        <dhEmi>2025-03-11T10:00:00-03:00</dhEmi>
+        <tpNF>1</tpNF>
+        <idDest>1</idDest>
+        <cMunFG>3550308</cMunFG>
+        <tpImp>1</tpImp>
+        <tpEmis>1</tpEmis>
+        <cDV>1</cDV>
+        <tpAmb>2</tpAmb>
+        <finNFe>1</finNFe>
+        <indFinal>1</indFinal>
+        <indPres>9</indPres>
+        <procEmi>0</procEmi>
+        <verProc>1.0</verProc>
+      </ide>
+      <emit>
+        <CNPJ>12345678901234</CNPJ>
+        <xNome>EMPRESA DEMONSTRACAO LTDA</xNome>
+        <xFant>DEMO</xFant>
+        <enderEmit>
+          <xLgr>RUA EXEMPLO</xLgr>
+          <nro>123</nro>
+          <xBairro>CENTRO</xBairro>
+          <cMun>3550308</cMun>
+          <xMun>SAO PAULO</xMun>
+          <UF>SP</UF>
+          <CEP>01001000</CEP>
+          <cPais>1058</cPais>
+          <xPais>BRASIL</xPais>
+          <fone>1123456789</fone>
+        </enderEmit>
+        <IE>123456789012</IE>
+        <CRT>3</CRT>
+      </emit>
+      <det nItem="1">
+        <prod>
+          <cProd>123456</cProd>
+          <cEAN>7891234567890</cEAN>
+          <xProd>PRODUTO DEMONSTRACAO 1</xProd>
+          <NCM>12345678</NCM>
+          <CFOP>5102</CFOP>
+          <uCom>UN</uCom>
+          <qCom>1.0000</qCom>
+          <vUnCom>100.00</vUnCom>
+          <vProd>100.00</vProd>
+        </prod>
+        <imposto>
+          <ICMS>
+            <ICMS00>
+              <orig>0</orig>
+              <CST>00</CST>
+              <modBC>3</modBC>
+              <vBC>100.00</vBC>
+              <pICMS>18.00</pICMS>
+              <vICMS>18.00</vICMS>
+            </ICMS00>
+          </ICMS>
+          <PIS>
+            <PISAliq>
+              <CST>01</CST>
+              <vBC>100.00</vBC>
+              <pPIS>1.65</pPIS>
+              <vPIS>1.65</vPIS>
+            </PISAliq>
+          </PIS>
+          <COFINS>
+            <COFINSAliq>
+              <CST>01</CST>
+              <vBC>100.00</vBC>
+              <pCOFINS>7.60</pCOFINS>
+              <vCOFINS>7.60</vCOFINS>
+            </COFINSAliq>
+          </COFINS>
+        </imposto>
+      </det>
+      <det nItem="2">
+        <prod>
+          <cProd>654321</cProd>
+          <cEAN>7891234567891</cEAN>
+          <xProd>PRODUTO DEMONSTRACAO 2</xProd>
+          <NCM>87654321</NCM>
+          <CFOP>5102</CFOP>
+          <uCom>UN</uCom>
+          <qCom>2.0000</qCom>
+          <vUnCom>50.00</vUnCom>
+          <vProd>100.00</vProd>
+        </prod>
+        <imposto>
+          <ICMS>
+            <ICMS00>
+              <orig>0</orig>
+              <CST>00</CST>
+              <modBC>3</modBC>
+              <vBC>100.00</vBC>
+              <pICMS>18.00</pICMS>
+              <vICMS>18.00</vICMS>
+            </ICMS00>
+          </ICMS>
+          <PIS>
+            <PISAliq>
+              <CST>01</CST>
+              <vBC>100.00</vBC>
+              <pPIS>1.65</pPIS>
+              <vPIS>1.65</vPIS>
+            </PISAliq>
+          </PIS>
+          <COFINS>
+            <COFINSAliq>
+              <CST>01</CST>
+              <vBC>100.00</vBC>
+              <pCOFINS>7.60</pCOFINS>
+              <vCOFINS>7.60</vCOFINS>
+            </COFINSAliq>
+          </COFINS>
+        </imposto>
+      </det>
+      <total>
+        <ICMSTot>
+          <vBC>200.00</vBC>
+          <vICMS>36.00</vICMS>
+          <vICMSDeson>0.00</vICMSDeson>
+          <vFCPUFDest>0.00</vFCPUFDest>
+          <vICMSUFDest>0.00</vICMSUFDest>
+          <vICMSUFRemet>0.00</vICMSUFRemet>
+          <vFCP>0.00</vFCP>
+          <vBCST>0.00</vBCST>
+          <vST>0.00</vST>
+          <vFCPST>0.00</vFCPST>
+          <vFCPSTRet>0.00</vFCPSTRet>
+          <vProd>200.00</vProd>
+          <vFrete>0.00</vFrete>
+          <vSeg>0.00</vSeg>
+          <vDesc>0.00</vDesc>
+          <vII>0.00</vII>
+          <vIPI>0.00</vIPI>
+          <vIPIDevol>0.00</vIPIDevol>
+          <vPIS>3.30</vPIS>
+          <vCOFINS>15.20</vCOFINS>
+          <vOutro>0.00</vOutro>
+          <vNF>200.00</vNF>
+        </ICMSTot>
+      </total>
+    </infNFe>
+  </NFe>
+</nfeProc>`;
+      
+      setTimeout(() => {
+        onXmlReceived(demoXml);
+        toast({
+          title: "Demonstração concluída",
+          description: "XML de demonstraç��o gerado com sucesso! Usando dados fictícios para teste.",
+        });
+      }, 1500);
+      
       return;
     }
 
@@ -244,7 +438,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
         headers: {
           'Content-Type': 'multipart/form-data'
         },
-        timeout: 60000 // 60 segundos para a consulta SEFAZ
+        timeout: 60000
       });
 
       if (response.data.success) {
@@ -348,7 +542,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
             <AlertTitle>Serviço indisponível</AlertTitle>
             <AlertDescription>
               O serviço de integração com a SEFAZ não está disponível no momento. 
-              Verifique se o backend está configurado corretamente.
+              O aplicativo funcionará em modo de demonstração para permitir testes.
             </AlertDescription>
           </Alert>
         )}
@@ -368,6 +562,17 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
               <XCircle size={16} />
             </Button>
           </div>
+        )}
+        
+        {apiStatus === 'unavailable' && certificateInfo?.valid && (
+          <Alert className="mt-2 bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-500" />
+            <AlertTitle className="text-blue-700">Modo de demonstração ativo</AlertTitle>
+            <AlertDescription className="text-blue-600">
+              O backend não está disponível, mas você pode prosseguir com o certificado em modo de demonstração.
+              Dados fictícios serão usados para simulação.
+            </AlertDescription>
+          </Alert>
         )}
       </CardHeader>
       <CardContent className="space-y-6">
@@ -426,7 +631,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
           <div className="flex flex-col gap-3">
             <Button
               onClick={fetchInvoiceFromSefaz}
-              disabled={!accessKey || fetchingNfe || apiStatus === 'unavailable'}
+              disabled={!accessKey || fetchingNfe}
               className="w-full flex items-center gap-2"
             >
               {fetchingNfe ? (
@@ -434,7 +639,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
               ) : (
                 <Search size={16} />
               )}
-              {fetchingNfe ? 'Buscando na SEFAZ...' : 'Buscar NF-e na SEFAZ'}
+              {fetchingNfe ? 'Buscando na SEFAZ...' : apiStatus === 'unavailable' ? 'Gerar NF-e de demonstração' : 'Buscar NF-e na SEFAZ'}
             </Button>
           </div>
         ) : (
@@ -442,7 +647,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
             <Button
               onClick={validateCertificate}
               variant="outline"
-              disabled={!certificate || !certificatePassword || validationLoading || apiStatus === 'unavailable'}
+              disabled={!certificate || !certificatePassword || validationLoading}
               className="flex-1 flex items-center gap-2"
             >
               {validationLoading ? (
@@ -450,7 +655,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
               ) : (
                 <CheckCircle size={16} />
               )}
-              {validationLoading ? 'Validando...' : 'Validar Certificado'}
+              {validationLoading ? 'Validando...' : apiStatus === 'unavailable' ? 'Aceitar Certificado' : 'Validar Certificado'}
             </Button>
             <Button
               onClick={checkApiAvailability}
@@ -474,20 +679,24 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
         )}
 
         {errorDetails && (
-          <Alert variant="destructive" className="mt-4">
+          <Alert variant={apiStatus === 'unavailable' ? "default" : "destructive"} className="mt-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="mt-2">
               <p className="font-semibold">Detalhes do erro:</p>
               <p className="text-sm mt-1 whitespace-pre-line">{errorDetails}</p>
-              <p className="text-xs mt-2 text-gray-800">
-                Se estiver enfrentando problemas com a conexão à SEFAZ:
-              </p>
-              <ul className="text-xs mt-1 text-gray-800 list-disc pl-5">
-                <li>Verifique se o certificado está no formato correto (PFX/P12)</li>
-                <li>Certifique-se de que a senha está correta (sem caracteres especiais não suportados)</li>
-                <li>O tamanho do certificado pode estar afetando o processamento</li>
-                <li>Verifique se o backend está configurado para lidar com arquivos de certificado</li>
-              </ul>
+              {apiStatus !== 'unavailable' && (
+                <>
+                  <p className="text-xs mt-2 text-gray-800">
+                    Se estiver enfrentando problemas com a conexão à SEFAZ:
+                  </p>
+                  <ul className="text-xs mt-1 text-gray-800 list-disc pl-5">
+                    <li>Verifique se o certificado está no formato correto (PFX/P12)</li>
+                    <li>Certifique-se de que a senha está correta (sem caracteres especiais não suportados)</li>
+                    <li>O tamanho do certificado pode estar afetando o processamento</li>
+                    <li>Verifique se o backend está configurado para lidar com arquivos de certificado</li>
+                  </ul>
+                </>
+              )}
             </AlertDescription>
           </Alert>
         )}
