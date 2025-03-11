@@ -31,6 +31,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
   const [errorDetails, setErrorDetails] = useState<string>('');
   const [fetchingNfe, setFetchingNfe] = useState<boolean>(false);
   const [apiStatus, setApiStatus] = useState<'available' | 'unavailable' | 'unknown'>('unknown');
+  const [certificateError, setCertificateError] = useState<string>('');
   
   React.useEffect(() => {
     const savedCertificateInfo = localStorage.getItem('certificateInfo');
@@ -73,6 +74,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
     setCertificate(file);
     setCertificateInfo(null);
     setErrorDetails('');
+    setCertificateError('');
   };
 
   const validateAccessKey = () => {
@@ -108,6 +110,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
 
     setValidationLoading(true);
     setErrorDetails('');
+    setCertificateError('');
     
     try {
       const formData = new FormData();
@@ -148,7 +151,10 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
           valid: false,
           errorMessage: response.data.message || 'Certificado inválido ou senha incorreta'
         });
+        
+        setCertificateError('Certificado inválido ou senha incorreta');
         setErrorDetails(response.data.message || 'Certificado inválido ou senha incorreta');
+        
         toast({
           title: "Erro no certificado",
           description: response.data.message || 'Certificado inválido ou senha incorreta',
@@ -190,6 +196,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
         errorMessage: errorMsg
       });
       
+      setCertificateError('Certificado inválido ou senha incorreta');
       setErrorDetails(`${errorMsg}\n\nDetalhes técnicos: ${technicalDetails}\n\nOs seguintes problemas podem estar ocorrendo:\n1. O backend pode não estar processando corretamente o certificado.\n2. O formato do certificado pode não ser suportado (verifique se é um PFX/P12 válido).\n3. A senha do certificado pode conter caracteres especiais não suportados.\n4. A conexão com o backend pode estar instável.`);
       
       toast({
@@ -320,6 +327,7 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
     setCertificateInfo(null);
     setCertificate(null);
     setCertificatePassword('');
+    setCertificateError('');
     localStorage.removeItem('certificateInfo');
     setErrorDetails('');
     toast({
@@ -407,6 +415,9 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
                 value={certificatePassword}
                 onChange={(e) => setCertificatePassword(e.target.value)}
               />
+              <p className="text-xs text-red-500">
+                {certificateError && "Use somente caracteres alfanuméricos na senha (evite caracteres especiais)"}
+              </p>
             </div>
           </>
         )}
@@ -450,6 +461,16 @@ const SefazIntegration: React.FC<SefazIntegrationProps> = ({ onXmlReceived }) =>
               <RefreshCw size={16} />
             </Button>
           </div>
+        )}
+
+        {certificateError && (
+          <Alert variant="destructive" className="mt-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erro no certificado</AlertTitle>
+            <AlertDescription>
+              {certificateError}
+            </AlertDescription>
+          </Alert>
         )}
 
         {errorDetails && (
