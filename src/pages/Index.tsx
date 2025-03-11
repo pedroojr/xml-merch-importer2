@@ -160,7 +160,7 @@ const Index = () => {
     setProducts(newProducts);
   };
 
-  const handleExcelExport = () => {
+  const handleGoogleSheetsExport = () => {
     const headers = ['Código', 'EAN', 'Nome', 'NCM', 'CFOP', 'UOM', 'Quantidade', 'Preço Unit.', 'Total', 'Desconto', 'Líquido', 'Cor', 'Preço Venda'];
     const rows = products.map(p => [
       p.code,
@@ -187,12 +187,16 @@ const Index = () => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', 'produtos.csv');
+    link.setAttribute('download', 'produtos_para_google_sheets.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    toast.success('Produtos exportados para Excel com sucesso!');
+    toast.success('Produtos exportados para Google Planilhas com sucesso!');
+    
+    toast.info('Para importar: Abra o Google Planilhas, clique em Arquivo > Importar > Upload > Selecione o arquivo CSV baixado', {
+      duration: 6000,
+    });
   };
 
   const handleConfigurationUpdate = (
@@ -479,11 +483,11 @@ const Index = () => {
             <div className="flex justify-end gap-4 mt-6">
               <Button 
                 variant="outline"
-                onClick={handleExcelExport}
+                onClick={handleGoogleSheetsExport}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <FileSpreadsheet size={18} className="mr-2" />
-                Exportar para Excel
+                Exportar para Google Planilhas
               </Button>
               <Button 
                 onClick={() => toast.success('Produtos importados com sucesso!')}
@@ -500,3 +504,4 @@ const Index = () => {
 };
 
 export default Index;
+
