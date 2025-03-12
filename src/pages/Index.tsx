@@ -21,7 +21,7 @@ const STORAGE_KEYS = {
   XAPURI_MARKUP: 'nfe_import_xapuri_markup',
   EPITA_MARKUP: 'nfe_import_epita_markup',
   ROUNDING_TYPE: 'nfe_import_rounding_type',
-  TAX_MULTIPLIER: 'nfe_import_tax_multiplier',
+  TAX_PERCENT: 'nfe_import_tax_percent',
   SAVED_NFES: 'nfe_import_saved_nfes'
 };
 
@@ -55,7 +55,7 @@ const Index = () => {
     const savedXapuriMarkup = localStorage.getItem(STORAGE_KEYS.XAPURI_MARKUP);
     const savedEpitaMarkup = localStorage.getItem(STORAGE_KEYS.EPITA_MARKUP);
     const savedRoundingType = localStorage.getItem(STORAGE_KEYS.ROUNDING_TYPE);
-    const savedTaxMultiplier = localStorage.getItem(STORAGE_KEYS.TAX_MULTIPLIER);
+    const savedTaxPercent = localStorage.getItem(STORAGE_KEYS.TAX_PERCENT);
 
     if (savedXapuriMarkup) {
       const markup = Number(savedXapuriMarkup);
@@ -71,8 +71,8 @@ const Index = () => {
       console.log('Carregando tipo de arredondamento:', savedRoundingType);
     }
     
-    if (savedTaxMultiplier) {
-      console.log('Carregando multiplicador de imposto:', savedTaxMultiplier);
+    if (savedTaxPercent) {
+      console.log('Carregando percentual de imposto:', savedTaxPercent);
     }
   }, []);
 
@@ -242,12 +242,12 @@ const Index = () => {
     xapuriMarkup: number, 
     epitaMarkup: number, 
     roundingType: string,
-    taxMultiplier: number = 1.18
+    taxPercent: number = 18
   ) => {
     localStorage.setItem(STORAGE_KEYS.XAPURI_MARKUP, xapuriMarkup.toString());
     localStorage.setItem(STORAGE_KEYS.EPITA_MARKUP, epitaMarkup.toString());
     localStorage.setItem(STORAGE_KEYS.ROUNDING_TYPE, roundingType);
-    localStorage.setItem(STORAGE_KEYS.TAX_MULTIPLIER, taxMultiplier.toString());
+    localStorage.setItem(STORAGE_KEYS.TAX_PERCENT, taxPercent.toString());
     
     if (currentNFeId) {
       const updatedNFes = savedNFes.map(nfe => {
@@ -257,7 +257,7 @@ const Index = () => {
             xapuriMarkup,
             epitaMarkup,
             roundingType,
-            taxMultiplier
+            taxPercent
           };
         }
         return nfe;
@@ -271,7 +271,7 @@ const Index = () => {
       xapuriMarkup,
       epitaMarkup,
       roundingType,
-      taxMultiplier
+      taxPercent
     });
   };
   
@@ -331,7 +331,7 @@ const Index = () => {
       xapuriMarkup: Number(localStorage.getItem(STORAGE_KEYS.XAPURI_MARKUP) || '120'),
       epitaMarkup: Number(localStorage.getItem(STORAGE_KEYS.EPITA_MARKUP) || '140'),
       roundingType: localStorage.getItem(STORAGE_KEYS.ROUNDING_TYPE) || '90',
-      taxMultiplier: Number(localStorage.getItem(STORAGE_KEYS.TAX_MULTIPLIER) || '1.18')
+      taxPercent: Number(localStorage.getItem(STORAGE_KEYS.TAX_PERCENT) || '18')
     };
     
     const updatedNFes = [newNFe, ...savedNFes.filter(nfe => nfe.id !== currentNFeId)].slice(0, 3);
@@ -363,8 +363,8 @@ const Index = () => {
       localStorage.setItem(STORAGE_KEYS.ROUNDING_TYPE, nfe.roundingType);
     }
     
-    if (nfe.taxMultiplier) {
-      localStorage.setItem(STORAGE_KEYS.TAX_MULTIPLIER, nfe.taxMultiplier.toString());
+    if (nfe.taxPercent) {
+      localStorage.setItem(STORAGE_KEYS.TAX_PERCENT, nfe.taxPercent.toString());
     }
     
     toast.success(`Nota fiscal ${nfe.name} carregada com sucesso`);

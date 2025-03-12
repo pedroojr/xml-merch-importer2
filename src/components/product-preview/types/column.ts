@@ -154,7 +154,11 @@ export const getDefaultColumns = (): Column[] => [
     minWidth: 112,
     order: 15,
     format: (value: number, product) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-    getValue: (product: Product) => (product.taxMultiplier || 1) * (product.quantity > 0 ? product.netPrice / product.quantity : 0)
+    getValue: (product: Product) => {
+      const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
+      const taxMultiplier = 1 + (product.taxPercent || 0) / 100;
+      return unitNetPrice * taxMultiplier;
+    }
   },
   { 
     id: 'xapuriPrice', 

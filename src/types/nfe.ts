@@ -20,7 +20,7 @@ export interface Product {
   imageUrl?: string;    // URL da imagem do produto
   brand: string;        // Marca identificada do produto
   brandConfidence: number; // Nível de confiança na identificação da marca (0-1)
-  taxMultiplier?: number; // Multiplicador de imposto de entrada
+  taxPercent?: number; // Percentual de imposto de entrada
 }
 
 export interface SavedNFe {
@@ -34,5 +34,5 @@ export interface SavedNFe {
   xapuriMarkup?: number;
   epitaMarkup?: number;
   roundingType?: string;
-  taxMultiplier?: number; // Novo campo para armazenar o multiplicador de imposto
+  taxPercent?: number; // Percentual de imposto de entrada
 }

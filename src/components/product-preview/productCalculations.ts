@@ -1,9 +1,20 @@
 
 import { Product } from '../../types/nfe';
 
-export const calculateSalePrice = (product: Product, markup: number): number => {
+export const calculateSalePrice = (product: Product, markup: number, unitPriceWithTax?: number): number => {
   const markupMultiplier = 1 + markup / 100;
-  return product.netPrice * markupMultiplier;
+  // If a taxed unit price is provided, use it, otherwise calculate from the product's properties
+  const basePrice = unitPriceWithTax !== undefined ? 
+    unitPriceWithTax : 
+    calculateTaxedUnitPrice(product);
+  
+  return basePrice * markupMultiplier;
+};
+
+export const calculateTaxedUnitPrice = (product: Product): number => {
+  const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
+  const taxMultiplier = 1 + (product.taxPercent || 0) / 100;
+  return unitNetPrice * taxMultiplier;
 };
 
 export type RoundingType = '90' | '50' | 'none';

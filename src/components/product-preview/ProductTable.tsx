@@ -25,7 +25,7 @@ interface ProductTableProps {
   xapuriMarkup: number;
   epitaMarkup: number;
   roundingType: RoundingType;
-  taxMultiplier: number;
+  taxPercent: number;
 }
 
 export const ProductTable: React.FC<ProductTableProps> = ({
@@ -38,7 +38,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   xapuriMarkup,
   epitaMarkup,
   roundingType,
-  taxMultiplier,
+  taxPercent,
 }) => {
   const [showHidden, setShowHidden] = useState(() => {
     const saved = localStorage.getItem('showHidden');
@@ -151,8 +151,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
   const averageDiscountPercent = calculateAverageDiscountPercent();
 
-  const applyTaxMultiplier = (price: number) => {
-    return price * taxMultiplier;
+  const applyTaxPercent = (price: number) => {
+    return price * (1 + taxPercent / 100);
   };
 
   return (
@@ -197,7 +197,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               <CardContent className="p-3">
                 <div className="text-xs font-medium text-muted-foreground">Com Imposto</div>
                 <div className="text-sm font-medium tabular-nums">
-                  {applyTaxMultiplier(products.reduce((acc, p) => acc + p.netPrice, 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  {applyTaxPercent(products.reduce((acc, p) => acc + p.netPrice, 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </div>
               </CardContent>
             </Card>
@@ -262,9 +262,12 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               const isHidden = hiddenItems.has(productIndex);
 
               const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
-              const taxedUnitNetPrice = applyTaxMultiplier(unitNetPrice);
-              const xapuriPrice = roundPrice(calculateSalePrice({ ...product, netPrice: taxedUnitNetPrice }, xapuriMarkup), roundingType);
-              const epitaPrice = roundPrice(calculateSalePrice({ ...product, netPrice: taxedUnitNetPrice }, epitaMarkup), roundingType);
+              const taxedUnitNetPrice = unitNetPrice * (1 + taxPercent / 100);
+              
+              const productWithTax = { ...product, taxPercent };
+              
+              const xapuriPrice = roundPrice(calculateSalePrice(productWithTax, xapuriMarkup, taxedUnitNetPrice), roundingType);
+              const epitaPrice = roundPrice(calculateSalePrice(productWithTax, epitaMarkup, taxedUnitNetPrice), roundingType);
               
               const tamanhoReferencia = extrairTamanhoDaReferencia(product.reference);
               const tamanhoDescricao = extrairTamanhoDaDescricao(product.name);
@@ -297,7 +300,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     }
 
                     let value: any = column.getValue ? 
-                      column.getValue(product) : 
+                      column.getValue(productWithTax) : 
                       product[column.id as keyof Product];
 
                     if (column.id === 'xapuriPrice') value = xapuriPrice;
@@ -328,7 +331,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                             column.id === 'name' ? "whitespace-normal" : "truncate",
                             column.alignment === 'right' ? "ml-auto" : "mr-auto"
                           )}>
-                            {column.format ? column.format(value, product) : value}
+                            {column.format ? column.format(value, productWithTax) : value}
                           </span>
                           <span className={cn(
                             "transition-opacity flex-shrink-0",

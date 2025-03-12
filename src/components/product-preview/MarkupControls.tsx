@@ -12,11 +12,11 @@ interface MarkupControlsProps {
   xapuriMarkup: number;
   epitaMarkup: number;
   roundingType: RoundingType;
-  taxMultiplier: number;
+  taxPercent: number;
   onXapuriMarkupChange: (value: number) => void;
   onEpitaMarkupChange: (value: number) => void;
   onRoundingChange: (value: RoundingType) => void;
-  onTaxMultiplierChange: (value: number) => void;
+  onTaxPercentChange: (value: number) => void;
   xapuriSuggestedMarkup?: number;
   epitaSuggestedMarkup?: number;
 }
@@ -25,11 +25,11 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
   xapuriMarkup,
   epitaMarkup,
   roundingType,
-  taxMultiplier,
+  taxPercent,
   onXapuriMarkupChange,
   onEpitaMarkupChange,
   onRoundingChange,
-  onTaxMultiplierChange,
+  onTaxPercentChange,
   xapuriSuggestedMarkup,
   epitaSuggestedMarkup,
 }) => {
@@ -105,8 +105,8 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
         <Card className="rounded-md border-amber-200 shadow-sm">
           <CardContent className="p-3 space-y-2">
             <div className="flex items-center gap-2">
-              <Label htmlFor="tax-multiplier" className="text-sm font-medium text-amber-700">
-                Multiplicador de Imposto
+              <Label htmlFor="tax-percent" className="text-sm font-medium text-amber-700">
+                Imposto de Entrada (%)
               </Label>
               <TooltipProvider>
                 <Tooltip>
@@ -115,21 +115,21 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="w-[220px] text-sm">
-                      Multiplicador do imposto de entrada aplicado ao produto
+                      Percentual do imposto de entrada aplicado ao produto
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
             <Input
-              id="tax-multiplier"
+              id="tax-percent"
               type="number"
-              value={taxMultiplier}
-              onChange={(e) => onTaxMultiplierChange(Number(e.target.value))}
+              value={taxPercent}
+              onChange={(e) => onTaxPercentChange(Number(e.target.value))}
               className="w-full border-amber-200 focus:border-amber-400"
-              step="0.01"
-              min="1"
-              placeholder="Ex: 1.18 (18%)"
+              step="0.5"
+              min="0"
+              placeholder="Ex: 18 (18%)"
             />
           </CardContent>
         </Card>
