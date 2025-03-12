@@ -126,7 +126,7 @@ export const getDefaultColumns = (): Column[] => [
   },
   { 
     id: 'netPrice', 
-    header: 'Custo Líquido', 
+    header: 'Custo c/ Desconto', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-fit',

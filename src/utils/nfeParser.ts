@@ -125,7 +125,8 @@ export const parseNFeXML = (xmlText: string): Product[] => {
       markup: 30,
       salePrice: netPrice * 1.3,
       brand: brand,
-      brandConfidence: confidence
+      brandConfidence: confidence,
+      taxMultiplier: 1.18 // Default tax multiplier of 18%
     };
     
     products.push(product);

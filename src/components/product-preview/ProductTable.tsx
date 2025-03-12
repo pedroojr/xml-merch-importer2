@@ -187,7 +187,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             </Card>
             <Card className="bg-white/50">
               <CardContent className="p-3">
-                <div className="text-xs font-medium text-muted-foreground">Valor Líquido</div>
+                <div className="text-xs font-medium text-muted-foreground">Valor c/ Desconto</div>
                 <div className="text-sm font-medium tabular-nums">
                   {products.reduce((acc, p) => acc + p.netPrice, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </div>
@@ -328,7 +328,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                             column.id === 'name' ? "whitespace-normal" : "truncate",
                             column.alignment === 'right' ? "ml-auto" : "mr-auto"
                           )}>
-                            {column.format ? column.format(value) : value}
+                            {column.format ? column.format(value, product) : value}
                           </span>
                           <span className={cn(
                             "transition-opacity flex-shrink-0",

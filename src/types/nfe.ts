@@ -10,7 +10,7 @@ export interface Product {
   unitPrice: number;     // vUnCom - Valor Unitário de Comercialização
   totalPrice: number;    // vProd - Valor Total Bruto
   discount: number;      // vDesc - Valor do Desconto
-  netPrice: number;      // Valor Total Líquido (após descontos)
+  netPrice: number;      // Valor com Desconto (após descontos)
   color: string;        // Cor do produto em formato HEX
   size: string;         // Tamanho do produto
   reference: string;    // Referência do produto
