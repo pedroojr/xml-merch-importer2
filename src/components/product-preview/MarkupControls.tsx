@@ -6,14 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface MarkupControlsProps {
   xapuriMarkup: number;
   epitaMarkup: number;
   roundingType: RoundingType;
+  taxMultiplier: number;
   onXapuriMarkupChange: (value: number) => void;
   onEpitaMarkupChange: (value: number) => void;
   onRoundingChange: (value: RoundingType) => void;
+  onTaxMultiplierChange: (value: number) => void;
   xapuriSuggestedMarkup?: number;
   epitaSuggestedMarkup?: number;
 }
@@ -22,15 +25,17 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
   xapuriMarkup,
   epitaMarkup,
   roundingType,
+  taxMultiplier,
   onXapuriMarkupChange,
   onEpitaMarkupChange,
   onRoundingChange,
+  onTaxMultiplierChange,
   xapuriSuggestedMarkup,
   epitaSuggestedMarkup,
 }) => {
   return (
     <div className="p-4 border-b bg-slate-50">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Label htmlFor="xapuri-markup" className="text-sm font-medium text-blue-700">
@@ -96,6 +101,38 @@ export const MarkupControls: React.FC<MarkupControlsProps> = ({
             )}
           </div>
         </div>
+
+        <Card className="rounded-md border-amber-200 shadow-sm">
+          <CardContent className="p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="tax-multiplier" className="text-sm font-medium text-amber-700">
+                Multiplicador de Imposto
+              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-amber-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="w-[220px] text-sm">
+                      Multiplicador do imposto de entrada aplicado ao produto
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <Input
+              id="tax-multiplier"
+              type="number"
+              value={taxMultiplier}
+              onChange={(e) => onTaxMultiplierChange(Number(e.target.value))}
+              className="w-full border-amber-200 focus:border-amber-400"
+              step="0.01"
+              min="1"
+              placeholder="Ex: 1.18 (18%)"
+            />
+          </CardContent>
+        </Card>
 
         <div className="space-y-2">
           <Label htmlFor="rounding-type" className="text-sm font-medium">

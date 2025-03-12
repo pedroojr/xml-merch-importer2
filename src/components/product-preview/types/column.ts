@@ -146,13 +146,24 @@ export const getDefaultColumns = (): Column[] => [
     getValue: (product: Product) => product.quantity > 0 ? product.discount / product.quantity : 0
   },
   { 
+    id: 'taxedNetPrice', 
+    header: 'Custo c/ Imposto', 
+    initiallyVisible: true, 
+    alignment: 'right',
+    width: 'w-fit',
+    minWidth: 112,
+    order: 15,
+    format: (value: number, product) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    getValue: (product: Product) => (product.taxMultiplier || 1) * (product.quantity > 0 ? product.netPrice / product.quantity : 0)
+  },
+  { 
     id: 'xapuriPrice', 
     header: 'Preço Xap.', 
     initiallyVisible: true, 
     alignment: 'right',
     width: 'w-fit',
     minWidth: 112,
-    order: 15,
+    order: 16,
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   },
   { 
@@ -162,7 +173,7 @@ export const getDefaultColumns = (): Column[] => [
     alignment: 'right',
     width: 'w-fit',
     minWidth: 112,
-    order: 16,
+    order: 17,
     format: (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   }
 ];
@@ -177,6 +188,7 @@ export const compactColumns = [
   'unitPrice',
   'unitDiscount',
   'netPrice',
+  'taxedNetPrice',
   'xapuriPrice',
   'epitaPrice',
 ];

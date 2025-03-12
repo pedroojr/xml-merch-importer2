@@ -18,9 +18,11 @@ interface ProductToolbarProps {
   xapuriMarkup: number;
   epitaMarkup: number;
   roundingType: RoundingType;
+  taxMultiplier: number;
   onXapuriMarkupChange: (value: number) => void;
   onEpitaMarkupChange: (value: number) => void;
   onRoundingChange: (value: RoundingType) => void;
+  onTaxMultiplierChange: (value: number) => void;
   compactMode: boolean;
   toggleCompactMode: () => void;
   columns: Column[];
@@ -35,9 +37,11 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
   xapuriMarkup,
   epitaMarkup,
   roundingType,
+  taxMultiplier,
   onXapuriMarkupChange,
   onEpitaMarkupChange,
   onRoundingChange,
+  onTaxMultiplierChange,
   compactMode,
   toggleCompactMode,
   columns,
@@ -55,9 +59,11 @@ export const ProductToolbar: React.FC<ProductToolbarProps> = ({
             xapuriMarkup={xapuriMarkup}
             epitaMarkup={epitaMarkup}
             roundingType={roundingType}
+            taxMultiplier={taxMultiplier}
             onXapuriMarkupChange={onXapuriMarkupChange}
             onEpitaMarkupChange={onEpitaMarkupChange}
             onRoundingChange={onRoundingChange}
+            onTaxMultiplierChange={onTaxMultiplierChange}
             xapuriSuggestedMarkup={xapuriSuggestedMarkup}
             epitaSuggestedMarkup={epitaSuggestedMarkup}
           />

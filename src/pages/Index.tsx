@@ -21,6 +21,7 @@ const STORAGE_KEYS = {
   XAPURI_MARKUP: 'nfe_import_xapuri_markup',
   EPITA_MARKUP: 'nfe_import_epita_markup',
   ROUNDING_TYPE: 'nfe_import_rounding_type',
+  TAX_MULTIPLIER: 'nfe_import_tax_multiplier',
   SAVED_NFES: 'nfe_import_saved_nfes'
 };
 
@@ -54,6 +55,7 @@ const Index = () => {
     const savedXapuriMarkup = localStorage.getItem(STORAGE_KEYS.XAPURI_MARKUP);
     const savedEpitaMarkup = localStorage.getItem(STORAGE_KEYS.EPITA_MARKUP);
     const savedRoundingType = localStorage.getItem(STORAGE_KEYS.ROUNDING_TYPE);
+    const savedTaxMultiplier = localStorage.getItem(STORAGE_KEYS.TAX_MULTIPLIER);
 
     if (savedXapuriMarkup) {
       const markup = Number(savedXapuriMarkup);
@@ -67,6 +69,10 @@ const Index = () => {
 
     if (savedRoundingType) {
       console.log('Carregando tipo de arredondamento:', savedRoundingType);
+    }
+    
+    if (savedTaxMultiplier) {
+      console.log('Carregando multiplicador de imposto:', savedTaxMultiplier);
     }
   }, []);
 
@@ -235,11 +241,13 @@ const Index = () => {
   const handleConfigurationUpdate = (
     xapuriMarkup: number, 
     epitaMarkup: number, 
-    roundingType: string
+    roundingType: string,
+    taxMultiplier: number = 1.18
   ) => {
     localStorage.setItem(STORAGE_KEYS.XAPURI_MARKUP, xapuriMarkup.toString());
     localStorage.setItem(STORAGE_KEYS.EPITA_MARKUP, epitaMarkup.toString());
     localStorage.setItem(STORAGE_KEYS.ROUNDING_TYPE, roundingType);
+    localStorage.setItem(STORAGE_KEYS.TAX_MULTIPLIER, taxMultiplier.toString());
     
     if (currentNFeId) {
       const updatedNFes = savedNFes.map(nfe => {
@@ -248,7 +256,8 @@ const Index = () => {
             ...nfe,
             xapuriMarkup,
             epitaMarkup,
-            roundingType
+            roundingType,
+            taxMultiplier
           };
         }
         return nfe;
@@ -261,7 +270,8 @@ const Index = () => {
     console.log('Configurações salvas:', {
       xapuriMarkup,
       epitaMarkup,
-      roundingType
+      roundingType,
+      taxMultiplier
     });
   };
   
@@ -320,7 +330,8 @@ const Index = () => {
       hiddenItems: new Set(hiddenItems),
       xapuriMarkup: Number(localStorage.getItem(STORAGE_KEYS.XAPURI_MARKUP) || '120'),
       epitaMarkup: Number(localStorage.getItem(STORAGE_KEYS.EPITA_MARKUP) || '140'),
-      roundingType: localStorage.getItem(STORAGE_KEYS.ROUNDING_TYPE) || '90'
+      roundingType: localStorage.getItem(STORAGE_KEYS.ROUNDING_TYPE) || '90',
+      taxMultiplier: Number(localStorage.getItem(STORAGE_KEYS.TAX_MULTIPLIER) || '1.18')
     };
     
     const updatedNFes = [newNFe, ...savedNFes.filter(nfe => nfe.id !== currentNFeId)].slice(0, 3);
@@ -350,6 +361,10 @@ const Index = () => {
     
     if (nfe.roundingType) {
       localStorage.setItem(STORAGE_KEYS.ROUNDING_TYPE, nfe.roundingType);
+    }
+    
+    if (nfe.taxMultiplier) {
+      localStorage.setItem(STORAGE_KEYS.TAX_MULTIPLIER, nfe.taxMultiplier.toString());
     }
     
     toast.success(`Nota fiscal ${nfe.name} carregada com sucesso`);

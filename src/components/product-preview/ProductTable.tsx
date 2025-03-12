@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,7 @@ interface ProductTableProps {
   xapuriMarkup: number;
   epitaMarkup: number;
   roundingType: RoundingType;
+  taxMultiplier: number;
 }
 
 export const ProductTable: React.FC<ProductTableProps> = ({
@@ -38,6 +38,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   xapuriMarkup,
   epitaMarkup,
   roundingType,
+  taxMultiplier,
 }) => {
   const [showHidden, setShowHidden] = useState(() => {
     const saved = localStorage.getItem('showHidden');
@@ -63,7 +64,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     localStorage.setItem('showHidden', JSON.stringify(showHidden));
   }, [showHidden]);
 
-  // Effect to persist column order
   useEffect(() => {
     const orderMap = sortedColumns.reduce((acc, col, index) => {
       acc[col.id] = index;
@@ -140,7 +140,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     return showHidden ? isItemHidden : !isItemHidden;
   });
 
-  // Calcular a média de desconto em percentual
   const calculateAverageDiscountPercent = () => {
     if (products.length === 0) return 0;
     
@@ -151,6 +150,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   };
 
   const averageDiscountPercent = calculateAverageDiscountPercent();
+
+  const applyTaxMultiplier = (price: number) => {
+    return price * taxMultiplier;
+  };
 
   return (
     <div className="w-full space-y-4">
@@ -167,7 +170,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             </Label>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
             <Card className="bg-white/50">
               <CardContent className="p-3">
                 <div className="text-xs font-medium text-muted-foreground">Quantidade</div>
@@ -187,6 +190,14 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 <div className="text-xs font-medium text-muted-foreground">Valor Líquido</div>
                 <div className="text-sm font-medium tabular-nums">
                   {products.reduce((acc, p) => acc + p.netPrice, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white/50">
+              <CardContent className="p-3">
+                <div className="text-xs font-medium text-muted-foreground">Com Imposto</div>
+                <div className="text-sm font-medium tabular-nums">
+                  {applyTaxMultiplier(products.reduce((acc, p) => acc + p.netPrice, 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </div>
               </CardContent>
             </Card>
@@ -251,8 +262,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               const isHidden = hiddenItems.has(productIndex);
 
               const unitNetPrice = product.quantity > 0 ? product.netPrice / product.quantity : 0;
-              const xapuriPrice = roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, xapuriMarkup), roundingType);
-              const epitaPrice = roundPrice(calculateSalePrice({ ...product, netPrice: unitNetPrice }, epitaMarkup), roundingType);
+              const taxedUnitNetPrice = applyTaxMultiplier(unitNetPrice);
+              const xapuriPrice = roundPrice(calculateSalePrice({ ...product, netPrice: taxedUnitNetPrice }, xapuriMarkup), roundingType);
+              const epitaPrice = roundPrice(calculateSalePrice({ ...product, netPrice: taxedUnitNetPrice }, epitaMarkup), roundingType);
               
               const tamanhoReferencia = extrairTamanhoDaReferencia(product.reference);
               const tamanhoDescricao = extrairTamanhoDaDescricao(product.name);
