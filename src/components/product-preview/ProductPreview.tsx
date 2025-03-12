@@ -14,7 +14,7 @@ interface ProductPreviewProps {
   products: Product[];
   onProductUpdate?: (index: number, product: Product) => void;
   editable?: boolean;
-  onConfigurationUpdate?: (xapuriMarkup: number, epitaMarkup: number, roundingType: string, taxMultiplier: number) => void;
+  onConfigurationUpdate?: (xapuriMarkup: number, epitaMarkup: number, roundingType: string, taxPercent: number) => void;
   onNewFile?: (products: Product[]) => void;
   hiddenItems?: Set<number>;
   onToggleVisibility?: (index: number) => void;
@@ -55,9 +55,9 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     return (saved as RoundingType) || '90';
   });
 
-  const [taxMultiplier, setTaxMultiplier] = useState<number>(() => {
-    const saved = localStorage.getItem('taxMultiplier');
-    return saved ? Number(saved) : 1.18; // Default 18% tax
+  const [taxPercent, setTaxPercent] = useState<number>(() => {
+    const saved = localStorage.getItem('taxPercent');
+    return saved ? Number(saved) : 18; // Default 18% tax
   });
 
   const [localHiddenItems, setLocalHiddenItems] = useState<Set<number>>(hiddenItems);
@@ -84,16 +84,16 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
     localStorage.setItem('xapuriMarkup', xapuriMarkup.toString());
     localStorage.setItem('epitaMarkup', epitaMarkup.toString());
     localStorage.setItem('roundingType', roundingType);
-    localStorage.setItem('taxMultiplier', taxMultiplier.toString());
+    localStorage.setItem('taxPercent', taxPercent.toString());
     localStorage.setItem('compactMode', JSON.stringify(compactMode));
-  }, [xapuriMarkup, epitaMarkup, roundingType, taxMultiplier, compactMode]);
+  }, [xapuriMarkup, epitaMarkup, roundingType, taxPercent, compactMode]);
 
-  const handleMarkupChange = (xapuri: number, epita: number, rounding: RoundingType, taxMult: number) => {
+  const handleMarkupChange = (xapuri: number, epita: number, rounding: RoundingType, taxPerc: number) => {
     setXapuriMarkup(xapuri);
     setEpitaMarkup(epita);
     setRoundingType(rounding);
-    setTaxMultiplier(taxMult);
-    onConfigurationUpdate?.(xapuri, epita, rounding, taxMult);
+    setTaxPercent(taxPerc);
+    onConfigurationUpdate?.(xapuri, epita, rounding, taxPerc);
   };
 
   const handleImageSearch = async (index: number, product: Product) => {
@@ -172,11 +172,11 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
               xapuriMarkup={xapuriMarkup}
               epitaMarkup={epitaMarkup}
               roundingType={roundingType}
-              taxMultiplier={taxMultiplier}
-              onXapuriMarkupChange={(value) => handleMarkupChange(value, epitaMarkup, roundingType, taxMultiplier)}
-              onEpitaMarkupChange={(value) => handleMarkupChange(xapuriMarkup, value, roundingType, taxMultiplier)}
-              onRoundingChange={(value) => handleMarkupChange(xapuriMarkup, epitaMarkup, value, taxMultiplier)}
-              onTaxMultiplierChange={(value) => handleMarkupChange(xapuriMarkup, epitaMarkup, roundingType, value)}
+              taxPercent={taxPercent}
+              onXapuriMarkupChange={(value) => handleMarkupChange(value, epitaMarkup, roundingType, taxPercent)}
+              onEpitaMarkupChange={(value) => handleMarkupChange(xapuriMarkup, value, roundingType, taxPercent)}
+              onRoundingChange={(value) => handleMarkupChange(xapuriMarkup, epitaMarkup, value, taxPercent)}
+              onTaxPercentChange={(value) => handleMarkupChange(xapuriMarkup, epitaMarkup, roundingType, value)}
               compactMode={compactMode}
               toggleCompactMode={toggleCompactMode}
               columns={columns}
@@ -197,7 +197,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({
               xapuriMarkup={xapuriMarkup}
               epitaMarkup={epitaMarkup}
               roundingType={roundingType}
-              taxMultiplier={taxMultiplier}
+              taxPercent={taxPercent}
             />
           </TabsContent>
 
